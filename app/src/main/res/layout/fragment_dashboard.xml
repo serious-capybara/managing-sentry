@@ -28,20 +28,18 @@
 
         <include
             android:id="@+id/sort_dropdown_container"
-            layout="@layout/layout_sort_dropdown"
+            layout="@layout/sort_dropdown"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
-        <EditText
-            android:id="@+id/search_bar"
-            android:layout_width="250dp"
+        <include
+            android:id="@+id/search_field_container"
+            layout="@layout/search_field"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="Search products..."
-            android:background="@drawable/cell_white_bg"
-            android:padding="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
@@ -112,14 +110,14 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <include
-            layout="@layout/layout_checkout_cart"
+            layout="@layout/checkout_cart"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="2"
             android:layout_marginEnd="8dp" />
 
         <include
-            layout="@layout/layout_checkout_total"
+            layout="@layout/checkout_total"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
