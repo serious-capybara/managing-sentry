@@ -11,9 +11,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Cart"
-        android:textSize="24sp"
+        android:textSize="@dimen/body_two"
         android:textStyle="bold"
-        android:textColor="@android:color/black"
+        android:textColor="@color/black"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
@@ -42,6 +42,8 @@
             <!-- Cart Items -->
             <include android:id="@+id/cart_row_1" layout="@layout/pos_row" />
             <include android:id="@+id/cart_row_2" layout="@layout/pos_row" />
+            <include android:id="@+id/cart_row_3" layout="@layout/pos_row" />
+            <include android:id="@+id/cart_row_4" layout="@layout/pos_row" />
 
         </LinearLayout>
     </ScrollView>

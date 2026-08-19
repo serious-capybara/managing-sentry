@@ -60,16 +60,16 @@ public class DashboardFragment extends Fragment {
 
         // Main Table Sample Data
         String[][] dashboardData = {
-                {"Sentry Vitamin C", "Vitamins", "₱ 150.00", "₱ 1,500.00"},
-                {"Paracetamol 500mg", "Medicine", "₱ 5.00", "₱ 100.00"},
-                {"Alcohol 70%", "Sanitation", "₱ 45.00", "₱ 225.00"},
-                {"Face Mask Box", "Protection", "₱ 50.00", "₱ 500.00"},
-                {"Sentry Multivitamins", "Vitamins", "₱ 300.00", "₱ 600.00"},
-                {"Hand Sanitizer", "Sanitation", "₱ 85.00", "₱ 170.00"},
-                {"Thermometer Digital", "Equipment", "₱ 120.00", "₱ 120.00"},
-                {"Cotton Balls", "First Aid", "₱ 25.00", "₱ 50.00"},
-                {"Adhesive Bandage", "First Aid", "₱ 2.00", "₱ 20.00"},
-                {"Gauze Pad", "First Aid", "₱ 15.00", "₱ 45.00"}
+                {"Biogesic 500mg", "Medicine", "₱ 5.50", "Add to Cart"},
+                {"Neozep Forte", "Medicine", "₱ 6.00", "Add to Cart"},
+                {"Safeguard White 130g", "Personal Care", "₱ 48.00", "Add to Cart"},
+                {"Colgate Regular 150g", "Personal Care", "₱ 95.00", "Add to Cart"},
+                {"Kopiko Black 3-in-1", "Grocery", "₱ 8.00", "Add to Cart"},
+                {"Gardenia White Bread", "Grocery", "₱ 75.00", "Add to Cart"},
+                {"Bear Brand Milk 320g", "Grocery", "₱ 115.00", "Add to Cart"},
+                {"Century Tuna Oil 155g", "Grocery", "₱ 38.00", "Add to Cart"},
+                {"Pale Pilsen 330ml Can", "Beverage", "₱ 65.00", "Add to Cart"},
+                {"Poten-Cee Vitamin C", "Vitamins", "₱ 7.50", "Add to Cart"}
         };
 
         // Main Table Setup
@@ -85,8 +85,9 @@ public class DashboardFragment extends Fragment {
                 row.findViewById(R.id.row_order).setVisibility(View.GONE);
                 row.findViewById(R.id.row_quantity).setVisibility(View.GONE);
                 row.findViewById(R.id.row_sales).setVisibility(View.GONE);
-                row.findViewById(R.id.row_subtotal).setVisibility(View.GONE); // Hide subtotal
+                row.findViewById(R.id.row_subtotal).setVisibility(View.GONE);
                 row.findViewById(R.id.row_status).setVisibility(View.GONE);
+                row.findViewById(R.id.row_cart_actions).setVisibility(View.GONE);
 
                 ((android.widget.TextView) row.findViewById(R.id.row_name)).setText(dashboardData[i][0]);
                 ((android.widget.TextView) row.findViewById(R.id.row_category)).setText(dashboardData[i][1]);
@@ -94,17 +95,18 @@ public class DashboardFragment extends Fragment {
             }
         }
 
-        // Cart Items Setup
-        int[] cartRowIds = {R.id.cart_row_1, R.id.cart_row_2};
+        // Cart Items Setup (4 Rows)
+        int[] cartRowIds = {R.id.cart_row_1, R.id.cart_row_2, R.id.cart_row_3, R.id.cart_row_4};
         String[][] cartData = {
-                {"Sentry Vitamin C", "10", "₱ 1,500.00"},
-                {"Face Mask Box", "2", "₱ 100.00"}
+                {"Safeguard White 130g", "2", "₱ 96.00"},
+                {"Colgate Regular 150g", "1", "₱ 95.00"},
+                {"Bear Brand Milk 320g", "1", "₱ 115.00"},
+                {"Century Tuna Oil 155g", "3", "₱ 114.00"}
         };
 
         for (int i = 0; i < cartRowIds.length; i++) {
             View row = view.findViewById(cartRowIds[i]);
             if (row != null) {
-                // Hide main table columns
                 row.findViewById(R.id.row_category).setVisibility(View.GONE);
                 row.findViewById(R.id.row_srp).setVisibility(View.GONE);
                 row.findViewById(R.id.row_timestamp).setVisibility(View.GONE);
@@ -112,11 +114,8 @@ public class DashboardFragment extends Fragment {
                 row.findViewById(R.id.row_sales).setVisibility(View.GONE);
                 row.findViewById(R.id.row_checkout).setVisibility(View.GONE);
                 row.findViewById(R.id.row_status).setVisibility(View.GONE);
-
-                // Show Cart Actions
                 row.findViewById(R.id.row_cart_actions).setVisibility(View.VISIBLE);
 
-                // Set Data
                 ((android.widget.TextView) row.findViewById(R.id.row_name)).setText(cartData[i][0]);
                 ((android.widget.TextView) row.findViewById(R.id.row_quantity)).setText(cartData[i][1]);
                 ((android.widget.TextView) row.findViewById(R.id.row_subtotal)).setText(cartData[i][2]);

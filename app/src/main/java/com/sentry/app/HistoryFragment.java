@@ -34,16 +34,16 @@ public class HistoryFragment extends Fragment {
 
         // Sample Data for History (TimeStamp, Order, Quantity, Sales, Status)
         String[][] historyData = {
-                {"2026-08-19 10:00 AM", "ORD-001", "10", "₱ 1,500.00", "Completed"},
-                {"2026-08-19 11:30 AM", "ORD-002", "2", "₱ 10.00", "Cancelled"},
-                {"2026-08-19 01:15 PM", "ORD-003", "5", "₱ 225.00", "Completed"},
-                {"2026-08-19 02:45 PM", "ORD-004", "1", "₱ 50.00", "Pending"},
-                {"2026-08-19 04:00 PM", "ORD-005", "2", "₱ 600.00", "Completed"},
-                {"2026-08-20 09:00 AM", "ORD-006", "3", "₱ 255.00", "Completed"},
-                {"2026-08-20 10:30 AM", "ORD-007", "1", "₱ 120.00", "Completed"},
-                {"2026-08-20 12:00 PM", "ORD-008", "4", "₱ 100.00", "Completed"},
-                {"2026-08-20 02:15 PM", "ORD-009", "10", "₱ 20.00", "Completed"},
-                {"2026-08-20 03:45 PM", "ORD-010", "3", "₱ 45.00", "Completed"}
+                {"2026-08-19 10:00 AM", "ORD-101", "12", "₱ 1,140.00", "Completed"},
+                {"2026-08-19 11:30 AM", "ORD-102", "2", "₱ 12.00", "Cancelled"},
+                {"2026-08-19 01:15 PM", "ORD-103", "5", "₱ 240.00", "Completed"},
+                {"2026-08-19 02:45 PM", "ORD-104", "1", "₱ 95.00", "Pending"},
+                {"2026-08-19 04:00 PM", "ORD-105", "2", "₱ 16.00", "Completed"},
+                {"2026-08-20 09:00 AM", "ORD-106", "8", "₱ 600.00", "Completed"},
+                {"2026-08-20 10:30 AM", "ORD-107", "1", "₱ 115.00", "Completed"},
+                {"2026-08-20 12:00 PM", "ORD-108", "4", "₱ 152.00", "Completed"},
+                {"2026-08-20 02:15 PM", "ORD-109", "10", "₱ 55.00", "Completed"},
+                {"2026-08-20 03:45 PM", "ORD-110", "3", "₱ 195.00", "Completed"}
         };
 
         // Setup Data Rows (Row 1 to 10)

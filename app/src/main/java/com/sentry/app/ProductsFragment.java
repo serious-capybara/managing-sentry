@@ -35,16 +35,16 @@ public class ProductsFragment extends Fragment {
 
         // Sample Data for Products (Name, Category, SRP, Status)
         String[][] productData = {
-                {"Sentry Vitamin C", "Vitamins", "₱ 150.00", "In Stock"},
-                {"Paracetamol 500mg", "Medicine", "₱ 5.00", "Low Stock"},
-                {"Alcohol 70%", "Sanitation", "₱ 45.00", "In Stock"},
-                {"Face Mask Box", "Protection", "₱ 50.00", "Out of Stock"},
-                {"Sentry Multivitamins", "Vitamins", "₱ 300.00", "In Stock"},
-                {"Hand Sanitizer", "Sanitation", "₱ 85.00", "In Stock"},
-                {"Thermometer Digital", "Equipment", "₱ 120.00", "Low Stock"},
-                {"Cotton Balls", "First Aid", "₱ 25.00", "In Stock"},
-                {"Adhesive Bandage", "First Aid", "₱ 2.00", "In Stock"},
-                {"Gauze Pad", "First Aid", "₱ 15.00", "In Stock"}
+                {"Biogesic 500mg", "Medicine", "₱ 5.50", "In Stock"},
+                {"Neozep Forte", "Medicine", "₱ 6.00", "Low Stock"},
+                {"Safeguard White 130g", "Personal Care", "₱ 48.00", "In Stock"},
+                {"Colgate Regular 150g", "Personal Care", "₱ 95.00", "Out of Stock"},
+                {"Kopiko Black 3-in-1", "Grocery", "₱ 8.00", "In Stock"},
+                {"Gardenia White Bread", "Grocery", "₱ 75.00", "In Stock"},
+                {"Bear Brand Milk 320g", "Grocery", "₱ 115.00", "Low Stock"},
+                {"Century Tuna Oil 155g", "Grocery", "₱ 38.00", "In Stock"},
+                {"Pale Pilsen 330ml Can", "Beverage", "₱ 65.00", "In Stock"},
+                {"Poten-Cee Vitamin C", "Vitamins", "₱ 7.50", "In Stock"}
         };
 
         // Setup Data Rows (Row 1 to 10)
