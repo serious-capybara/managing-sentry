@@ -74,11 +74,12 @@ public class HistoryFragment extends Fragment {
     }
 
     private void setupDropdown(View view) {
-        String[] options = getResources().getStringArray(R.array.sort_options);
+        String[] options = getResources().getStringArray(R.array.history_sort_options);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, options);
         MaterialAutoCompleteTextView dropdown = view.findViewById(R.id.sort_dropdown);
         if (dropdown != null) {
             dropdown.setAdapter(adapter);
+            dropdown.setText(options[0], false); // Set default to "Today"
         }
     }
 }
