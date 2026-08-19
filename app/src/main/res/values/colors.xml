@@ -12,6 +12,7 @@
     <color name="light_gray">#F5F5F5</color>
     <color name="gray_200">#EEEEEE</color>
     <color name="gray_400">#BDBDBD</color>
+    <color name="gray_400_stroke">#50BDBDBD</color>
     <color name="gray_600">#757575</color>
     <color name="success_green">#618764</color>
     <color name="divider_color">#DDDDDD</color>

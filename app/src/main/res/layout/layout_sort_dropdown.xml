@@ -5,12 +5,11 @@
     style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:minHeight="0dp"
     android:minWidth="200dp"
     android:background="@drawable/cell_white_bg"
-    app:boxCornerRadiusBottomEnd="12dp"
-    app:boxCornerRadiusBottomStart="12dp"
-    app:boxCornerRadiusTopEnd="12dp"
-    app:boxCornerRadiusTopStart="12dp"
+    app:boxStrokeWidth="0dp"
+    app:boxStrokeWidthFocused="0dp"
     app:hintEnabled="false">
 
     <com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -20,6 +19,9 @@
         android:inputType="none"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:minHeight="0dp"
         android:text="Name"
         android:textColor="@android:color/black"
         android:textSize="@dimen/body_two" />
