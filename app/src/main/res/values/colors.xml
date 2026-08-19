@@ -2,13 +2,18 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="blue_gray">#191D31</color>
-    <color name="accent_blue">#5B7FFF</color>
+
+    <!-- Sidebar / Navigation Colors -->
+    <color name="sidebar_bg">#111844</color>
+    <color name="sidebar_btn_primary">#4b5694</color>
+    <color name="sidebar_btn_critical">#E53935</color>
+
+    <!-- Other UI Colors -->
     <color name="light_gray">#F5F5F5</color>
     <color name="gray_200">#EEEEEE</color>
     <color name="gray_400">#BDBDBD</color>
+    <color name="gray_400_stroke">#50BDBDBD</color>
     <color name="gray_600">#757575</color>
-    <color name="success_green">#76C052</color>
-    <color name="error_red">#E53935</color>
+    <color name="success_green">#618764</color>
     <color name="divider_color">#DDDDDD</color>
 </resources>

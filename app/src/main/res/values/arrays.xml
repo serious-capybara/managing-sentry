@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="default_options">
+        <item>Name</item>
+        <item>Category</item>
+        <item>Low on stock</item>
+        <item>High on stock</item>
+    </string-array>
+
+    <string-array name="history_sort_options">
+        <item>Today</item>
+        <item>Yesterday</item>
+        <item>This Week</item>
+        <item>Last Week</item>
+    </string-array>
+</resources>

@@ -5,35 +5,107 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+    <!-- Title Products -->
+    <TextView
+        android:id="@+id/products_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="48dp"
+        android:text="@string/products"
+        android:textSize="@dimen/title"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Sort and Search Row -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/sort_search_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/products_title"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/sort_by_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/body_one"
+            android:text="Sort By: "
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <include
+            android:id="@+id/sort_dropdown_container"
+            layout="@layout/sort_dropdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toEndOf="@id/sort_by_label"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <include
+            android:id="@+id/search_field_container"
+            layout="@layout/search_field"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Main Table Section (Header + Scrollable Content) -->
+    <LinearLayout
+        android:id="@+id/main_table_section"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
+        android:background="@drawable/cart_container_bg"
+        android:padding="16dp"
+        app:layout_constraintTop_toBottomOf="@id/sort_search_row"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <LinearLayout
-            android:id="@+id/products_content"
+        <!-- Sticky Header Row -->
+        <include
+            android:id="@+id/header_row"
+            layout="@layout/pos_header"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="wrap_content" />
 
-            <!-- Header Row -->
-            <include
-                android:id="@+id/header_row"
-                layout="@layout/pos_header" />
+        <!-- Scrollable Content -->
+        <ScrollView
+            android:id="@+id/products_scrollview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="8dp">
 
-            <!-- Data Rows (Sample) -->
-            <include
-                android:id="@+id/row_1"
-                layout="@layout/pos_row" />
+            <LinearLayout
+                android:id="@+id/products_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-            <include
-                android:id="@+id/row_2"
-                layout="@layout/pos_row" />
+                <!-- Data Rows (Sample) -->
+                <include android:id="@+id/row_1" layout="@layout/pos_row" />
+                <include android:id="@+id/row_2" layout="@layout/pos_row" />
+                <include android:id="@+id/row_3" layout="@layout/pos_row" />
+                <include android:id="@+id/row_4" layout="@layout/pos_row" />
+                <include android:id="@+id/row_5" layout="@layout/pos_row" />
+                <include android:id="@+id/row_6" layout="@layout/pos_row" />
+                <include android:id="@+id/row_7" layout="@layout/pos_row" />
+                <include android:id="@+id/row_8" layout="@layout/pos_row" />
+                <include android:id="@+id/row_9" layout="@layout/pos_row" />
+                <include android:id="@+id/row_10" layout="@layout/pos_row" />
 
-        </LinearLayout>
-    </ScrollView>
+            </LinearLayout>
+        </ScrollView>
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
