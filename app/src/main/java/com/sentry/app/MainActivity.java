@@ -20,30 +20,45 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        View mainView = findViewById(R.id.main);
+        if (mainView != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                return insets;
+            });
+        }
 
         // Set default fragment
         if (savedInstanceState == null) {
             loadFragment(new DashboardFragment());
         }
 
-        // Setup Sidebar Buttons
+        // Setup Sidebar Buttons with null checks
+        setupSidebarButtons();
+    }
+
+    private void setupSidebarButtons() {
         Button btnDashboard = findViewById(R.id.btn_dashboard);
         Button btnProducts = findViewById(R.id.btn_products);
         Button btnHistory = findViewById(R.id.btn_history);
 
-        btnDashboard.setOnClickListener(v -> loadFragment(new DashboardFragment()));
-        btnProducts.setOnClickListener(v -> loadFragment(new ProductsFragment()));
-        btnHistory.setOnClickListener(v -> loadFragment(new HistoryFragment()));
+        if (btnDashboard != null) {
+            btnDashboard.setOnClickListener(v -> loadFragment(new DashboardFragment()));
+        }
+        if (btnProducts != null) {
+            btnProducts.setOnClickListener(v -> loadFragment(new ProductsFragment()));
+        }
+        if (btnHistory != null) {
+            btnHistory.setOnClickListener(v -> loadFragment(new HistoryFragment()));
+        }
     }
 
     private void loadFragment(Fragment fragment) {
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, fragment);
-        transaction.commit();
+        if (findViewById(R.id.fragment_container) != null) {
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, fragment);
+            transaction.commit();
+        }
     }
 }

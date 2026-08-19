@@ -7,4 +7,5 @@
     <dimen name="header_three">19sp</dimen>
     <dimen name="body_one">18sp</dimen>
     <dimen name="body_two">16sp</dimen>
+    <dimen name="body_three">14sp</dimen>
 </resources>

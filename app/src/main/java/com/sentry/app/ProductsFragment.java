@@ -29,6 +29,7 @@ public class ProductsFragment extends Fragment {
             header.findViewById(R.id.header_order).setVisibility(View.GONE);
             header.findViewById(R.id.header_quantity).setVisibility(View.GONE);
             header.findViewById(R.id.header_sales).setVisibility(View.GONE);
+            header.findViewById(R.id.header_subtotal).setVisibility(View.GONE);
             header.findViewById(R.id.header_checkout).setVisibility(View.GONE);
         }
 
@@ -60,7 +61,9 @@ public class ProductsFragment extends Fragment {
                 row.findViewById(R.id.row_order).setVisibility(View.GONE);
                 row.findViewById(R.id.row_quantity).setVisibility(View.GONE);
                 row.findViewById(R.id.row_sales).setVisibility(View.GONE);
+                row.findViewById(R.id.row_subtotal).setVisibility(View.GONE);
                 row.findViewById(R.id.row_checkout).setVisibility(View.GONE);
+                row.findViewById(R.id.row_cart_actions).setVisibility(View.GONE);
 
                 // Set Sample Data
                 ((android.widget.TextView) row.findViewById(R.id.row_name)).setText(productData[i][0]);

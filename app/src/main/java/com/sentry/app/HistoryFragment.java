@@ -28,6 +28,7 @@ public class HistoryFragment extends Fragment {
             header.findViewById(R.id.header_name).setVisibility(View.GONE);
             header.findViewById(R.id.header_category).setVisibility(View.GONE);
             header.findViewById(R.id.header_srp).setVisibility(View.GONE);
+            header.findViewById(R.id.header_subtotal).setVisibility(View.GONE);
             header.findViewById(R.id.header_checkout).setVisibility(View.GONE);
         }
 
@@ -58,7 +59,9 @@ public class HistoryFragment extends Fragment {
                 row.findViewById(R.id.row_name).setVisibility(View.GONE);
                 row.findViewById(R.id.row_category).setVisibility(View.GONE);
                 row.findViewById(R.id.row_srp).setVisibility(View.GONE);
+                row.findViewById(R.id.row_subtotal).setVisibility(View.GONE);
                 row.findViewById(R.id.row_checkout).setVisibility(View.GONE);
+                row.findViewById(R.id.row_cart_actions).setVisibility(View.GONE);
 
                 // Set Sample Data
                 ((android.widget.TextView) row.findViewById(R.id.row_timestamp)).setText(historyData[i][0]);
