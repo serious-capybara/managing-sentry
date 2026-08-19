@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Managing Sentry</string>
+    <string name="app_name">Sentry</string>
     <string name="dashboard">Dashboard</string>
     <string name="products">Products</string>
     <string name="history">History</string>
