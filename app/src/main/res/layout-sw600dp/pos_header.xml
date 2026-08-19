@@ -167,7 +167,6 @@
             android:textStyle="bold"
             android:gravity="center" />
 
-        <!-- Header Cart Actions Spacer -->
         <View
             android:id="@+id/header_cart_spacer"
             android:layout_width="88dp"

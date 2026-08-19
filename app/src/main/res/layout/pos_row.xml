@@ -17,7 +17,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Name Column -->
         <TextView
             android:id="@+id/row_name"
             android:layout_width="0dp"
@@ -32,7 +31,6 @@
             android:textColor="@android:color/black"
             android:gravity="start|center_vertical" />
 
-        <!-- Category Column -->
         <TextView
             android:id="@+id/row_category"
             android:layout_width="0dp"
@@ -47,7 +45,6 @@
             android:textColor="@android:color/black"
             android:gravity="center" />
 
-        <!-- SRP Column -->
         <TextView
             android:id="@+id/row_srp"
             android:layout_width="0dp"
@@ -62,7 +59,6 @@
             android:textColor="@android:color/black"
             android:gravity="center" />
 
-        <!-- TimeStamp Column -->
         <TextView
             android:id="@+id/row_timestamp"
             android:layout_width="0dp"
@@ -77,7 +73,6 @@
             android:textColor="@android:color/black"
             android:gravity="center" />
 
-        <!-- Order Column -->
         <TextView
             android:id="@+id/row_order"
             android:layout_width="0dp"
@@ -92,7 +87,6 @@
             android:textColor="@android:color/black"
             android:gravity="center" />
 
-        <!-- Quantity Column -->
         <TextView
             android:id="@+id/row_quantity"
             android:layout_width="0dp"
@@ -107,7 +101,6 @@
             android:textColor="@android:color/black"
             android:gravity="center" />
 
-        <!-- Sales Column -->
         <TextView
             android:id="@+id/row_sales"
             android:layout_width="0dp"
@@ -122,7 +115,6 @@
             android:textColor="@android:color/black"
             android:gravity="center" />
 
-        <!-- Subtotal Column -->
         <TextView
             android:id="@+id/row_subtotal"
             android:layout_width="0dp"
@@ -137,7 +129,6 @@
             android:textColor="@android:color/black"
             android:gravity="center" />
 
-        <!-- Checkout Column (Button) -->
         <Button
             android:id="@+id/row_checkout"
             android:layout_width="0dp"
@@ -154,7 +145,6 @@
             android:textColor="@android:color/white"
             android:gravity="center" />
 
-        <!-- Status Column -->
         <TextView
             android:id="@+id/row_status"
             android:layout_width="0dp"
@@ -169,7 +159,6 @@
             android:textColor="@android:color/black"
             android:gravity="center" />
 
-        <!-- Cart Actions -->
         <LinearLayout
             android:id="@+id/row_cart_actions"
             android:layout_width="wrap_content"

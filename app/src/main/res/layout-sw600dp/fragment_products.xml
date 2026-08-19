@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <!-- Title Products -->
     <TextView
         android:id="@+id/products_title"
         android:layout_width="wrap_content"
@@ -18,7 +17,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- Sort and Search Row -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/sort_search_row"
         android:layout_width="match_parent"
@@ -57,7 +55,6 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Main Table Section (Header + Scrollable Content) -->
     <LinearLayout
         android:id="@+id/main_table_section"
         android:layout_width="match_parent"
@@ -71,14 +68,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Sticky Header Row -->
         <include
             android:id="@+id/header_row"
             layout="@layout/pos_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <!-- Scrollable Content -->
         <ScrollView
             android:id="@+id/products_scrollview"
             android:layout_width="match_parent"
@@ -91,7 +86,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Data Rows (Sample) -->
                 <include android:id="@+id/row_1" layout="@layout/pos_row" />
                 <include android:id="@+id/row_2" layout="@layout/pos_row" />
                 <include android:id="@+id/row_3" layout="@layout/pos_row" />

@@ -24,7 +24,6 @@
         android:paddingBottom="12dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:text="Name"
         android:textColor="@color/black"
         android:textSize="@dimen/body_two" />
 

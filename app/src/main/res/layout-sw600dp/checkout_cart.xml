@@ -17,7 +17,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <!-- Sticky Header for Cart -->
     <include
         android:id="@+id/cart_header"
         layout="@layout/pos_header"
@@ -39,7 +38,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Cart Items -->
             <include android:id="@+id/cart_row_1" layout="@layout/pos_row" />
             <include android:id="@+id/cart_row_2" layout="@layout/pos_row" />
             <include android:id="@+id/cart_row_3" layout="@layout/pos_row" />

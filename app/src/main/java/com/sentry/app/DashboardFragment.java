@@ -4,12 +4,13 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import android.widget.ArrayAdapter;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 
 public class DashboardFragment extends Fragment {
@@ -19,7 +20,7 @@ public class DashboardFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_dashboard, container, false);
         setupDropdown(view);
-        setupColumns(view);
+        setupUI(view);
         return view;
     }
 
@@ -29,97 +30,96 @@ public class DashboardFragment extends Fragment {
         MaterialAutoCompleteTextView dropdown = view.findViewById(R.id.sort_dropdown);
         if (dropdown != null) {
             dropdown.setAdapter(adapter);
+            dropdown.setText(options[0], false);
+            // Ensure all items show on click by disabling filtering
+            dropdown.setOnClickListener(v -> dropdown.showDropDown());
         }
     }
 
-    private void setupColumns(View view) {
-        // Main Table Header
-        View mainHeader = view.findViewById(R.id.header_row);
-        if (mainHeader != null) {
-            mainHeader.findViewById(R.id.header_timestamp).setVisibility(View.GONE);
-            mainHeader.findViewById(R.id.header_order).setVisibility(View.GONE);
-            mainHeader.findViewById(R.id.header_quantity).setVisibility(View.GONE);
-            mainHeader.findViewById(R.id.header_sales).setVisibility(View.GONE);
-            mainHeader.findViewById(R.id.header_subtotal).setVisibility(View.GONE); // Hide subtotal in main table
-            mainHeader.findViewById(R.id.header_status).setVisibility(View.GONE);
-        }
+    private void setupUI(View view) {
+        setupHeaders(view);
+        setupMainTable(view);
+        setupCart(view);
+    }
 
-        // Cart Header (Inside the Cart Layout)
-        View cartHeader = view.findViewById(R.id.cart_header);
-        if (cartHeader != null) {
-            cartHeader.findViewById(R.id.header_category).setVisibility(View.GONE);
-            cartHeader.findViewById(R.id.header_srp).setVisibility(View.GONE);
-            cartHeader.findViewById(R.id.header_timestamp).setVisibility(View.GONE);
-            cartHeader.findViewById(R.id.header_order).setVisibility(View.GONE);
-            cartHeader.findViewById(R.id.header_sales).setVisibility(View.GONE);
-            cartHeader.findViewById(R.id.header_checkout).setVisibility(View.GONE);
-            cartHeader.findViewById(R.id.header_status).setVisibility(View.GONE);
-            // Show Cart Spacer for buttons alignment
-            cartHeader.findViewById(R.id.header_cart_spacer).setVisibility(View.VISIBLE);
-        }
+    private void setupHeaders(View view) {
+        setupMainTableHeader(view.findViewById(R.id.header_row));
+        setupCartHeader(view.findViewById(R.id.cart_header));
+    }
 
-        // Main Table Sample Data
-        String[][] dashboardData = {
-                {"Biogesic 500mg", "Medicine", "₱ 5.50", "Add to Cart"},
-                {"Neozep Forte", "Medicine", "₱ 6.00", "Add to Cart"},
-                {"Safeguard White 130g", "Personal Care", "₱ 48.00", "Add to Cart"},
-                {"Colgate Regular 150g", "Personal Care", "₱ 95.00", "Add to Cart"},
-                {"Kopiko Black 3-in-1", "Grocery", "₱ 8.00", "Add to Cart"},
-                {"Gardenia White Bread", "Grocery", "₱ 75.00", "Add to Cart"},
-                {"Bear Brand Milk 320g", "Grocery", "₱ 115.00", "Add to Cart"},
-                {"Century Tuna Oil 155g", "Grocery", "₱ 38.00", "Add to Cart"},
-                {"Pale Pilsen 330ml Can", "Beverage", "₱ 65.00", "Add to Cart"},
-                {"Poten-Cee Vitamin C", "Vitamins", "₱ 7.50", "Add to Cart"}
+    private void setupMainTableHeader(View header) {
+        if (header == null) return;
+        hideViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_quantity, R.id.header_sales, R.id.header_subtotal, R.id.header_status);
+    }
+
+    private void setupCartHeader(View header) {
+        if (header == null) return;
+        hideViews(header, R.id.header_category, R.id.header_srp, R.id.header_timestamp, R.id.header_order, R.id.header_sales, R.id.header_checkout, R.id.header_status);
+        header.findViewById(R.id.header_cart_spacer).setVisibility(View.VISIBLE);
+    }
+
+    private void setupMainTable(View view) {
+        String[][] data = {
+                {"Biogesic 500mg", "Medicine", "₱ 5.50"},
+                {"Neozep Forte", "Medicine", "₱ 6.00"},
+                {"Safeguard White 130g", "Personal Care", "₱ 48.00"},
+                {"Colgate Regular 150g", "Personal Care", "₱ 95.00"},
+                {"Kopiko Black 3-in-1", "Grocery", "₱ 8.00"},
+                {"Gardenia White Bread", "Grocery", "₱ 75.00"},
+                {"Bear Brand Milk 320g", "Grocery", "₱ 115.00"},
+                {"Century Tuna Oil 155g", "Grocery", "₱ 38.00"},
+                {"Pale Pilsen 330ml Can", "Beverage", "₱ 65.00"},
+                {"Poten-Cee Vitamin C", "Vitamins", "₱ 7.50"}
         };
 
-        // Main Table Setup
-        int[] rowIds = {
-                R.id.row_1, R.id.row_2, R.id.row_3, R.id.row_4, R.id.row_5,
-                R.id.row_6, R.id.row_7, R.id.row_8, R.id.row_9, R.id.row_10
-        };
+        int[] ids = {R.id.row_1, R.id.row_2, R.id.row_3, R.id.row_4, R.id.row_5, R.id.row_6, R.id.row_7, R.id.row_8, R.id.row_9, R.id.row_10};
 
-        for (int i = 0; i < rowIds.length; i++) {
-            View row = view.findViewById(rowIds[i]);
+        for (int i = 0; i < ids.length; i++) {
+            View row = view.findViewById(ids[i]);
             if (row != null) {
-                row.findViewById(R.id.row_timestamp).setVisibility(View.GONE);
-                row.findViewById(R.id.row_order).setVisibility(View.GONE);
-                row.findViewById(R.id.row_quantity).setVisibility(View.GONE);
-                row.findViewById(R.id.row_sales).setVisibility(View.GONE);
-                row.findViewById(R.id.row_subtotal).setVisibility(View.GONE);
-                row.findViewById(R.id.row_status).setVisibility(View.GONE);
-                row.findViewById(R.id.row_cart_actions).setVisibility(View.GONE);
-
-                ((android.widget.TextView) row.findViewById(R.id.row_name)).setText(dashboardData[i][0]);
-                ((android.widget.TextView) row.findViewById(R.id.row_category)).setText(dashboardData[i][1]);
-                ((android.widget.TextView) row.findViewById(R.id.row_srp)).setText(dashboardData[i][2]);
+                hideViews(row, R.id.row_timestamp, R.id.row_order, R.id.row_quantity, R.id.row_sales, R.id.row_subtotal, R.id.row_status, R.id.row_cart_actions);
+                setText(row, R.id.row_name, data[i][0]);
+                setText(row, R.id.row_category, data[i][1]);
+                setText(row, R.id.row_srp, data[i][2]);
             }
         }
+    }
 
-        // Cart Items Setup (4 Rows)
-        int[] cartRowIds = {R.id.cart_row_1, R.id.cart_row_2, R.id.cart_row_3, R.id.cart_row_4};
-        String[][] cartData = {
+    private void setupCart(View view) {
+        String[][] data = {
                 {"Safeguard White 130g", "2", "₱ 96.00"},
                 {"Colgate Regular 150g", "1", "₱ 95.00"},
                 {"Bear Brand Milk 320g", "1", "₱ 115.00"},
                 {"Century Tuna Oil 155g", "3", "₱ 114.00"}
         };
 
-        for (int i = 0; i < cartRowIds.length; i++) {
-            View row = view.findViewById(cartRowIds[i]);
-            if (row != null) {
-                row.findViewById(R.id.row_category).setVisibility(View.GONE);
-                row.findViewById(R.id.row_srp).setVisibility(View.GONE);
-                row.findViewById(R.id.row_timestamp).setVisibility(View.GONE);
-                row.findViewById(R.id.row_order).setVisibility(View.GONE);
-                row.findViewById(R.id.row_sales).setVisibility(View.GONE);
-                row.findViewById(R.id.row_checkout).setVisibility(View.GONE);
-                row.findViewById(R.id.row_status).setVisibility(View.GONE);
-                row.findViewById(R.id.row_cart_actions).setVisibility(View.VISIBLE);
+        int[] ids = {R.id.cart_row_1, R.id.cart_row_2, R.id.cart_row_3, R.id.cart_row_4};
 
-                ((android.widget.TextView) row.findViewById(R.id.row_name)).setText(cartData[i][0]);
-                ((android.widget.TextView) row.findViewById(R.id.row_quantity)).setText(cartData[i][1]);
-                ((android.widget.TextView) row.findViewById(R.id.row_subtotal)).setText(cartData[i][2]);
+        for (int i = 0; i < ids.length; i++) {
+            View row = view.findViewById(ids[i]);
+            if (row != null) {
+                hideViews(row, R.id.row_category, R.id.row_srp, R.id.row_timestamp, R.id.row_order, R.id.row_sales, R.id.row_checkout, R.id.row_status);
+                row.findViewById(R.id.row_cart_actions).setVisibility(View.VISIBLE);
+                setText(row, R.id.row_name, data[i][0]);
+                setText(row, R.id.row_quantity, data[i][1]);
+                setText(row, R.id.row_subtotal, data[i][2]);
             }
+        }
+    }
+
+    private void hideViews(View root, int... ids) {
+        for (int id : ids) {
+            View view = root.findViewById(id);
+            if (view != null) {
+                view.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    private void setText(View root, int id, String text) {
+        TextView textView = root.findViewById(id);
+        if (textView != null) {
+            textView.setText(text);
         }
     }
 }
