@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <include android:id="@+id/sort_dropdown_container" layout="@layout/layout_sort_dropdown" android:visibility="gone" />
     <include android:id="@+id/header_row" layout="@layout/pos_header" android:visibility="gone" />
     <include android:id="@+id/row_1" layout="@layout/pos_row" android:visibility="gone" />
     <include android:id="@+id/row_2" layout="@layout/pos_row" android:visibility="gone" />

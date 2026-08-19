@@ -5,7 +5,8 @@
     android:layout_height="wrap_content"
     android:paddingStart="8dp"
     android:paddingEnd="8dp"
-    android:paddingTop="2dp">
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp">
 
     <LinearLayout
         android:id="@+id/row_container"
@@ -123,6 +124,20 @@
             android:background="@drawable/header_cell_gray_bg"
             android:padding="12dp"
             android:text="Checkout"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/header_subtotal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="12dp"
+            android:text="Subtotal"
             android:textSize="@dimen/body_two"
             android:textColor="@android:color/black"
             android:textStyle="bold"

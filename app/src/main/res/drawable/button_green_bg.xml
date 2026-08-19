@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Pressed or Hovered State (Slight Gray) -->
+    <!-- Pressed/Hovered State -->
     <item android:state_pressed="true">
         <shape>
-            <solid android:color="#2b46a3" />
+            <solid android:color="#2b5748" />
             <corners android:radius="12dp" />
         </shape>
     </item>
 
-    <!-- Default State (Accent Blue) -->
+    <!-- Default State -->
     <item>
         <shape>
-            <solid android:color="@color/sidebar_btn_primary" />
+            <solid android:color="@color/success_green" />
             <corners android:radius="12dp" />
         </shape>
     </item>

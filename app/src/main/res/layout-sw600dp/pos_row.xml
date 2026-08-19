@@ -5,7 +5,8 @@
     android:layout_height="wrap_content"
     android:paddingStart="8dp"
     android:paddingEnd="8dp"
-    android:paddingTop="2dp">
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp">
 
     <LinearLayout
         android:id="@+id/row_container"
@@ -25,10 +26,10 @@
             android:layout_margin="2dp"
             android:background="@drawable/cell_white_bg"
             android:padding="12dp"
-            android:text="Product Name"
+            android:text="Sentry Vitamin C"
             android:textSize="@dimen/body_two"
             android:textColor="@android:color/black"
-            android:gravity="center" />
+            android:gravity="start|center_vertical" />
 
         <!-- Category Column -->
         <TextView
@@ -39,7 +40,7 @@
             android:layout_margin="2dp"
             android:background="@drawable/cell_white_bg"
             android:padding="12dp"
-            android:text="Category"
+            android:text="Vitamins"
             android:textSize="@dimen/body_two"
             android:textColor="@android:color/black"
             android:gravity="center" />
@@ -53,7 +54,7 @@
             android:layout_margin="2dp"
             android:background="@drawable/cell_white_bg"
             android:padding="12dp"
-            android:text="SRP"
+            android:text="₱ 150.00"
             android:textSize="@dimen/body_two"
             android:textColor="@android:color/black"
             android:gravity="center" />
@@ -67,7 +68,7 @@
             android:layout_margin="2dp"
             android:background="@drawable/cell_white_bg"
             android:padding="12dp"
-            android:text="TimeStamp"
+            android:text="2026-08-19 10:00 AM"
             android:textSize="@dimen/body_two"
             android:textColor="@android:color/black"
             android:gravity="center" />
@@ -81,7 +82,7 @@
             android:layout_margin="2dp"
             android:background="@drawable/cell_white_bg"
             android:padding="12dp"
-            android:text="Order"
+            android:text="ORD-00123"
             android:textSize="@dimen/body_two"
             android:textColor="@android:color/black"
             android:gravity="center" />
@@ -95,7 +96,7 @@
             android:layout_margin="2dp"
             android:background="@drawable/cell_white_bg"
             android:padding="12dp"
-            android:text="Qty"
+            android:text="10"
             android:textSize="@dimen/body_two"
             android:textColor="@android:color/black"
             android:gravity="center" />
@@ -109,23 +110,39 @@
             android:layout_margin="4dp"
             android:background="@drawable/cell_white_bg"
             android:padding="12dp"
-            android:text="Sales"
+            android:text="₱ 1,500.00"
             android:textSize="@dimen/body_two"
             android:textColor="@android:color/black"
             android:gravity="center" />
 
-        <!-- Checkout Column -->
+        <!-- Subtotal Column -->
         <TextView
+            android:id="@+id/row_subtotal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="2dp"
+            android:background="@drawable/cell_white_bg"
+            android:padding="12dp"
+            android:text="₱ 0.00"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:gravity="center" />
+
+        <!-- Checkout Column (Button) -->
+        <Button
             android:id="@+id/row_checkout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1.3"
             android:layout_margin="2dp"
-            android:background="@drawable/cell_white_bg"
-            android:padding="12dp"
-            android:text="Checkout"
-            android:textSize="@dimen/body_two"
-            android:textColor="@android:color/black"
+            android:background="@drawable/button_green_bg"
+            app:backgroundTint="@null"
+            android:padding="0dp"
+            android:text="Add to Cart"
+            android:textAllCaps="false"
+            android:textSize="14sp"
+            android:textColor="@android:color/white"
             android:gravity="center" />
 
         <!-- Status Column -->
@@ -137,10 +154,38 @@
             android:layout_margin="2dp"
             android:background="@drawable/cell_white_bg"
             android:padding="12dp"
-            android:text="Status"
+            android:text="Completed"
             android:textSize="@dimen/body_two"
             android:textColor="@android:color/black"
             android:gravity="center" />
+
+        <!-- Cart Actions -->
+        <LinearLayout
+            android:id="@+id/row_cart_actions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_margin="2dp"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/btn_minus"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="4dp"
+                android:background="@drawable/button_circle_bg"
+                android:src="@drawable/ic_minus"
+                app:tint="@color/sidebar_btn_critical" />
+
+            <ImageButton
+                android:id="@+id/btn_plus"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/button_circle_bg"
+                android:src="@drawable/ic_plus"
+                app:tint="@color/success_green" />
+
+        </LinearLayout>
 
     </LinearLayout>
 
