@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -26,13 +25,10 @@ public class ProductsFragment extends Fragment {
 
     private void setupDropdown(View view) {
         String[] options = getResources().getStringArray(R.array.default_options);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, options);
         MaterialAutoCompleteTextView dropdown = view.findViewById(R.id.sort_dropdown);
         if (dropdown != null) {
-            dropdown.setAdapter(adapter);
+            dropdown.setSimpleItems(options);
             dropdown.setText(options[0], false);
-            // Ensure all items show on click by disabling filtering
-            dropdown.setOnClickListener(v -> dropdown.showDropDown());
         }
     }
 

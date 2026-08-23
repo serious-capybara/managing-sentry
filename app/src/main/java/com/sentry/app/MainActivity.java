@@ -109,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
     private void loadFragment(Fragment fragment) {
         if (findViewById(R.id.fragment_container) != null) {
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            transaction.setCustomAnimations(R.anim.fade_in, R.anim.fade_out);
+            transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
             transaction.replace(R.id.fragment_container, fragment);
             transaction.commit();
         }
