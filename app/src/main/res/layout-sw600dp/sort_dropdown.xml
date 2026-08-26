@@ -22,6 +22,7 @@
         android:focusable="false"
         android:focusableInTouchMode="false"
         android:inputType="none"
+        android:saveEnabled="false"
         android:paddingTop="12dp"
         android:paddingBottom="12dp"
         android:paddingStart="16dp"
