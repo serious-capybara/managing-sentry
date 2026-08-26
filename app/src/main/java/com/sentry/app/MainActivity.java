@@ -8,6 +8,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -21,16 +22,28 @@ import androidx.transition.TransitionSet;
 
 public class MainActivity extends AppCompatActivity {
 
+    private int currentFragmentIndex = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        if (savedInstanceState != null) {
+            currentFragmentIndex = savedInstanceState.getInt("current_fragment_index", 0);
+        }
+
         setupEdgeToEdge();
         setupNavigation(savedInstanceState);
         setupSidebarButtons();
         setupToggleMenu();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("current_fragment_index", currentFragmentIndex);
     }
 
     private void setupEdgeToEdge() {
@@ -46,20 +59,20 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupNavigation(Bundle savedInstanceState) {
         if (savedInstanceState == null) {
-            loadFragment(new DashboardFragment());
+            loadFragment(new DashboardFragment(), 0);
         }
     }
 
     private void setupSidebarButtons() {
-        setSidebarClickListener(R.id.btn_dashboard, new DashboardFragment());
-        setSidebarClickListener(R.id.btn_products, new ProductsFragment());
-        setSidebarClickListener(R.id.btn_history, new HistoryFragment());
+        setSidebarClickListener(R.id.btn_dashboard, new DashboardFragment(), 0);
+        setSidebarClickListener(R.id.btn_products, new ProductsFragment(), 1);
+        setSidebarClickListener(R.id.btn_history, new HistoryFragment(), 2);
     }
 
-    private void setSidebarClickListener(int buttonId, Fragment fragment) {
+    private void setSidebarClickListener(int buttonId, Fragment fragment, int index) {
         Button button = findViewById(buttonId);
         if (button != null) {
-            button.setOnClickListener(v -> loadFragment(fragment));
+            button.setOnClickListener(v -> loadFragment(fragment, index));
         }
     }
 
@@ -106,10 +119,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void loadFragment(Fragment fragment) {
+    private void loadFragment(Fragment fragment, int targetIndex) {
         if (findViewById(R.id.fragment_container) != null) {
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
+            
+            if (targetIndex > currentFragmentIndex) {
+                transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
+            } else if (targetIndex < currentFragmentIndex) {
+                transaction.setCustomAnimations(R.anim.slide_in_down, R.anim.slide_out_down);
+            }
+            
+            currentFragmentIndex = targetIndex;
             transaction.replace(R.id.fragment_container, fragment);
             transaction.commit();
         }
