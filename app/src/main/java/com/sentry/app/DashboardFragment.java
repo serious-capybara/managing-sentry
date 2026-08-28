@@ -1,13 +1,17 @@
 package com.sentry.app;
 
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.Guideline;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
@@ -24,6 +28,48 @@ public class DashboardFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         setupUI(view);
+        setupResizableDividers(view);
+    }
+
+    private void setupResizableDividers(View view) {
+        View root = view.findViewById(R.id.dashboard_root);
+        if (root == null) return;
+
+        // Vertical Resize (Horizontal Handle)
+        setupVerticalResize(view, root);
+    }
+
+    private void setupVerticalResize(View view, View root) {
+        View divider = view.findViewById(R.id.resize_divider_vertical);
+        Guideline guideline = view.findViewById(R.id.horizontal_guideline);
+        
+        if (divider != null && guideline != null) {
+            float minBottomHeightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 180, getResources().getDisplayMetrics());
+            float minTopHeightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200, getResources().getDisplayMetrics());
+
+            divider.setOnTouchListener((v, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                    float y = event.getRawY();
+                    int[] location = new int[2];
+                    root.getLocationOnScreen(location);
+                    float relativeY = y - location[1];
+                    float totalHeight = root.getHeight();
+
+                    // Calculate limits
+                    // Account for title and sort row height (approx 100dp)
+                    float topLimit = 100 * getResources().getDisplayMetrics().density + minTopHeightPx;
+                    float bottomLimit = totalHeight - minBottomHeightPx;
+
+                    if (relativeY > topLimit && relativeY < bottomLimit) {
+                        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) guideline.getLayoutParams();
+                        params.guidePercent = relativeY / totalHeight;
+                        guideline.setLayoutParams(params);
+                    }
+                }
+                v.performClick();
+                return true;
+            });
+        }
     }
 
     @Override

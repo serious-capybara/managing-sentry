@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="title">40sp</dimen>
-    <dimen name="title_second">24sp</dimen>
+    <dimen name="title">24sp</dimen>
+    <dimen name="title_second">20sp</dimen>
     <dimen name="header_one">18sp</dimen>
-    <dimen name="header_two">18sp</dimen>
-    <dimen name="header_three">18sp</dimen>
-    <dimen name="body_one">18sp</dimen>
-    <dimen name="body_two">18sp</dimen>
-    <dimen name="body_three">14sp</dimen>
+    <dimen name="header_two">16sp</dimen>
+    <dimen name="header_three">15sp</dimen>
+    <dimen name="body_one">16sp</dimen>
+    <dimen name="body_two">14sp</dimen>
+    <dimen name="body_three">12sp</dimen>
+    <dimen name="cell_padding">6dp</dimen>
 </resources>

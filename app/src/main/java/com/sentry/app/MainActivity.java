@@ -16,6 +16,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.transition.ChangeBounds;
+import androidx.transition.Fade;
 import androidx.transition.Slide;
 import androidx.transition.TransitionManager;
 import androidx.transition.TransitionSet;
@@ -38,6 +39,14 @@ public class MainActivity extends AppCompatActivity {
         setupNavigation(savedInstanceState);
         setupSidebarButtons();
         setupToggleMenu();
+        setupScrim();
+    }
+
+    private void setupScrim() {
+        View scrim = findViewById(R.id.scrim);
+        if (scrim != null) {
+            scrim.setOnClickListener(v -> toggleSidebar());
+        }
     }
 
     @Override
@@ -72,7 +81,10 @@ public class MainActivity extends AppCompatActivity {
     private void setSidebarClickListener(int buttonId, Fragment fragment, int index) {
         Button button = findViewById(buttonId);
         if (button != null) {
-            button.setOnClickListener(v -> loadFragment(fragment, index));
+            button.setOnClickListener(v -> {
+                loadFragment(fragment, index);
+                toggleSidebar();
+            });
         }
     }
 
@@ -85,38 +97,53 @@ public class MainActivity extends AppCompatActivity {
 
     private void toggleSidebar() {
         View sidebar = findViewById(R.id.dash_menu);
-        if (sidebar == null) return;
-
-        applySidebarTransition();
+        View contents = findViewById(R.id.dash_menu_contents);
+        if (sidebar == null || contents == null) return;
 
         boolean isVisible = sidebar.getVisibility() == View.VISIBLE;
+        
+        applySidebarTransition(isVisible);
+
         int targetVisibility = isVisible ? View.GONE : View.VISIBLE;
-        int arrowIcon = isVisible ? R.drawable.ic_arrow_right : R.drawable.ic_arrow_left;
+        int btnVisibility = isVisible ? View.VISIBLE : View.GONE;
 
         sidebar.setVisibility(targetVisibility);
-        setViewsVisibility(targetVisibility, R.id.title_sentry, R.id.divider, R.id.btn_dashboard, R.id.btn_products, R.id.btn_history, R.id.btn_log_out);
+        contents.setVisibility(targetVisibility);
         
-        ImageButton btnToggleMenu = findViewById(R.id.btn_toggle_menu);
+        View scrim = findViewById(R.id.scrim);
+        if (scrim != null) scrim.setVisibility(targetVisibility);
+        
+        View btnToggleMenu = findViewById(R.id.btn_toggle_menu);
         if (btnToggleMenu != null) {
-            btnToggleMenu.setImageResource(arrowIcon);
+            btnToggleMenu.setVisibility(btnVisibility);
         }
     }
 
-    private void applySidebarTransition() {
-        TransitionSet set = new TransitionSet()
-                .addTransition(new Slide(Gravity.START))
-                .addTransition(new ChangeBounds())
-                .setDuration(400);
+    private void applySidebarTransition(boolean isHiding) {
+        TransitionSet set = new TransitionSet();
+        
+        // Background slides in quickly
+        set.addTransition(new Slide(Gravity.START)
+                .addTarget(R.id.dash_menu)
+                .setDuration(300));
+        
+        // Scrim fades
+        set.addTransition(new Fade()
+                .addTarget(R.id.scrim)
+                .setDuration(300));
+        
+        // Contents slide in with a delay when showing
+        Slide contentSlide = new Slide(Gravity.START);
+        contentSlide.addTarget(R.id.dash_menu_contents);
+        contentSlide.setDuration(400);
+        if (!isHiding) {
+            contentSlide.setStartDelay(150); // Background moves first
+        }
+        set.addTransition(contentSlide);
+        
+        set.addTransition(new ChangeBounds());
+        
         TransitionManager.beginDelayedTransition((ViewGroup) findViewById(R.id.main), set);
-    }
-
-    private void setViewsVisibility(int visibility, int... ids) {
-        for (int id : ids) {
-            View view = findViewById(id);
-            if (view != null) {
-                view.setVisibility(visibility);
-            }
-        }
     }
 
     private void loadFragment(Fragment fragment, int targetIndex) {

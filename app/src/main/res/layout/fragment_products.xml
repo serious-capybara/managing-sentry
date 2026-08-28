@@ -9,6 +9,7 @@
         android:id="@+id/products_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
         android:text="@string/products"
         android:textSize="@dimen/title"
         android:textStyle="bold"
@@ -40,7 +41,8 @@
             layout="@layout/sort_dropdown"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@id/sort_by_label"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
