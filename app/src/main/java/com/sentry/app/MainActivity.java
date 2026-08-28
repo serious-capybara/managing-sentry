@@ -96,9 +96,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void toggleSidebar() {
+        ViewGroup root = findViewById(R.id.main);
         View sidebar = findViewById(R.id.dash_menu);
         View contents = findViewById(R.id.dash_menu_contents);
-        if (sidebar == null || contents == null) return;
+        if (sidebar == null || contents == null || root == null) return;
+
+        // Force finish any running transitions to prevent state corruption
+        TransitionManager.endTransitions(root);
 
         boolean isVisible = sidebar.getVisibility() == View.VISIBLE;
         

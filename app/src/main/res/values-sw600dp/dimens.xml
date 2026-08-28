@@ -9,4 +9,8 @@
     <dimen name="body_two">16sp</dimen>
     <dimen name="body_three">14sp</dimen>
     <dimen name="cell_padding">12dp</dimen>
+    <dimen name="grid_spacing">6dp</dimen>
+    <dimen name="title_start_margin">64dp</dimen>
+    <dimen name="title_top_margin">24dp</dimen>
+    <dimen name="input_height">48dp</dimen>
 </resources>
