@@ -49,6 +49,7 @@ firebase-debug.log
 **/apk/
 **/debug/
 **/release/
+**/.artifacts/
 *.class
 *.dex
 *.ap_
