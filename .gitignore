@@ -1,18 +1,93 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# Generated .gitignore template
+# Production-ready baseline for Android, web, and monorepo projects
+
+# OS files
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-/.idea
-/.artifacts
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# IDE and editor files
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Environment and secrets
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.jks
+*.keystore
+secrets/
+credentials/
+config/*.local.*
+firebase-debug.log
+*.log
+
+# Android / Java / Kotlin
+**/local.properties
+**/.gradle/
+**/build/
+**/captures/
+**/obj/
+**/bin/
+**/.externalNativeBuild/
+**/.cxx/
+**/generated/
+**/intermediates/
+**/lint/
+**/apk/
+**/debug/
+**/release/
+*.class
+*.dex
+*.ap_
+*.hprof
+
+# Web / Node / frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.next/
+out/
+dist/
+build/
+coverage/
+.cache/
+.parcel-cache/
+server/dist/
+client/dist/
+
+# Deployment and hosting artifacts
+.vercel/
+.netlify/
+.firebase/
+.azure/
+.aws/
+.render/
+
+# Temporary and cache files
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig
+*.rej
+.cache/
+*.tsbuildinfo
+
+# Git-specific
+.git/
+.gitignore.local
