@@ -1,0 +1,8 @@
+<resources>
+    <string name="header_category">Category</string>
+    <string name="header_timestamp">TimeStamp</string>
+    <string name="header_qty">Quantity</string>
+    <string name="header_status">Status</string>
+    <string name="header_action">Checkout</string>
+    <string name="header_total">Subtotal</string>
+</resources>

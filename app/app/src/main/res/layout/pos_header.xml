@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp">
+
+    <LinearLayout
+        android:id="@+id/row_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/header_name"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.5"
+            android:layout_marginTop="@dimen/grid_spacing"
+            android:layout_marginEnd="@dimen/grid_spacing"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="@dimen/cell_padding"
+            android:text="@string/header_name"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/header_category"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.0"
+            android:layout_marginTop="@dimen/grid_spacing"
+            android:layout_marginEnd="@dimen/grid_spacing"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="@dimen/cell_padding"
+            android:text="@string/header_category"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/header_srp"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.8"
+            android:layout_marginTop="@dimen/grid_spacing"
+            android:layout_marginEnd="@dimen/grid_spacing"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="@dimen/cell_padding"
+            android:text="@string/header_srp"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/header_timestamp"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.2"
+            android:layout_marginTop="@dimen/grid_spacing"
+            android:layout_marginEnd="@dimen/grid_spacing"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="@dimen/cell_padding"
+            android:text="@string/header_timestamp"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/header_order"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.8"
+            android:layout_marginTop="@dimen/grid_spacing"
+            android:layout_marginEnd="@dimen/grid_spacing"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="@dimen/cell_padding"
+            android:text="@string/header_order"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/header_quantity"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.5"
+            android:layout_marginTop="@dimen/grid_spacing"
+            android:layout_marginEnd="@dimen/grid_spacing"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="@dimen/cell_padding"
+            android:text="@string/header_qty"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/header_sales"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.0"
+            android:layout_marginTop="@dimen/grid_spacing"
+            android:layout_marginEnd="@dimen/grid_spacing"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="@dimen/cell_padding"
+            android:text="@string/header_sales"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/header_checkout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.2"
+            android:layout_marginTop="@dimen/grid_spacing"
+            android:layout_marginEnd="@dimen/grid_spacing"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="@dimen/cell_padding"
+            android:text="@string/header_action"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/header_subtotal"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.0"
+            android:layout_marginTop="@dimen/grid_spacing"
+            android:layout_marginEnd="@dimen/grid_spacing"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="@dimen/cell_padding"
+            android:text="@string/header_total"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/header_status"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.0"
+            android:layout_marginTop="@dimen/grid_spacing"
+            android:layout_marginEnd="@dimen/grid_spacing"
+            android:background="@drawable/header_cell_gray_bg"
+            android:padding="@dimen/cell_padding"
+            android:text="@string/header_status"
+            android:textSize="@dimen/body_two"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <View
+            android:id="@+id/header_cart_spacer"
+            android:layout_width="72dp"
+            android:layout_height="1dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

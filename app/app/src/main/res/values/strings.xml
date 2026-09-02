@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">Sentry</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="products">Products</string>
+    <string name="history">History</string>
+    <string name="logout">Log Out</string>
+
+    <!-- Table Headers -->
+    <string name="header_name">Name</string>
+    <string name="header_category">Cat</string>
+    <string name="header_srp">SRP</string>
+    <string name="header_timestamp">Time</string>
+    <string name="header_order">Order</string>
+    <string name="header_qty">Qty</string>
+    <string name="header_sales">Sales</string>
+    <string name="header_action">Action</string>
+    <string name="header_total">Total</string>
+    <string name="header_status">Stat</string>
+
+    <!-- Labels & Buttons -->
+    <string name="label_total">Total :</string>
+    <string name="btn_checkout">Checkout</string>
+    <string name="btn_clean_cart">Clean Cart</string>
+    <string name="btn_add_to_cart">Add</string>
+
+    <!-- Welcome Phrases -->
+    <string name="phrase_one">Meow</string>
+    <string name="phrase_two">Meows</string>
+    <string name="phrase_three">Tes </string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="title">30sp</dimen>
+    <dimen name="title_second">28sp</dimen>
+    <dimen name="header_one">24sp</dimen>
+    <dimen name="header_two">20sp</dimen>
+    <dimen name="header_three">19sp</dimen>
+    <dimen name="body_one">18sp</dimen>
+    <dimen name="body_two">16sp</dimen>
+    <dimen name="body_three">14sp</dimen>
+    <dimen name="cell_padding">12dp</dimen>
+    <dimen name="grid_spacing">6dp</dimen>
+    <dimen name="title_start_margin">64dp</dimen>
+    <dimen name="title_top_margin">24dp</dimen>
+    <dimen name="input_height">48dp</dimen>
+</resources>
