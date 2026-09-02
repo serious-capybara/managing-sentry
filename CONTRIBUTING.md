@@ -136,7 +136,60 @@ git push -u origin yourname
 
 ---
 
-## 4. Strict Rules for AI Coding Assistants
+## 4. Commit and Push Workflow
+
+Before committing or pushing code, contributors must confirm they are working on their own branch.
+
+### Check your current branch
+
+From the repository root, run:
+
+```bash
+git branch --show-current
+```
+
+Your branch should match your personal branch name, for example:
+
+```bash
+firstname-lastname
+```
+
+If you are not on your own branch, switch to it:
+
+```bash
+git checkout yourname
+```
+
+### Important: run Git commands from the repo root
+
+Because this is a monorepo, Git should be used from the main repository root, not from inside `app/` or `web/`.
+
+If you are currently inside `app/` or `web/`, return to the monorepo root first:
+
+```bash
+cd ..
+```
+
+Then run your Git commands from the root:
+
+```bash
+git status
+git add .
+git commit -m "Describe your change"
+git push -u origin yourname
+```
+
+### Commit rules
+
+- Always verify the branch before committing.
+- Commit only the files relevant to your task.
+- Do not commit unrelated changes from the other project folder.
+- If you are working on Android, keep the changes inside `app/`.
+- If you are working on web, keep the changes inside `web/`.
+
+---
+
+## 5. Strict Rules for AI Coding Assistants
 
 > **IMPORTANT: Strict AI Scope Boundaries**
 >
@@ -155,7 +208,7 @@ Examples:
 
 ---
 
-## 5. Recommended Local Development Workflow
+## 6. Recommended Local Development Workflow
 
 ### Android workflow
 
@@ -178,7 +231,7 @@ Then open the `web/` directory directly in VS Code or WebStorm for frontend deve
 
 ---
 
-## 6. Pull Request Guidelines
+## 7. Pull Request Guidelines
 
 Before opening a PR:
 
@@ -196,7 +249,7 @@ PR titles should be clear and specific. Example:
 
 ---
 
-## 7. Final Notes
+## 8. Final Notes
 
 This monorepo is intentionally split between `app/` and `web/`.
 
