@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Professional Slate Palette -->
+    <color name="slate_900">#0F172A</color>
+    <color name="slate_600">#475569</color>
+    <color name="slate_400">#94A3B8</color>
+    <color name="slate_200">#E2E8F0</color>
+    <color name="slate_50">#F8FAFC</color>
+
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
@@ -8,16 +15,22 @@
     <color name="sidebar_btn_primary">#4b5694</color>
     <color name="sidebar_btn_critical">#E53935</color>
 
-    <!-- Other UI Colors -->
-    <color name="light_gray">#F5F5F5</color>
-    <color name="gray_200">#EEEEEE</color>
-    <color name="gray_400">#BDBDBD</color>
-    <color name="gray_400_stroke">#50BDBDBD</color>
-    <color name="gray_600">#757575</color>
+    <!-- UI Colors -->
+    <color name="gray_bg">@color/slate_50</color>
+    <color name="text_primary">@color/slate_900</color>
+    <color name="text_secondary">@color/slate_600</color>
+    <color name="divider_color">@color/slate_200</color>
     <color name="success_green">#618764</color>
-    <color name="divider_color">#DDDDDD</color>
+
+    <!-- Legacy Color Mapping (to fix existing layouts) -->
+    <color name="light_gray">@color/slate_50</color>
+    <color name="gray_200">@color/slate_200</color>
+    <color name="gray_400">@color/slate_400</color>
+    <color name="gray_600">@color/slate_600</color>
+    <color name="gray_400_stroke">#3094A3B8</color>
 
     <!-- Login Screen Colors -->
     <color name="login_btn_color">@color/sidebar_bg</color>
+    <color name="login_btn_pressed">#0A0F2B</color>
     <color name="input_bg_color">#F2F2F2</color>
 </resources>

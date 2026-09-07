@@ -1,6 +1,6 @@
 package com.sentry.app.ui;
 
-import android.content.SharedPreferences;
+import com.sentry.app.data.SessionManager;
 import com.sentry.app.R;
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,13 +9,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.transition.ChangeBounds;
@@ -27,15 +30,16 @@ import androidx.transition.TransitionSet;
 public class MainActivity extends AppCompatActivity {
 
     private int currentFragmentIndex = 0;
+    private SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-
-        // Update last use timestamp
-        refreshSessionTimestamp();
+        
+        sessionManager = new SessionManager(this);
+        sessionManager.refreshTimestamp();
 
         if (savedInstanceState != null) {
             currentFragmentIndex = savedInstanceState.getInt("current_fragment_index", 0);
@@ -46,6 +50,39 @@ public class MainActivity extends AppCompatActivity {
         setupSidebarButtons();
         setupToggleMenu();
         setupScrim();
+        updateProfileUI();
+    }
+
+    private void updateProfileUI() {
+        String fullName = sessionManager.getFullName();
+        String userName = sessionManager.getUserName();
+
+        TextView tvFullName = findViewById(R.id.tv_profile_full_name);
+        TextView tvUserName = findViewById(R.id.tv_profile_username);
+        TextView tvAvatar = findViewById(R.id.tv_avatar);
+
+        if (tvFullName != null) tvFullName.setText(fullName);
+        if (tvUserName != null) tvUserName.setText("@" + userName);
+
+        if (tvAvatar != null && fullName != null && !fullName.isEmpty()) {
+            String initials = getInitials(fullName);
+            tvAvatar.setText(initials);
+        }
+    }
+
+    private String getInitials(String fullName) {
+        String[] parts = fullName.trim().split("\\s+");
+        if (parts.length == 1) {
+            String name = parts[0];
+            if (name.length() >= 2) {
+                return (name.substring(0, 1) + name.substring(name.length() - 1)).toUpperCase();
+            }
+            return name.toUpperCase();
+        } else {
+            String firstPart = parts[0];
+            String lastPart = parts[parts.length - 1];
+            return (firstPart.substring(0, 1) + lastPart.substring(0, 1)).toUpperCase();
+        }
     }
 
     private void setupScrim() {
@@ -62,6 +99,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupEdgeToEdge() {
+        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightStatusBars(true);
+        controller.setAppearanceLightNavigationBars(true);
+
         View mainView = findViewById(R.id.main);
         if (mainView != null) {
             ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
@@ -86,22 +127,12 @@ public class MainActivity extends AppCompatActivity {
         Button btnLogout = findViewById(R.id.btn_log_out);
         if (btnLogout != null) {
             btnLogout.setOnClickListener(v -> {
-                clearSession();
+                sessionManager.clear();
                 Intent intent = new Intent(this, LoginActivity.class);
                 startActivity(intent);
                 finish();
             });
         }
-    }
-
-    private void refreshSessionTimestamp() {
-        SharedPreferences prefs = getSharedPreferences("sentry_prefs", MODE_PRIVATE);
-        prefs.edit().putLong("last_use_timestamp", System.currentTimeMillis()).apply();
-    }
-
-    private void clearSession() {
-        SharedPreferences prefs = getSharedPreferences("sentry_prefs", MODE_PRIVATE);
-        prefs.edit().clear().apply();
     }
 
     private void setSidebarClickListener(int buttonId, Fragment fragment, int index) {

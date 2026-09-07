@@ -50,6 +50,22 @@ public abstract class BaseFragment extends Fragment {
     }
 
     /**
+     * Shows a set of views by setting their visibility to VISIBLE.
+     *
+     * @param root The parent view containing the views to show.
+     * @param ids  The resource IDs of the views to show.
+     */
+    protected void showViews(View root, int... ids) {
+        if (root == null) return;
+        for (int id : ids) {
+            View view = root.findViewById(id);
+            if (view != null) {
+                view.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+
+    /**
      * Sets the text of a TextView.
      *
      * @param root The parent view containing the TextView.
