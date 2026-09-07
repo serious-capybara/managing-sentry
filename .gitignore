@@ -92,3 +92,8 @@ temp/
 # Git-specific
 .git/
 .gitignore.local
+.gitdocker
+
+
+.scr
+/docker-compose.yml

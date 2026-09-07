@@ -1,5 +1,6 @@
-package com.sentry.app;
+package com.sentry.app.ui;
 
+import com.sentry.app.R;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
