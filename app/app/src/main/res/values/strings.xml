@@ -27,4 +27,12 @@
     <string name="phrase_one">Meow</string>
     <string name="phrase_two">Meows</string>
     <string name="phrase_three">Tes </string>
+
+    <!-- Login Screen -->
+    <string name="login_welcome">Welcome Back!</string>
+    <string name="login_email_hint">Username</string>
+    <string name="login_password_hint">Password</string>
+    <string name="login_button_text">Log In</string>
+    <string name="login_error_invalid">Invalid email or password</string>
+    <string name="login_carousel_desc">Carousel image</string>
 </resources>

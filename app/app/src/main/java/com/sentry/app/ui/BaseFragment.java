@@ -1,4 +1,4 @@
-package com.sentry.app;
+package com.sentry.app.ui;
 
 import android.view.View;
 import android.widget.TextView;

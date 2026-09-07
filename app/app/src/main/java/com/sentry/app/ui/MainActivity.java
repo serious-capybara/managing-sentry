@@ -1,5 +1,8 @@
-package com.sentry.app;
+package com.sentry.app.ui;
 
+import android.content.SharedPreferences;
+import com.sentry.app.R;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -30,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        // Update last use timestamp
+        refreshSessionTimestamp();
 
         if (savedInstanceState != null) {
             currentFragmentIndex = savedInstanceState.getInt("current_fragment_index", 0);
@@ -76,6 +82,26 @@ public class MainActivity extends AppCompatActivity {
         setSidebarClickListener(R.id.btn_dashboard, new DashboardFragment(), 0);
         setSidebarClickListener(R.id.btn_products, new ProductsFragment(), 1);
         setSidebarClickListener(R.id.btn_history, new HistoryFragment(), 2);
+
+        Button btnLogout = findViewById(R.id.btn_log_out);
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> {
+                clearSession();
+                Intent intent = new Intent(this, LoginActivity.class);
+                startActivity(intent);
+                finish();
+            });
+        }
+    }
+
+    private void refreshSessionTimestamp() {
+        SharedPreferences prefs = getSharedPreferences("sentry_prefs", MODE_PRIVATE);
+        prefs.edit().putLong("last_use_timestamp", System.currentTimeMillis()).apply();
+    }
+
+    private void clearSession() {
+        SharedPreferences prefs = getSharedPreferences("sentry_prefs", MODE_PRIVATE);
+        prefs.edit().clear().apply();
     }
 
     private void setSidebarClickListener(int buttonId, Fragment fragment, int index) {

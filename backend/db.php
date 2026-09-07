@@ -1,9 +1,9 @@
 <?php
-$host = "localhost";
-$port = "5433";
-$dbname = "sentry";
-$user = "postgres";
-$pass = "password";
+$host = getenv("DB_HOST");
+$port = getenv("DB_PORT");
+$dbname = getenv("DB_NAME");
+$user = getenv("DB_USER");
+$pass = getenv("DB_PASSWORD");
 
 try {
     $pdo = new PDO("pgsql:host=$host;port=$port;dbname=$dbname", $user, $pass);
