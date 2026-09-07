@@ -260,3 +260,185 @@ To keep the project stable:
 - do not cross-edit between Android and web code
 
 Thank you for helping keep the project organized, stable, and maintainable.
+
+---
+
+# Local Docker / Portainer Setup (team-specific)
+
+This section is for local development only. Some values in this repo are machine-specific and must stay local on each teammate's computer.
+
+### 1. Prerequisites
+
+Install Docker before doing anything else.
+
+- Install Docker Desktop if you are working locally, or use Portainer if your team runs stacks through it.
+- Make sure Docker is running.
+- If you are using Portainer, confirm you can create a stack and paste YAML content.
+
+### 2. Clone the repo and find the compose file
+
+```bash
+git clone <repo-url>
+cd Managing-Sentry
+ls
+```
+
+At the repo root, you will find:
+
+```text
+./docker-compose.yml
+```
+
+This is the file used to start the backend stack locally.
+
+### 3. IMPORTANT: edit your own local copy before deploying
+
+The root `docker-compose.yml` is the project owner's master file. It contains absolute bind mount paths for their machine. Those paths are not valid for everyone else.
+
+Before creating or deploying the stack, each teammate must edit their own local copy of `docker-compose.yml` and change the bind mount paths to match their own machine.
+
+This is required because Docker bind mounts need a real absolute filesystem path on the machine running Docker. Relative paths do not work reliably in Portainer's Web Editor, and Portainer resolves them against its own internal storage instead of your local project folder.
+
+Example:
+
+Before (owner's machine):
+
+```yaml
+volumes:
+  - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend:/app
+```
+
+After (your local machine, example):
+
+```yaml
+volumes:
+  - /home/their-username/wherever-they-cloned-it/Managing-Sentry/backend:/app
+```
+
+If your `db` service also mounts the init SQL file, update that path too:
+
+```yaml
+volumes:
+  - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+```
+
+to:
+
+```yaml
+volumes:
+  - /home/their-username/wherever-they-cloned-it/Managing-Sentry/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+```
+
+Important:
+- Do not leave the owner’s absolute path in your file.
+- Do not leave a relative path like `./backend` for Portainer.
+- This is a local-only change for your machine.
+
+### 4. Deploy the stack in Portainer
+
+After editing your local copy, deploy it in Portainer:
+
+- paste the edited YAML into the Web Editor, or
+- go to `Stacks` > `Add Stack` and paste the edited YAML there
+
+The important part is to deploy your edited local version, not the original shared file from Git.
+
+### 5. Do not push your edited docker-compose.yml back to Git
+
+This file is intentionally local-only.
+
+Do not run:
+
+```bash
+git add docker-compose.yml
+git commit -m "Update docker compose paths"
+git push
+```
+
+Do not commit personal bind paths or local environment-specific values back to the shared repo.
+
+If the project owner later updates the official `docker-compose.yml`, re-apply only your own volume path edits on top of the new file before deploying again. Do not keep using an old personal copy.
+
+Recommended options:
+
+- add `docker-compose.yml` to your local Git exclude file, such as `.git/info/exclude`, or
+- simply avoid `git add` / `git commit` for this file after editing
+
+Either approach is fine.
+
+### 6. Android-side configuration
+
+The Android app uses a backend URL in `RetrofitClient.java`.
+
+#### Emulator
+
+Use:
+
+```java
+private static final String BASE_URL = "http://10.0.2.2:8000/";
+```
+
+This works for the Android emulator and does not require any local edits.
+
+#### Real device over Wi‑Fi / wireless debugging
+
+Use your own computer's local network IP instead of `10.0.2.2` or `127.0.0.1`:
+
+```java
+private static final String BASE_URL = "http://192.168.x.x:8000/";
+```
+
+Find the correct IPv4 address on your computer:
+
+Linux / Mac:
+
+```bash
+ip addr show
+```
+
+Windows:
+
+```cmd
+ipconfig
+```
+
+Look for the local network IPv4 address, such as `192.168.1.25`, not `127.0.0.1`.
+
+Also:
+- your PC and Android device must be on the same Wi‑Fi network
+- `10.0.2.2` only works on the emulator
+- this `BASE_URL` change is also local-only and should not be committed with a personal IP hardcoded in it
+
+### 7. How to verify it's working
+
+Once the stack is running:
+
+```bash
+docker ps -a
+```
+
+You should see both containers running, and the PHP container should expose the published port such as `0.0.0.0:8000->8000/tcp`.
+
+Then test the backend before testing from Android:
+
+```text
+http://localhost:8000/test.php
+```
+
+Open that URL in a browser or Postman. If it responds successfully, the PHP + Postgres stack is running and serving files from the mounted `backend/` folder.
+
+### 8. Common mistakes
+
+- forgetting to update the bind mount path and ending up with an empty `/app` folder inside the PHP container
+- accidentally committing a personal `docker-compose.yml` path or Android `BASE_URL` IP change
+- using `10.0.2.2` on a real device by mistake
+- leaving an old personal docker-compose file in place after the official one changes
+
+This repo is shared, but machine-specific values stay local:
+- absolute bind mount paths in `docker-compose.yml`
+- absolute init SQL mount paths
+- Android `BASE_URL` values with your own local IP
+
+Keep those edits local and do not push them to the shared repository.
+
+---
