@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E8E8E8">
+    android:background="@color/slate_50">
 
     <androidx.cardview.widget.CardView
         android:layout_width="0dp"
@@ -22,19 +22,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="32dp">
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_marginBottom="24dp"
-                app:cardCornerRadius="12dp"
+                android:layout_height="220dp"
+                android:layout_marginBottom="32dp"
+                app:cardCornerRadius="16dp"
                 app:cardElevation="0dp">
 
                 <androidx.viewpager2.widget.ViewPager2
                     android:id="@+id/vp_carousel"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+                    android:layout_height="match_parent"
+                    android:background="@color/slate_50" />
             </androidx.cardview.widget.CardView>
 
             <TextView
@@ -43,9 +44,21 @@
                 android:layout_height="wrap_content"
                 android:text="@string/login_welcome"
                 android:textSize="@dimen/title"
+                android:textStyle="bold"
                 android:textColor="@color/black"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="24dp" />
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tv_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/login_subtitle"
+                android:textSize="@dimen/body_two"
+                android:textColor="@color/gray_600"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="24dp"
+                android:textAlignment="center" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
@@ -98,11 +111,15 @@
             <Button
                 android:id="@+id/btn_login"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="@dimen/input_height"
                 android:text="@string/login_button_text"
-                android:backgroundTint="@color/login_btn_color"
+                android:background="@drawable/button_login_bg"
+                app:backgroundTint="@null"
                 android:textColor="@color/white"
-                app:cornerRadius="8dp" />
+                android:textAllCaps="false"
+                android:textSize="@dimen/header_one"
+                android:textStyle="bold"
+                app:cornerRadius="12dp" />
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>

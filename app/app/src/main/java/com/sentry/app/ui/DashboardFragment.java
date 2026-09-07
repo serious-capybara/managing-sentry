@@ -48,8 +48,13 @@ public class DashboardFragment extends BaseFragment {
         Guideline guideline = view.findViewById(R.id.horizontal_guideline);
         
         if (divider != null && guideline != null) {
-            float minBottomHeightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 180, getResources().getDisplayMetrics());
-            float minTopHeightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200, getResources().getDisplayMetrics());
+            boolean isPhone = getResources().getConfiguration().smallestScreenWidthDp < 600;
+            // Phone needs more space for the bottom section to show Total Bar + Cart Header + 1 Row
+            float minBottomHeightDp = isPhone ? 250 : 200;
+            float minTopHeightDp = isPhone ? 350 : 400;
+
+            float minBottomHeightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, minBottomHeightDp, getResources().getDisplayMetrics());
+            float minTopHeightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, minTopHeightDp, getResources().getDisplayMetrics());
 
             divider.setOnTouchListener((v, event) -> {
                 if (event.getAction() == MotionEvent.ACTION_MOVE) {
@@ -59,15 +64,15 @@ public class DashboardFragment extends BaseFragment {
                     float relativeY = y - location[1];
                     float totalHeight = root.getHeight();
 
-                    // Account for title and sort row height (approx 100dp)
-                    float topLimit = 100 * getResources().getDisplayMetrics().density + minTopHeightPx;
+                    // Account for title and sort row height
+                    float topLimit = minTopHeightPx;
                     float bottomLimit = totalHeight - minBottomHeightPx;
 
-                    if (relativeY > topLimit && relativeY < bottomLimit) {
-                        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) guideline.getLayoutParams();
-                        params.guidePercent = relativeY / totalHeight;
-                        guideline.setLayoutParams(params);
-                    }
+                    float safeY = Math.max(topLimit, Math.min(relativeY, bottomLimit));
+                    
+                    ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) guideline.getLayoutParams();
+                    params.guidePercent = safeY / totalHeight;
+                    guideline.setLayoutParams(params);
                 }
                 v.performClick();
                 return true;
@@ -88,13 +93,16 @@ public class DashboardFragment extends BaseFragment {
 
     private void setupMainTableHeader(View header) {
         if (header == null) return;
+        // Dashboard Table: Name, Cat, SRP, Action
         hideViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_quantity, R.id.header_sales, R.id.header_subtotal, R.id.header_status);
+        showViews(header, R.id.header_name, R.id.header_category, R.id.header_srp, R.id.header_checkout);
     }
 
     private void setupCartHeader(View header) {
         if (header == null) return;
-        hideViews(header, R.id.header_category, R.id.header_srp, R.id.header_timestamp, R.id.header_order, R.id.header_sales, R.id.header_checkout, R.id.header_status);
-        header.findViewById(R.id.header_cart_spacer).setVisibility(View.VISIBLE);
+        // Cart Table: Name, Qty, Total (Subtotal), Action
+        hideViews(header, R.id.header_category, R.id.header_srp, R.id.header_timestamp, R.id.header_order, R.id.header_sales, R.id.header_status);
+        showViews(header, R.id.header_name, R.id.header_quantity, R.id.header_subtotal, R.id.header_checkout);
     }
 
     private void setupMainTable(View view) {
@@ -116,7 +124,9 @@ public class DashboardFragment extends BaseFragment {
         for (int i = 0; i < rowIds.length; i++) {
             View row = view.findViewById(rowIds[i]);
             if (row != null && i < products.length) {
+                // Dashboard Row: Name, Cat, SRP, Action (Checkout)
                 hideViews(row, R.id.row_timestamp, R.id.row_order, R.id.row_quantity, R.id.row_sales, R.id.row_subtotal, R.id.row_status, R.id.row_cart_actions);
+                showViews(row, R.id.row_name, R.id.row_category, R.id.row_srp, R.id.row_action_container, R.id.row_checkout);
                 setText(row, R.id.row_name, products[i][0]);
                 setText(row, R.id.row_category, products[i][1]);
                 setText(row, R.id.row_srp, products[i][2]);
@@ -137,8 +147,9 @@ public class DashboardFragment extends BaseFragment {
         for (int i = 0; i < cartRowIds.length; i++) {
             View row = view.findViewById(cartRowIds[i]);
             if (row != null && i < cartData.length) {
+                // Cart Row: Name, Qty, Total (Subtotal), Action (Cart Actions)
                 hideViews(row, R.id.row_category, R.id.row_srp, R.id.row_timestamp, R.id.row_order, R.id.row_sales, R.id.row_checkout, R.id.row_status);
-                row.findViewById(R.id.row_cart_actions).setVisibility(View.VISIBLE);
+                showViews(row, R.id.row_name, R.id.row_quantity, R.id.row_subtotal, R.id.row_action_container, R.id.row_cart_actions);
                 setText(row, R.id.row_name, cartData[i][0]);
                 setText(row, R.id.row_quantity, cartData[i][1]);
                 setText(row, R.id.row_subtotal, cartData[i][2]);

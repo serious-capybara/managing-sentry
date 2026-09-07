@@ -6,4 +6,26 @@
     </style>
 
     <style name="Theme.Sentry" parent="Base.Theme.Sentry" />
+
+    <!-- Table Cell Styles -->
+    <style name="HeaderCell">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:background">@color/slate_50</item>
+        <item name="android:padding">@dimen/cell_padding</item>
+        <item name="android:textColor">@color/slate_900</item>
+        <item name="android:textSize">@dimen/body_two</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="DataCell">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:background">@color/white</item>
+        <item name="android:padding">@dimen/cell_padding</item>
+        <item name="android:textColor">@color/slate_600</item>
+        <item name="android:textSize">@dimen/body_three</item>
+        <item name="android:gravity">center</item>
+    </style>
 </resources>

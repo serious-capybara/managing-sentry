@@ -30,6 +30,7 @@
 
     <!-- Login Screen -->
     <string name="login_welcome">Welcome Back!</string>
+    <string name="login_subtitle">Enter your credentials to start processing sales</string>
     <string name="login_email_hint">Username</string>
     <string name="login_password_hint">Password</string>
     <string name="login_button_text">Log In</string>

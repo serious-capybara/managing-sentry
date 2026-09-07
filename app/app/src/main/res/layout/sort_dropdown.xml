@@ -17,7 +17,7 @@
     <com.google.android.material.textfield.MaterialAutoCompleteTextView
         android:id="@+id/sort_dropdown"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/input_height"
+        android:layout_height="@dimen/filter_bar_height"
         android:focusable="false"
         android:focusableInTouchMode="false"
         android:inputType="none"

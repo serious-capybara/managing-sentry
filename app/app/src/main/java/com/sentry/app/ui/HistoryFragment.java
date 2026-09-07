@@ -39,7 +39,9 @@ public class HistoryFragment extends BaseFragment {
 
     private void setupHeader(View header) {
         if (header == null) return;
+        // History Table: Time, Order, Qty, Sales, Stat
         hideViews(header, R.id.header_name, R.id.header_category, R.id.header_srp, R.id.header_subtotal, R.id.header_checkout);
+        showViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_quantity, R.id.header_sales, R.id.header_status);
     }
 
     private void setupTableRows(View view) {
@@ -61,7 +63,8 @@ public class HistoryFragment extends BaseFragment {
         for (int i = 0; i < rowIds.length; i++) {
             View row = view.findViewById(rowIds[i]);
             if (row != null && i < historyData.length) {
-                hideViews(row, R.id.row_name, R.id.row_category, R.id.row_srp, R.id.row_subtotal, R.id.row_checkout, R.id.row_cart_actions);
+                hideViews(row, R.id.row_name, R.id.row_category, R.id.row_srp, R.id.row_subtotal, R.id.row_checkout, R.id.row_action_container, R.id.row_cart_actions);
+                showViews(row, R.id.row_timestamp, R.id.row_order, R.id.row_quantity, R.id.row_sales, R.id.row_status);
                 setText(row, R.id.row_timestamp, historyData[i][0]);
                 setText(row, R.id.row_order, historyData[i][1]);
                 setText(row, R.id.row_quantity, historyData[i][2]);

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
-    android:background="@color/gray_200"
+    android:background="@color/slate_50"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -55,60 +55,124 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
+        <!-- App Branding -->
         <TextView
-            android:id="@+id/title_sentry"
+            android:id="@+id/sidebar_app_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="60dp"
+            android:layout_marginTop="24dp"
             android:text="@string/app_name"
             android:textColor="@color/white"
-            android:textSize="@dimen/title" />
+            android:alpha="0.6"
+            android:textSize="@dimen/header_three"
+            android:textStyle="bold"
+            android:textAllCaps="true"
+            android:letterSpacing="0.2" />
+
+        <!-- Profile Section -->
+        <LinearLayout
+            android:id="@+id/profile_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="24dp"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="32dp">
+
+            <TextView
+                android:id="@+id/tv_avatar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/avatar_circle_bg"
+                android:gravity="center"
+                android:text="JD"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp">
+
+                <TextView
+                    android:id="@+id/tv_profile_full_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Full Name"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/header_two"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/tv_profile_username"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="username"
+                    android:textColor="@color/white"
+                    android:alpha="0.7"
+                    android:textSize="@dimen/body_three"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+        </LinearLayout>
 
         <View
             android:id="@+id/divider"
             android:layout_width="230dp"
-            android:layout_height="2dp"
-            android:layout_marginTop="16dp"
-            android:background="@color/white" />
+            android:layout_height="1dp"
+            android:background="@color/white"
+            android:alpha="0.2" />
 
         <Button
             android:id="@+id/btn_dashboard"
             android:layout_width="230dp"
-            android:layout_height="50dp"
-            android:layout_marginTop="50dp"
+            android:layout_height="@dimen/input_height"
+            android:layout_marginTop="32dp"
             android:background="@drawable/button_menu_bg"
             app:backgroundTint="@null"
-            android:gravity="start|center_vertical"
-            android:paddingStart="20dp"
+            android:gravity="center_vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
             android:text="@string/dashboard"
             android:textColor="@color/white"
-            android:textSize="@dimen/header_two" />
+            android:textSize="@dimen/header_two"
+            android:textAllCaps="false" />
 
         <Button
             android:id="@+id/btn_products"
             android:layout_width="230dp"
-            android:layout_height="50dp"
-            android:layout_marginTop="20dp"
+            android:layout_height="@dimen/input_height"
+            android:layout_marginTop="16dp"
             android:background="@drawable/button_menu_bg"
             app:backgroundTint="@null"
-            android:gravity="start|center_vertical"
-            android:paddingStart="20dp"
+            android:gravity="center_vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
             android:text="@string/products"
             android:textColor="@color/white"
-            android:textSize="@dimen/header_two" />
+            android:textSize="@dimen/header_two"
+            android:textAllCaps="false" />
 
         <Button
             android:id="@+id/btn_history"
             android:layout_width="230dp"
-            android:layout_height="50dp"
-            android:layout_marginTop="20dp"
+            android:layout_height="@dimen/input_height"
+            android:layout_marginTop="16dp"
             android:background="@drawable/button_menu_bg"
             app:backgroundTint="@null"
-            android:gravity="start|center_vertical"
-            android:paddingStart="20dp"
+            android:gravity="center_vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
             android:text="@string/history"
             android:textColor="@color/white"
-            android:textSize="@dimen/header_two" />
+            android:textSize="@dimen/header_two"
+            android:textAllCaps="false" />
 
         <Space
             android:layout_width="match_parent"
@@ -118,7 +182,7 @@
         <Button
             android:id="@+id/btn_log_out"
             android:layout_width="230dp"
-            android:layout_height="50dp"
+            android:layout_height="@dimen/input_height"
             android:layout_marginBottom="50dp"
             android:background="@drawable/button_red_bg"
             app:backgroundTint="@null"

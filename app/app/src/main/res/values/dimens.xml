@@ -1,20 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="title">24sp</dimen>
-    <dimen name="title_second">20sp</dimen>
-    <dimen name="header_one">18sp</dimen>
-    <dimen name="header_two">16sp</dimen>
-    <dimen name="header_three">14sp</dimen>
-    <dimen name="body_one">16sp</dimen>
-    <dimen name="body_two">14sp</dimen>
-    <dimen name="body_three">12sp</dimen>
-    <dimen name="cell_padding">6dp</dimen>
-    <dimen name="grid_spacing">4dp</dimen>
+    <!-- Typography -->
+    <dimen name="title">22sp</dimen>
+    <dimen name="title_second">18sp</dimen>
+    <dimen name="header_one">16sp</dimen>
+    <dimen name="header_two">15sp</dimen>
+    <dimen name="header_three">13sp</dimen>
+    <dimen name="body_one">14sp</dimen>
+    <dimen name="body_two">13sp</dimen>
+    <dimen name="body_three">11sp</dimen>
+
+    <!-- Spacing -->
+    <dimen name="margin_standard">12dp</dimen>
+    <dimen name="margin_small">6dp</dimen>
+    <dimen name="cell_padding">3dp</dimen>
+    <dimen name="grid_spacing">1dp</dimen>
+
+    <!-- Targets -->
     <dimen name="action_button_size">36dp</dimen>
-    <dimen name="button_padding">4dp</dimen>
-    <dimen name="margin_standard">16dp</dimen>
-    <dimen name="margin_small">8dp</dimen>
-    <dimen name="title_start_margin">64dp</dimen>
-    <dimen name="title_top_margin">24dp</dimen>
     <dimen name="input_height">48dp</dimen>
+    <dimen name="filter_bar_height">36dp</dimen>
+    <dimen name="row_min_height">44dp</dimen>
+    <dimen name="header_min_height">36dp</dimen>
+    <dimen name="title_start_margin">48dp</dimen>
+    <dimen name="title_top_margin">16dp</dimen>
 </resources>

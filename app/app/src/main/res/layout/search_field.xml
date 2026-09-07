@@ -17,13 +17,14 @@
     <com.google.android.material.textfield.TextInputEditText
         android:id="@+id/search_bar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/input_height"
+        android:layout_height="@dimen/filter_bar_height"
         android:hint="Search..."
         android:paddingTop="0dp"
         android:paddingBottom="0dp"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
         android:textColor="@color/black"
+        android:textColorHint="@color/gray_600"
         android:textSize="@dimen/body_two" />
 
 </com.google.android.material.textfield.TextInputLayout>
