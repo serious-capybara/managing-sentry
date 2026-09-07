@@ -433,6 +433,71 @@ Also:
 - `10.0.2.2` only works on the emulator; it will not work on a real device.
 - This BASE_URL edit is also local-only and should not be committed with a personal IP hardcoded into it.
 
+## Setting Up Your Own Local Database (pgAdmin4)
+
+Each teammate runs their own local Docker Postgres container — that means each person has their OWN separate, empty database until they create the schema themselves. We do it this way because we don't have shared team hosting yet (that will come later when the teacher provides real hosting). For now, everyone needs a local copy so they can develop and test independently without being on the same network or waiting for a shared server. This also gives everyone hands-on practice creating the schema themselves (a skill you'll use again when we move to real hosting).
+
+Note: This means your test data will NOT match anyone else's, and that's expected — it's for individual development and testing, not shared team data.
+
+Follow these steps in pgAdmin4 to register your local Docker Postgres server and create the project database and tables.
+
+1. Open pgAdmin4. In the left tree, right-click `Servers` and choose `Register` > `Server`.
+2. In the **General** tab, give the connection a name (anything descriptive, e.g. "Local Docker").
+3. In the **Connection** tab, fill in the values (these are the typical values for this project):
+
+  - Host name/address: `localhost`
+  - Port: `5433`  (match whatever host port is set in `docker-compose.yml`'s `ports` line for the `db` service — the LEFT number in `5433:5432`)
+  - Maintenance database: `postgres` (this is just the initial DB used to connect; application tables go elsewhere)
+  - Username / Password: use the `DB_USER` and `DB_PASSWORD` values from your local `.env` file
+
+  Click **Save**.
+
+4. Once connected, expand your new server, right-click `Databases` > `Create` > `Database`.
+  - Name it to match `DB_NAME` from your `.env` (for example, `sentry`).
+  - This creates your OWN dedicated application database. We do NOT put app tables into the default `postgres` database because `postgres` is intended for admin/maintenance — using a dedicated app database matches common real-world practice.
+
+5. Expand your new database > `Schemas` > `public` > `Tables`. Right-click `Tables` > `Create` > `Table`.
+  - `public` is the standard default schema where tables normally live; there is no need to create a separate schema for this project.
+
+6. Create the `users` table (required for the login feature) with these columns:
+
+  - `user_id`: integer, Primary Key, Identity / auto-increment (in pgAdmin, set this using the `Identity` tab for the column or choose a serial-style type)
+  - `full_name`: character varying
+  - `user_name`: character varying — should be UNIQUE (set this in the **Constraints** tab)
+  - `password_hash`: character varying — this stores a HASHED password, never plain text
+  - `role`: character varying
+
+  Set the Primary Key on `user_id` and add a Unique constraint on `user_name` in the Constraints tab.
+
+7. Save the table. Your database is now ready for the app to connect to using the `DB_NAME`, `DB_USER`, and `DB_PASSWORD` you set in your local `.env`.
+
+### Why Passwords Are Hashed, Not Stored as Plain Text
+
+What password hashing means: converting the actual password into a scrambled, irreversible string using a one-way function. The resulting value cannot be feasibly reversed to get the original password.
+
+Why this matters practically: if the database is ever leaked, exposed, or accessed by someone who shouldn't have access (including accidentally, e.g. a misconfigured connection), plain-text passwords would immediately compromise every user's account. Because many people reuse passwords across sites, exposed plain-text passwords can lead to account takeover on other services as well.
+
+How this project handles it: the backend uses PHP's `password_hash()` when a user is created/registered, and `password_verify()` when a user logs in. The app never needs to reverse the hash — when a login happens the submitted password is hashed and compared using `password_verify()`.
+
+Example of what a `password_hash()` value looks like (this is a realistic-looking example hash, not a real password):
+
+```
+$2y$10$e0NR5k3Z9bW7P6q1h4K9uO8wYz0AbCDeFGHIJKLMNOPQRSTUV
+```
+
+Do NOT manually type a plain-text password directly into the `password_hash` column when testing or seeding data. Instead, insert test users through the app's registration flow (or run the password through PHP's `password_hash()` first) so the hashing logic is exercised and not bypassed.
+
+To hash a password from your shell (useful for creating a single test user), run this PHP one-liner and replace `YOUR_PLAIN_TEXT_PASSWORD` with the password you want to hash:
+
+```bash
+php -r "echo password_hash('YOUR_PLAIN_TEXT_PASSWORD', PASSWORD_BCRYPT, ['cost' => 12]) . PHP_EOL;"
+```
+
+Notes:
+
+- Replace `YOUR_PLAIN_TEXT_PASSWORD` with your test password. The command prints the hashed value which you can paste into the `password_hash` column if you must seed manually.
+- Be cautious: running this in a shell can leave the plain-text password in your shell history. Prefer creating test users through the registration endpoint whenever possible.
+
 ## 7. How to verify it's working
 
 Once the stack is running:
