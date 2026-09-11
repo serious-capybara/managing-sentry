@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="24dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="8dp">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <!-- Title -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/checkout_title"
+                android:textColor="@color/slate_900"
+                android:textSize="@dimen/title"
+                android:textStyle="bold"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Receipt Preview -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="@color/slate_50"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/receipt_preview_title"
+                        android:textColor="@color/slate_600"
+                        android:textSize="@dimen/header_three"
+                        android:textStyle="bold" />
+
+                    <androidx.core.widget.NestedScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_receipt_content"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="monospace"
+                            android:text=""
+                            android:textColor="@color/slate_900"
+                            android:textSize="11sp" />
+                    </androidx.core.widget.NestedScrollView>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Inputs Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_total_amount"
+                    android:textColor="@color/slate_600"
+                    android:textSize="@dimen/body_two"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/et_total_amount"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/input_height"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/login_input_bg"
+                    android:enabled="false"
+                    android:focusable="false"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:textColor="@color/black"
+                    android:textColorHint="@color/gray_600"
+                    android:textSize="@dimen/header_two"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_amount_received"
+                    android:textColor="@color/slate_600"
+                    android:textSize="@dimen/body_two"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_amount_received"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/input_height"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/login_input_bg"
+                    android:gravity="center_vertical"
+                    android:inputType="numberDecimal"
+                    android:hint="@string/hint_zero_amount"
+                    android:importantForAutofill="no"
+                    android:paddingHorizontal="16dp"
+                    android:textColor="@color/black"
+                    android:textColorHint="@color/gray_600"
+                    android:textSize="@dimen/header_two" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_payment_method"
+                    android:textColor="@color/slate_600"
+                    android:textSize="@dimen/body_two"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp"
+                    app:boxBackgroundColor="@color/input_bg_color"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp"
+                    app:hintEnabled="false">
+
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/actv_payment_method"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/input_height"
+                        android:inputType="none"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="0dp"
+                        android:textColor="@color/black"
+                        android:textColorHint="@color/gray_600"
+                        android:textSize="@dimen/body_one" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <LinearLayout
+                    android:id="@+id/container_reference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_reference"
+                        android:textColor="@color/slate_600"
+                        android:textSize="@dimen/body_two"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_reference"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/input_height"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="@drawable/login_input_bg"
+                        android:gravity="center_vertical"
+                        android:hint="@string/hint_reference"
+                        android:importantForAutofill="no"
+                        android:inputType="text"
+                        android:paddingHorizontal="16dp"
+                        android:textColor="@color/black"
+                        android:textColorHint="@color/gray_600"
+                        android:textSize="@dimen/body_two" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_change"
+                    android:textColor="@color/slate_600"
+                    android:textSize="@dimen/body_two"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/et_change"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/input_height"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="32dp"
+                    android:background="@drawable/login_input_bg"
+                    android:enabled="false"
+                    android:focusable="false"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:textColor="@color/black"
+                    android:textColorHint="@color/gray_600"
+                    android:textSize="@dimen/header_two"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btn_modal_cancel"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/input_height"
+                        android:layout_marginEnd="12dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/button_slate_bg"
+                        app:backgroundTint="@null"
+                        android:text="@string/btn_cancel"
+                        android:textAllCaps="false"
+                        android:textColor="@color/slate_900"
+                        android:textSize="@dimen/header_three"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btn_modal_ok"
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/input_height"
+                        android:layout_weight="1"
+                        android:background="@drawable/button_green_bg"
+                        app:backgroundTint="@null"
+                        android:text="@string/btn_ok"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/header_three"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</androidx.cardview.widget.CardView>

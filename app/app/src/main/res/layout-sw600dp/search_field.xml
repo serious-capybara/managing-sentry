@@ -19,7 +19,7 @@
         android:id="@+id/search_bar"
         android:layout_width="match_parent"
         android:layout_height="@dimen/filter_bar_height"
-        android:hint="Search..."
+        android:hint="@string/hint_search"
         android:paddingTop="0dp"
         android:paddingBottom="0dp"
         android:paddingStart="16dp"

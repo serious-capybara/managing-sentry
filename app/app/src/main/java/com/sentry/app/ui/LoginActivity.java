@@ -81,6 +81,18 @@ public class LoginActivity extends AppCompatActivity {
         configureCarousel();
         configureLoginAction();
         startAutoSlide();
+        checkLogoutStatus();
+    }
+
+    private void checkLogoutStatus() {
+        if (getIntent().getBooleanExtra("show_logout_success", false)) {
+            String userName = getIntent().getStringExtra("logged_out_username");
+            if (userName == null) userName = "User";
+            NotificationHelper.showNotification(this, 
+                getString(R.string.notif_logout_success), 
+                userName,
+                getResources().getColor(R.color.pill_bg_logout, getTheme()));
+        }
     }
 
     private void setupOrientationMode() {
@@ -166,7 +178,9 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void launchDashboard() {
-        startActivity(new Intent(this, MainActivity.class));
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("show_login_success", true);
+        startActivity(intent);
         finish();
     }
 

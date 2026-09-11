@@ -51,6 +51,17 @@ public class MainActivity extends AppCompatActivity {
         setupToggleMenu();
         setupScrim();
         updateProfileUI();
+        checkLoginStatus();
+    }
+
+    private void checkLoginStatus() {
+        if (getIntent().getBooleanExtra("show_login_success", false)) {
+            String userName = sessionManager.getUserName();
+            NotificationHelper.showNotification(this, 
+                getString(R.string.notif_login_success), 
+                userName,
+                getResources().getColor(R.color.sidebar_bg, getTheme()));
+        }
     }
 
     private void updateProfileUI() {
@@ -126,13 +137,22 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnLogout = findViewById(R.id.btn_log_out);
         if (btnLogout != null) {
-            btnLogout.setOnClickListener(v -> {
-                sessionManager.clear();
-                Intent intent = new Intent(this, LoginActivity.class);
-                startActivity(intent);
-                finish();
-            });
+            btnLogout.setOnClickListener(v -> showLogoutConfirmation());
         }
+    }
+
+    private void showLogoutConfirmation() {
+        LogoutDialogFragment dialog = new LogoutDialogFragment();
+        dialog.setLogoutListener(() -> {
+            String userName = sessionManager.getUserName();
+            sessionManager.clear();
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.putExtra("show_logout_success", true);
+            intent.putExtra("logged_out_username", userName);
+            startActivity(intent);
+            finish();
+        });
+        dialog.show(getSupportFragmentManager(), "LogoutDialog");
     }
 
     private void setSidebarClickListener(int buttonId, Fragment fragment, int index) {

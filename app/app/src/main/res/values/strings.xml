@@ -4,6 +4,8 @@
     <string name="products">Products</string>
     <string name="history">History</string>
     <string name="logout">Log Out</string>
+    <string name="logout_confirm_title">Log Out</string>
+    <string name="logout_confirm_msg">Are you sure you want to end your session?</string>
 
     <!-- Table Headers -->
     <string name="header_name">Name</string>
@@ -36,4 +38,50 @@
     <string name="login_button_text">Log In</string>
     <string name="login_error_invalid">Invalid email or password</string>
     <string name="login_carousel_desc">Carousel image</string>
+
+    <!-- Sidebar / Profile -->
+    <string name="dummy_initials">JD</string>
+    <string name="dummy_full_name">Full Name</string>
+    <string name="dummy_username">username</string>
+
+    <!-- Notifications -->
+    <string name="notif_login_success">Successfully logged in as</string>
+    <string name="notif_logout_success">Successfully logged out as</string>
+
+    <!-- UI Labels -->
+    <string name="label_cart">Cart</string>
+    <string name="label_total_colon">Total :</string>
+    <string name="label_sort_by">Sort By: </string>
+    <string name="hint_search">Search&#8230;</string>
+
+    <!-- Dummy Table Data -->
+    <string name="dummy_amount">₱ 0.00</string>
+    <string name="dummy_name">Name</string>
+    <string name="dummy_category">Category</string>
+    <string name="dummy_time">Time</string>
+    <string name="dummy_order">ORD-0</string>
+    <string name="dummy_qty">0</string>
+    <string name="dummy_status">Status</string>
+    <string name="currency_format">₱ %.2f</string>
+    <string name="currency_zero">₱ 0.00</string>
+
+    <!-- Checkout Modal -->
+    <string name="checkout_title">Checkout Confirmation</string>
+    <string name="label_total_amount">Total Amount</string>
+    <string name="label_amount_received">Amount Received</string>
+    <string name="label_payment_method">Payment Method</string>
+    <string name="label_reference">Reference</string>
+    <string name="hint_reference">Reference #</string>
+    <string name="hint_zero_amount">0.00</string>
+    <string name="label_change">Change</string>
+    <string name="btn_ok">Ok</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="receipt_preview_title">ASCII Receipts</string>
+
+    <string-array name="payment_methods">
+        <item>Cash</item>
+        <item>GCash</item>
+        <item>Maya</item>
+        <item>Bank Transfer</item>
+    </string-array>
 </resources>

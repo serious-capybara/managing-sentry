@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -65,10 +66,9 @@ public class DashboardFragment extends BaseFragment {
                     float totalHeight = root.getHeight();
 
                     // Account for title and sort row height
-                    float topLimit = minTopHeightPx;
                     float bottomLimit = totalHeight - minBottomHeightPx;
 
-                    float safeY = Math.max(topLimit, Math.min(relativeY, bottomLimit));
+                    float safeY = Math.max(minTopHeightPx, Math.min(relativeY, bottomLimit));
                     
                     ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) guideline.getLayoutParams();
                     params.guidePercent = safeY / totalHeight;
@@ -84,6 +84,20 @@ public class DashboardFragment extends BaseFragment {
         setupHeaders(view);
         setupMainTable(view);
         setupCart(view);
+        setupCheckout(view);
+    }
+
+    private void setupCheckout(View view) {
+        View checkoutBtn = view.findViewById(R.id.btn_checkout);
+        TextView totalAmountTv = view.findViewById(R.id.tv_total_amount);
+
+        if (checkoutBtn != null) {
+            checkoutBtn.setOnClickListener(v -> {
+                String total = (totalAmountTv != null) ? totalAmountTv.getText().toString() : "₱ 0.00";
+                CheckoutDialogFragment dialog = CheckoutDialogFragment.newInstance(total);
+                dialog.show(getChildFragmentManager(), "CheckoutDialog");
+            });
+        }
     }
 
     private void setupHeaders(View view) {
@@ -154,6 +168,11 @@ public class DashboardFragment extends BaseFragment {
                 setText(row, R.id.row_quantity, cartData[i][1]);
                 setText(row, R.id.row_subtotal, cartData[i][2]);
             }
+        }
+        
+        TextView totalAmountTv = view.findViewById(R.id.tv_total_amount);
+        if (totalAmountTv != null) {
+            totalAmountTv.setText("₱ 419.00"); // Dummy total for testing
         }
     }
 }

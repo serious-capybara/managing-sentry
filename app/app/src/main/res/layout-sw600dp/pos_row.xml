@@ -18,7 +18,7 @@
         android:background="@drawable/cell_white_bg"
         android:paddingHorizontal="16dp"
         android:paddingVertical="@dimen/cell_padding"
-        android:text="Name"
+        android:text="@string/dummy_name"
         android:textSize="@dimen/body_two"
         android:textColor="@color/text_primary"
         android:gravity="start|center_vertical" />
@@ -32,7 +32,7 @@
         android:layout_marginEnd="@dimen/grid_spacing"
         android:background="@drawable/cell_white_bg"
         android:padding="@dimen/cell_padding"
-        android:text="Category"
+        android:text="@string/dummy_category"
         android:textSize="@dimen/body_two"
         android:textColor="@color/text_secondary"
         android:gravity="center" />
@@ -46,7 +46,7 @@
         android:layout_marginEnd="@dimen/grid_spacing"
         android:background="@drawable/cell_white_bg"
         android:padding="@dimen/cell_padding"
-        android:text="₱ 0.00"
+        android:text="@string/dummy_amount"
         android:textSize="@dimen/body_two"
         android:textColor="@color/text_secondary"
         android:gravity="center" />
@@ -60,7 +60,7 @@
         android:layout_marginEnd="@dimen/grid_spacing"
         android:background="@drawable/cell_white_bg"
         android:padding="@dimen/cell_padding"
-        android:text="Time"
+        android:text="@string/dummy_time"
         android:textSize="@dimen/body_two"
         android:textColor="@color/text_secondary"
         android:gravity="center" />
@@ -74,7 +74,7 @@
         android:layout_marginEnd="@dimen/grid_spacing"
         android:background="@drawable/cell_white_bg"
         android:padding="@dimen/cell_padding"
-        android:text="ORD-0"
+        android:text="@string/dummy_order"
         android:textSize="@dimen/body_two"
         android:textColor="@color/text_secondary"
         android:gravity="center" />
@@ -88,7 +88,7 @@
         android:layout_marginEnd="@dimen/grid_spacing"
         android:background="@drawable/cell_white_bg"
         android:padding="@dimen/cell_padding"
-        android:text="0"
+        android:text="@string/dummy_qty"
         android:textSize="@dimen/body_two"
         android:textColor="@color/text_secondary"
         android:gravity="center" />
@@ -102,7 +102,7 @@
         android:layout_marginEnd="@dimen/grid_spacing"
         android:background="@drawable/cell_white_bg"
         android:padding="@dimen/cell_padding"
-        android:text="₱ 0.00"
+        android:text="@string/dummy_amount"
         android:textSize="@dimen/body_two"
         android:textColor="@color/text_secondary"
         android:gravity="center" />
@@ -116,7 +116,7 @@
         android:layout_marginEnd="@dimen/grid_spacing"
         android:background="@drawable/cell_white_bg"
         android:padding="@dimen/cell_padding"
-        android:text="₱ 0.00"
+        android:text="@string/dummy_amount"
         android:textSize="@dimen/body_two"
         android:textColor="@color/text_secondary"
         android:gravity="center" />
@@ -189,7 +189,7 @@
         android:layout_marginEnd="@dimen/grid_spacing"
         android:background="@drawable/cell_white_bg"
         android:padding="@dimen/cell_padding"
-        android:text="Status"
+        android:text="@string/dummy_status"
         android:textSize="@dimen/body_two"
         android:textColor="@color/text_secondary"
         android:gravity="center" />
