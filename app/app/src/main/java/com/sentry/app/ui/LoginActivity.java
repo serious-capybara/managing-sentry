@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -136,7 +135,7 @@ public class LoginActivity extends AppCompatActivity {
         String password = passwordInput.getText().toString().trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            showToast("Please enter credentials");
+            showErrorNotification("Please enter credentials");
             return;
         }
 
@@ -158,7 +157,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Call<User> call, @NonNull Throwable t) {
                 setLoadingState(false);
-                showToast("Network Error: " + t.getMessage());
+                showErrorNotification("Network Error: " + t.getMessage());
             }
         });
     }
@@ -174,7 +173,7 @@ public class LoginActivity extends AppCompatActivity {
         String message = "Login Failed: " + code;
         if (code == 401) message = "Invalid username or password";
         else if (code == 404) message = "Service not found";
-        showToast(message);
+        showErrorNotification(message);
     }
 
     private void launchDashboard() {
@@ -188,8 +187,11 @@ public class LoginActivity extends AppCompatActivity {
         carouselHandler.postDelayed(carouselTask, 4000);
     }
 
-    private void showToast(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    private void showErrorNotification(String message) {
+        NotificationHelper.showNotification(this, 
+            message, 
+            null,
+            getResources().getColor(R.color.pill_bg_logout, getTheme()));
     }
 
     @Override
