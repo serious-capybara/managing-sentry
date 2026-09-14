@@ -9,8 +9,8 @@ public class User {
     @SerializedName("full_name")
     private String fullName;
     
-    @SerializedName("user_name")
-    private String userName;
+    @SerializedName("username")
+    private String username;
     
     private String role;
 
@@ -22,8 +22,8 @@ public class User {
         return fullName;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getUsername() {
+        return username;
     }
 
     public String getRole() {

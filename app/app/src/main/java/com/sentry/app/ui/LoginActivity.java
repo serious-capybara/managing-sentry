@@ -27,6 +27,9 @@ import com.sentry.app.api.RetrofitClient;
 import com.sentry.app.data.LoginRequest;
 import com.sentry.app.data.SessionManager;
 import com.sentry.app.data.User;
+import com.google.gson.Gson;
+
+import java.io.IOException;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -142,15 +145,16 @@ public class LoginActivity extends AppCompatActivity {
         setLoadingState(true);
         LoginRequest request = new LoginRequest(username, password);
 
-        RetrofitClient.getApiService().login(request).enqueue(new Callback<User>() {
+        RetrofitClient.getApiService().login(request).enqueue(new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<User> call, @NonNull Response<User> response) {
                 setLoadingState(false);
                 if (response.isSuccessful() && response.body() != null) {
-                    sessionManager.saveUser(response.body());
+                    User user = response.body();
+                    sessionManager.saveUser(user);
                     launchDashboard();
                 } else {
-                    handleAuthError(response.code());
+                    parseAndShowError(response);
                 }
             }
 
@@ -160,6 +164,28 @@ public class LoginActivity extends AppCompatActivity {
                 showErrorNotification("Network Error: " + t.getMessage());
             }
         });
+    }
+
+    private void parseAndShowError(Response<User> response) {
+        try {
+            if (response.errorBody() != null) {
+                String errorJson = response.errorBody().string();
+                try {
+                    ErrorResponse errorObj = new Gson().fromJson(errorJson, ErrorResponse.class);
+                    if (errorObj != null && errorObj.error != null) {
+                        showErrorNotification(errorObj.error);
+                    } else {
+                        showErrorNotification(errorJson);
+                    }
+                } catch (Exception e) {
+                    showErrorNotification(errorJson);
+                }
+            } else {
+                handleAuthError(response.code());
+            }
+        } catch (IOException e) {
+            handleAuthError(response.code());
+        }
     }
 
     private void setLoadingState(boolean isLoading) {
@@ -198,6 +224,10 @@ public class LoginActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         carouselHandler.removeCallbacks(carouselTask);
+    }
+
+    private static class ErrorResponse {
+        String error;
     }
 
     private static class CarouselAdapter extends RecyclerView.Adapter<CarouselAdapter.ViewHolder> {

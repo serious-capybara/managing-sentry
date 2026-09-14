@@ -4,32 +4,37 @@
 include 'db_connect.php';
 header('Content-Type: application/json');
 
-$query = "
-    SELECT
-        o.transaction_timestamp,
-        o.order_id,
-        SUM(oi.quantity) as total_quantity,
-        o.total_amount,
-        h.order_status
-    FROM orders o
-    LEFT JOIN histories h ON o.order_id = h.order_id
-    LEFT JOIN order_items oi ON o.order_id = oi.order_id
-    GROUP BY o.order_id
-    ORDER BY o.transaction_timestamp DESC
-    LIMIT 10
-";
+try {
+    $query = "
+        SELECT
+            o.transaction_timestamp,
+            o.order_id,
+            COALESCE(SUM(oi.quantity), 0) as total_quantity,
+            o.total_amount,
+            h.order_status
+        FROM orders o
+        LEFT JOIN histories h ON o.order_id = h.order_id
+        LEFT JOIN order_items oi ON o.order_id = oi.order_id
+        GROUP BY o.order_id, o.transaction_timestamp, o.total_amount, h.order_status
+        ORDER BY o.transaction_timestamp DESC
+        LIMIT 20
+    ";
 
-$result = $conn->query($query);
-$history = [];
+    $stmt = $conn->query($query);
+    $history = [];
 
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $row['order_id'] = (int)$row['order_id'];
-        $row['total_quantity'] = (int)$row['total_quantity'];
-        $row['total_amount'] = (float)$row['total_amount'];
-        $history[] = $row;
+    while ($row = $stmt->fetch()) {
+        $history[] = [
+            'transaction_timestamp' => $row['transaction_timestamp'],
+            'order_id' => (int)$row['order_id'],
+            'total_quantity' => (int)$row['total_quantity'],
+            'total_amount' => (float)$row['total_amount'],
+            'order_status' => $row['order_status'] ?? 'PENDING'
+        ];
     }
+    echo json_encode($history);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(["error" => $e->getMessage()]);
 }
-
-echo json_encode($history);
 ?>

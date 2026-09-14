@@ -4,20 +4,30 @@
 include 'db_connect.php';
 header('Content-Type: application/json');
 
-$query = "SELECT product_id, name, base_cost, markup_amount, retail_price, stock_quantity, expiration_date, low_stock_alert_level FROM products";
-$result = $conn->query($query);
+try {
+    $query = "SELECT * FROM products";
+    $stmt = $conn->query($query);
+    $products = [];
 
-$products = [];
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        // Ensure numeric types are cast correctly if needed
-        $row['product_id'] = (int)$row['product_id'];
-        $row['base_cost'] = (float)$row['base_cost'];
-        $row['retail_price'] = (float)$row['retail_price'];
-        $row['stock_quantity'] = (int)$row['stock_quantity'];
-        $products[] = $row;
+    while ($row = $stmt->fetch()) {
+        // Map common variations of column names to match the Android data models
+        $product = [
+            'product_id' => (int)($row['product_id'] ?? 0),
+            'name' => $row['name'] ?? 'Unknown',
+            'category' => $row['category'] ?? 'General',
+            'base_cost' => (float)($row['base_cost'] ?? 0),
+            'markup_amount' => (float)($row['markup_amount'] ?? 0),
+            // Fallback for 'srp' vs 'retail_price'
+            'retail_price' => (float)($row['retail_price'] ?? $row['srp'] ?? 0),
+            'stock_quantity' => (int)($row['stock_quantity'] ?? 0),
+            'expiration_date' => $row['expiration_date'] ?? null,
+            'low_stock_alert_level' => (int)($row['low_stock_alert_level'] ?? 5)
+        ];
+        $products[] = $product;
     }
+    echo json_encode($products);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(["error" => $e->getMessage()]);
 }
-
-echo json_encode($products);
 ?>

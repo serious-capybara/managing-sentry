@@ -18,6 +18,16 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <View
+        android:id="@+id/connection_status_dot"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/dot_red"
+        app:layout_constraintTop_toTopOf="@id/history_title"
+        app:layout_constraintBottom_toBottomOf="@id/history_title"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/sort_search_row"
         android:layout_width="match_parent"
@@ -82,29 +92,45 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <ScrollView
-            android:id="@+id/history_scrollview"
+        <TextView
+            android:id="@+id/tv_empty_history"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/empty_history"
+            android:textColor="@color/gray_400"
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_refresh"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginTop="4dp">
 
-            <LinearLayout
-                android:id="@+id/history_content"
+            <ScrollView
+                android:id="@+id/history_scrollview"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-                <include android:id="@+id/row_1" layout="@layout/pos_row" />
-                <include android:id="@+id/row_2" layout="@layout/pos_row" />
-                <include android:id="@+id/row_3" layout="@layout/pos_row" />
-                <include android:id="@+id/row_4" layout="@layout/pos_row" />
-                <include android:id="@+id/row_5" layout="@layout/pos_row" />
-                <include android:id="@+id/row_6" layout="@layout/pos_row" />
-                <include android:id="@+id/row_7" layout="@layout/pos_row" />
-                <include android:id="@+id/row_8" layout="@layout/pos_row" />
-                <include android:id="@+id/row_9" layout="@layout/pos_row" />
-                <include android:id="@+id/row_10" layout="@layout/pos_row" />
-            </LinearLayout>
-        </ScrollView>
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:id="@+id/history_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <include android:id="@+id/row_1" layout="@layout/pos_row" />
+                    <include android:id="@+id/row_2" layout="@layout/pos_row" />
+                    <include android:id="@+id/row_3" layout="@layout/pos_row" />
+                    <include android:id="@+id/row_4" layout="@layout/pos_row" />
+                    <include android:id="@+id/row_5" layout="@layout/pos_row" />
+                    <include android:id="@+id/row_6" layout="@layout/pos_row" />
+                    <include android:id="@+id/row_7" layout="@layout/pos_row" />
+                    <include android:id="@+id/row_8" layout="@layout/pos_row" />
+                    <include android:id="@+id/row_9" layout="@layout/pos_row" />
+                    <include android:id="@+id/row_10" layout="@layout/pos_row" />
+                </LinearLayout>
+            </ScrollView>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

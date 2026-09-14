@@ -39,6 +39,17 @@ dependencies {
     implementation libs.retrofit
     implementation libs.retrofit.converter.gson
     implementation libs.google.gson
+    
+    // Room Database
+    implementation libs.room.runtime
+    annotationProcessor libs.room.compiler
+    
+    // WorkManager for background sync
+    implementation libs.work.runtime
+    
+    // Pull-to-refresh
+    implementation libs.swiperefreshlayout
+    
     testImplementation libs.junit
     androidTestImplementation libs.espresso.core
     androidTestImplementation libs.ext.junit

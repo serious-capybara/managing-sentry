@@ -21,8 +21,19 @@ import androidx.fragment.app.DialogFragment;
 
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.sentry.app.R;
+import com.sentry.app.api.RetrofitClient;
+import com.sentry.app.data.ApiResponse;
+import com.sentry.app.data.SaleItem;
+import com.sentry.app.data.SaleRequest;
+import com.sentry.app.data.SessionManager;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * CheckoutDialogFragment handles the final sale processing logic.
@@ -30,16 +41,24 @@ import java.util.Locale;
  */
 public class CheckoutDialogFragment extends DialogFragment {
 
-    private String totalAmountStr = "0.00";
+    private double totalAmount = 0.0;
+    private List<SaleItem> saleItems = new ArrayList<>();
     private EditText etTotalAmount, etAmountReceived, etReference, etChange;
     private View containerReference;
     private MaterialAutoCompleteTextView actvPaymentMethod;
     private Button btnOk, btnCancel;
+    private Runnable onSaleSuccessListener;
+    private boolean isProcessing = false;
 
-    public static CheckoutDialogFragment newInstance(String totalAmount) {
+    public void setOnSaleSuccessListener(Runnable listener) {
+        this.onSaleSuccessListener = listener;
+    }
+
+    public static CheckoutDialogFragment newInstance(double totalAmount, ArrayList<SaleItem> items) {
         CheckoutDialogFragment fragment = new CheckoutDialogFragment();
         Bundle args = new Bundle();
-        args.putString("total_amount", totalAmount);
+        args.putDouble("total_amount", totalAmount);
+        args.putSerializable("sale_items", items);
         fragment.setArguments(args);
         return fragment;
     }
@@ -48,7 +67,8 @@ public class CheckoutDialogFragment extends DialogFragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            totalAmountStr = getArguments().getString("total_amount", "0.00");
+            totalAmount = getArguments().getDouble("total_amount", 0.0);
+            saleItems = (List<SaleItem>) getArguments().getSerializable("sale_items");
         }
     }
 
@@ -88,7 +108,7 @@ public class CheckoutDialogFragment extends DialogFragment {
         btnOk = view.findViewById(R.id.btn_modal_ok);
         btnCancel = view.findViewById(R.id.btn_modal_cancel);
 
-        etTotalAmount.setText(totalAmountStr);
+        etTotalAmount.setText(String.format(Locale.US, "₱ %.2f", totalAmount));
     }
 
     private void setupPaymentMethodDropdown() {
@@ -127,9 +147,8 @@ public class CheckoutDialogFragment extends DialogFragment {
 
     private void calculateChange() {
         try {
-            double total = parseAmount(totalAmountStr);
             double received = parseAmount(etAmountReceived.getText().toString());
-            double change = received - total;
+            double change = received - totalAmount;
 
             if (change < 0) {
                 etChange.setText(getString(R.string.currency_zero));
@@ -144,14 +163,58 @@ public class CheckoutDialogFragment extends DialogFragment {
     private double parseAmount(String amount) {
         if (amount == null || amount.isEmpty()) return 0.0;
         String clean = amount.replaceAll("[^\\d.]", "");
+        if (clean.isEmpty()) return 0.0;
         return Double.parseDouble(clean);
     }
 
     private void setupActions() {
         btnCancel.setOnClickListener(v -> dismiss());
         btnOk.setOnClickListener(v -> {
-            // Logic for completing sale goes here
-            dismiss();
+            if (isProcessing) return; // Rate-limit: ignore extra taps
+            performSale();
+        });
+    }
+
+    private void performSale() {
+        double received = parseAmount(etAmountReceived.getText().toString());
+        if (received < totalAmount) {
+            // Show error - insufficient amount
+            etAmountReceived.setError(getString(R.string.error_insufficient_amount));
+            return;
+        }
+
+        // Lock the button immediately to prevent double-taps
+        isProcessing = true;
+        btnOk.setEnabled(false);
+        btnOk.setText(R.string.processing);
+
+        double change = received - totalAmount;
+        
+        SessionManager sessionManager = new SessionManager(requireContext());
+        int userId = sessionManager.getUserId();
+        
+        SaleRequest request = new SaleRequest(userId, totalAmount, received, change, saleItems);
+        
+        com.sentry.app.data.repo.DataRepository repository = new com.sentry.app.data.repo.DataRepository(requireContext());
+        repository.performSale(request, new com.sentry.app.data.repo.DataRepository.DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean success) {
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() -> {
+                    if (onSaleSuccessListener != null) onSaleSuccessListener.run();
+                    dismiss();
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                // Locally saved so still treat as success for UI
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() -> {
+                    if (onSaleSuccessListener != null) onSaleSuccessListener.run();
+                    dismiss();
+                });
+            }
         });
     }
 

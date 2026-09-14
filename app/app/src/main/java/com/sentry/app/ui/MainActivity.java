@@ -52,11 +52,84 @@ public class MainActivity extends AppCompatActivity {
         setupScrim();
         updateProfileUI();
         checkLoginStatus();
+        scheduleSync();
+        monitorConnectivity();
+    }
+
+    private void monitorConnectivity() {
+        boolean isConnected = BaseFragment.isNetworkConnected(this);
+        TextView status = findViewById(R.id.tv_offline_status);
+        if (status != null) {
+            status.setVisibility(isConnected ? View.GONE : View.VISIBLE);
+        }
+
+        android.net.ConnectivityManager connectivityManager = (android.net.ConnectivityManager) getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) return;
+
+        connectivityManager.registerDefaultNetworkCallback(new android.net.ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(@NonNull android.net.Network network) {
+                runOnUiThread(() -> {
+                    TextView tvStatus = findViewById(R.id.tv_offline_status);
+                    if (tvStatus != null && tvStatus.getVisibility() == View.VISIBLE) {
+                        tvStatus.setText("Back Online");
+                        tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#22C55E")));
+                        tvStatus.postDelayed(() -> {
+                            tvStatus.animate().alpha(0f).setDuration(400).withEndAction(() -> {
+                                tvStatus.setVisibility(View.GONE);
+                                tvStatus.setAlpha(1f);
+                                tvStatus.setText("Offline Mode");
+                                tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.sidebar_btn_critical, getTheme())));
+                            }).start();
+                        }, 2000);
+                    }
+
+                    // Immediately sync any offline sales — don't wait for the 15-min periodic window
+                    androidx.work.OneTimeWorkRequest immediateSyncRequest =
+                            new androidx.work.OneTimeWorkRequest.Builder(
+                                    com.sentry.app.data.repo.SyncWorker.class).build();
+                    androidx.work.WorkManager.getInstance(MainActivity.this)
+                            .enqueue(immediateSyncRequest);
+                });
+            }
+
+            @Override
+            public void onLost(@NonNull android.net.Network network) {
+                runOnUiThread(() -> {
+                    TextView tvStatus = findViewById(R.id.tv_offline_status);
+                    if (tvStatus != null) {
+                        tvStatus.animate().cancel();
+                        tvStatus.setAlpha(1f);
+                        tvStatus.setText("Offline Mode");
+                        tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.sidebar_btn_critical, getTheme())));
+                        tvStatus.setVisibility(View.VISIBLE);
+                    }
+                });
+            }
+        });
+    }
+
+
+    private void scheduleSync() {
+        androidx.work.Constraints constraints = new androidx.work.Constraints.Builder()
+                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                .build();
+
+        androidx.work.PeriodicWorkRequest syncRequest =
+                new androidx.work.PeriodicWorkRequest.Builder(com.sentry.app.data.repo.SyncWorker.class, 15, java.util.concurrent.TimeUnit.MINUTES)
+                        .setConstraints(constraints)
+                        .build();
+
+        androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "SentrySync",
+                androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+                syncRequest
+        );
     }
 
     private void checkLoginStatus() {
         if (getIntent().getBooleanExtra("show_login_success", false)) {
-            String userName = sessionManager.getUserName();
+            String userName = sessionManager.getUsername();
             NotificationHelper.showNotification(this, 
                 getString(R.string.notif_login_success), 
                 userName,
@@ -66,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateProfileUI() {
         String fullName = sessionManager.getFullName();
-        String userName = sessionManager.getUserName();
+        String userName = sessionManager.getUsername();
 
         TextView tvFullName = findViewById(R.id.tv_profile_full_name);
         TextView tvUserName = findViewById(R.id.tv_profile_username);
@@ -144,7 +217,7 @@ public class MainActivity extends AppCompatActivity {
     private void showLogoutConfirmation() {
         LogoutDialogFragment dialog = new LogoutDialogFragment();
         dialog.setLogoutListener(() -> {
-            String userName = sessionManager.getUserName();
+            String userName = sessionManager.getUsername();
             sessionManager.clear();
             Intent intent = new Intent(this, LoginActivity.class);
             intent.putExtra("show_logout_success", true);
@@ -187,7 +260,6 @@ public class MainActivity extends AppCompatActivity {
 
         boolean isVisible = sidebar.getVisibility() == View.VISIBLE;
         int nextVisibility = isVisible ? View.GONE : View.VISIBLE;
-        int btnVisibility = isVisible ? View.VISIBLE : View.GONE;
 
         applySidebarTransition(isVisible);
 
@@ -199,9 +271,18 @@ public class MainActivity extends AppCompatActivity {
             scrim.setVisibility(nextVisibility);
         }
         
+        // Use INVISIBLE (not GONE) so the pill stays constrained to it and doesn't jump
         View btnToggleMenu = findViewById(R.id.btn_toggle_menu);
         if (btnToggleMenu != null) {
-            btnToggleMenu.setVisibility(btnVisibility);
+            if (isVisible) {
+                // Sidebar closing → show the button again
+                btnToggleMenu.setVisibility(View.VISIBLE);
+                btnToggleMenu.setClickable(true);
+            } else {
+                // Sidebar opening → hide button but keep its space
+                btnToggleMenu.setVisibility(View.INVISIBLE);
+                btnToggleMenu.setClickable(false);
+            }
         }
     }
 

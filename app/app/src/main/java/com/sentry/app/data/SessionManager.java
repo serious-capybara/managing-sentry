@@ -11,7 +11,7 @@ public class SessionManager {
     private static final String PREFS_NAME = "sentry_prefs";
     private static final String KEY_USER_ID = "user_id";
     private static final String KEY_FULL_NAME = "full_name";
-    private static final String KEY_USER_NAME = "user_name";
+    private static final String KEY_USER_NAME = "username";
     private static final String KEY_ROLE = "role";
     private static final String KEY_LAST_USE = "last_use_timestamp";
     private static final long SESSION_TIMEOUT_DAYS = 7L;
@@ -29,7 +29,7 @@ public class SessionManager {
         editor.putInt(KEY_USER_ID, user.getUserId());
         
         if (user.getFullName() != null) editor.putString(KEY_FULL_NAME, user.getFullName());
-        if (user.getUserName() != null) editor.putString(KEY_USER_NAME, user.getUserName());
+        if (user.getUsername() != null) editor.putString(KEY_USER_NAME, user.getUsername());
         if (user.getRole() != null) editor.putString(KEY_ROLE, user.getRole());
         
         editor.putLong(KEY_LAST_USE, System.currentTimeMillis());
@@ -44,11 +44,15 @@ public class SessionManager {
         prefs.edit().clear().apply();
     }
 
+    public int getUserId() {
+        return prefs.getInt(KEY_USER_ID, -1);
+    }
+
     public String getFullName() {
         return prefs.getString(KEY_FULL_NAME, "User");
     }
 
-    public String getUserName() {
+    public String getUsername() {
         return prefs.getString(KEY_USER_NAME, "username");
     }
 
