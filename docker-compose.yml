@@ -23,7 +23,7 @@ services:
     restart: always
     working_dir: /app
     volumes:
-      - ./backend:/app
+      - ./backend:/app:z
     ports:
       - "8000:8000"
     command: sh -c "apt-get update && apt-get install -y libpq-dev && docker-php-ext-install pdo_pgsql && apt-get clean && rm -rf /var/lib/apt/lists/* && php -S 0.0.0.0:8000"
