@@ -6,7 +6,7 @@ router = APIRouter(tags=["auth"])
 
 
 @router.post("/login", response_model=LoginResponse)
-@router.post("/login.php", response_model=LoginResponse, include_in_schema=False)
+@router.post("/api/login.php", response_model=LoginResponse, include_in_schema=False)
 async def login(credentials: LoginRequest, request: Request):
     try:
         async with request.app.state.pool.acquire() as conn:

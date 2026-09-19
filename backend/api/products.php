@@ -2,8 +2,10 @@
 
 require_once __DIR__ . '/../init.php';
 
-use Config\Database;
-use Core\Response;
+use config\Database;
+use core\Response;
+use Exception;
+use PDO;
 
 $action = $_GET['action'] ?? 'list';
 $database = new Database();

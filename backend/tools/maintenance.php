@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/../init.php';
 
-use Config\Database;
+use config\Database;
 
 $action = $_GET['action'] ?? 'status';
 $database = new Database();

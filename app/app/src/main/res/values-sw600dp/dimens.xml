@@ -15,6 +15,7 @@
     <dimen name="margin_small">12dp</dimen>
     <dimen name="cell_padding">8dp</dimen>
     <dimen name="grid_spacing">3dp</dimen>
+    <dimen name="row_vertical_gap">1.5dp</dimen>
 
     <!-- Targets -->
     <dimen name="action_button_size">48dp</dimen>

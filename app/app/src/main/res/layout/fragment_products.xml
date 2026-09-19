@@ -23,7 +23,7 @@
         android:layout_width="14dp"
         android:layout_height="14dp"
         android:layout_marginEnd="4dp"
-        android:background="@drawable/dot_red"
+        android:background="@drawable/shape_status_dot_red"
         app:layout_constraintTop_toTopOf="@id/products_title"
         app:layout_constraintBottom_toBottomOf="@id/products_title"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -36,35 +36,23 @@
         app:layout_constraintTop_toBottomOf="@id/products_title"
         app:layout_constraintStart_toStartOf="parent">
 
-        <TextView
-            android:id="@+id/sort_by_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="@dimen/body_one"
-            android:text="@string/label_sort_by"
-            android:textColor="@color/gray_400"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
-
         <include
             android:id="@+id/sort_dropdown_container"
-            layout="@layout/sort_dropdown"
+            layout="@layout/layout_sort_dropdown"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            app:layout_constraintStart_toEndOf="@id/sort_by_label"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/search_field_container"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintHorizontal_weight="1" />
+            app:layout_constraintHorizontal_weight="0.8" />
 
         <include
             android:id="@+id/search_field_container"
-            layout="@layout/search_field"
+            layout="@layout/layout_search_field"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="48dp"
             app:layout_constraintStart_toEndOf="@id/sort_dropdown_container"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -88,39 +76,70 @@
 
         <include
             android:id="@+id/header_row"
-            layout="@layout/pos_header"
+            layout="@layout/layout_pos_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipe_refresh"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="4dp">
+            android:layout_height="match_parent">
 
-            <ScrollView
-                android:id="@+id/products_scrollview"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
+            <LinearLayout
+                android:id="@+id/empty_state_products"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <LinearLayout
-                    android:id="@+id/products_content"
-                    android:layout_width="match_parent"
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@drawable/ic_search_empty"
+                    app:tint="@color/slate_200"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/tv_empty_products"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <include android:id="@+id/row_1" layout="@layout/pos_row" />
-                    <include android:id="@+id/row_2" layout="@layout/pos_row" />
-                    <include android:id="@+id/row_3" layout="@layout/pos_row" />
-                    <include android:id="@+id/row_4" layout="@layout/pos_row" />
-                    <include android:id="@+id/row_5" layout="@layout/pos_row" />
-                    <include android:id="@+id/row_6" layout="@layout/pos_row" />
-                    <include android:id="@+id/row_7" layout="@layout/pos_row" />
-                    <include android:id="@+id/row_8" layout="@layout/pos_row" />
-                    <include android:id="@+id/row_9" layout="@layout/pos_row" />
-                    <include android:id="@+id/row_10" layout="@layout/pos_row" />
-                </LinearLayout>
-            </ScrollView>
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                    android:layout_marginTop="8dp"
+                    android:text="@string/empty_products"
+                    android:textColor="@color/slate_400"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipe_refresh"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="4dp">
+
+                <ScrollView
+                    android:id="@+id/products_scrollview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <LinearLayout
+                        android:id="@+id/products_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <include android:id="@+id/row_1" layout="@layout/item_product" />
+                        <include android:id="@+id/row_2" layout="@layout/item_product" />
+                        <include android:id="@+id/row_3" layout="@layout/item_product" />
+                        <include android:id="@+id/row_4" layout="@layout/item_product" />
+                        <include android:id="@+id/row_5" layout="@layout/item_product" />
+                        <include android:id="@+id/row_6" layout="@layout/item_product" />
+                        <include android:id="@+id/row_7" layout="@layout/item_product" />
+                        <include android:id="@+id/row_8" layout="@layout/item_product" />
+                        <include android:id="@+id/row_9" layout="@layout/item_product" />
+                        <include android:id="@+id/row_10" layout="@layout/item_product" />
+                    </LinearLayout>
+                </ScrollView>
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+        </FrameLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

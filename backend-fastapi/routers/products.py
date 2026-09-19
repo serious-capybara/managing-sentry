@@ -1,12 +1,16 @@
-from fastapi import APIRouter, HTTPException, Request
+from typing import Union
+from fastapi import APIRouter, HTTPException, Request, Query
 from models.product import ProductResponse
 
 router = APIRouter(tags=["products"])
 
 
 @router.get("/products", response_model=list[ProductResponse])
-@router.get("/get_products.php", response_model=list[ProductResponse], include_in_schema=False)
-async def get_products(request: Request):
+@router.get("/api/products.php", include_in_schema=False)
+async def get_products_api(request: Request, action: Union[str, None] = Query(None)):
+    if action == "categories":
+        return await get_categories(request)
+
     try:
         async with request.app.state.pool.acquire() as conn:
             rows = await conn.fetch("SELECT * FROM products")

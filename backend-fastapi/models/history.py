@@ -8,3 +8,4 @@ class HistoryResponse(BaseModel):
     total_quantity: int
     total_amount: float
     order_status: str
+    notes: str = ""

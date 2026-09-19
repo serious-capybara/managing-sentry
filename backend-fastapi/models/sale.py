@@ -18,6 +18,7 @@ class SaleCreate(BaseModel):
     total_amount: float = Field(ge=0)
     amount_tendered: float = Field(ge=0)
     change_given: float = Field(ge=0)
+    notes: str = ""
     items: list[SaleItem] = Field(min_length=1)
     # CHANGE THIS! PHP doesn't validate items is non-empty until the array
     # check at the top — min_length=1 here enforces it earlier via 422.

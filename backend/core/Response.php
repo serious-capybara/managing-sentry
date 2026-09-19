@@ -1,6 +1,6 @@
 <?php
 
-namespace Core;
+namespace core;
 
 class Response {
     public static function json($data, $status = 200) {

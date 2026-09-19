@@ -16,11 +16,41 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+    <ImageButton
+        android:id="@+id/btn_toggle_menu"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="@dimen/title_top_margin"
+        android:layout_marginStart="16dp"
+        android:background="@drawable/cell_white_bg"
+        android:src="@drawable/ic_menu"
+        app:tint="@color/sidebar_bg"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_offline_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="28dp"
+        android:background="@drawable/notification_pill_bg"
+        android:backgroundTint="@color/sidebar_btn_critical"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp"
+        android:text="Offline Mode"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/btn_toggle_menu"
+        app:layout_constraintBottom_toBottomOf="@id/btn_toggle_menu"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <View
         android:id="@+id/scrim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#80000000"
+        android:elevation="10dp"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -32,6 +62,7 @@
         android:layout_width="280dp"
         android:layout_height="match_parent"
         android:background="@drawable/dash_menu_bg"
+        android:elevation="12dp"
         android:visibility="gone"
         android:clickable="true"
         android:focusable="true"
@@ -48,6 +79,8 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center_horizontal"
+        android:background="@drawable/dash_menu_bg"
+        android:elevation="14dp"
         android:visibility="gone"
         android:clickable="true"
         android:focusable="true"
@@ -55,7 +88,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- App Branding -->
         <TextView
             android:id="@+id/sidebar_app_name"
             android:layout_width="wrap_content"
@@ -69,7 +101,6 @@
             android:textAllCaps="true"
             android:letterSpacing="0.2" />
 
-        <!-- Profile Section -->
         <LinearLayout
             android:id="@+id/profile_section"
             android:layout_width="match_parent"
@@ -184,7 +215,7 @@
             android:layout_width="230dp"
             android:layout_height="@dimen/input_height"
             android:layout_marginBottom="50dp"
-            android:background="@drawable/button_red_bg"
+            android:background="@drawable/bg_button_red"
             app:backgroundTint="@null"
             android:gravity="center"
             android:text="@string/logout"
@@ -192,35 +223,6 @@
             android:textSize="@dimen/header_two" />
 
     </LinearLayout>
-
-    <ImageButton
-        android:id="@+id/btn_toggle_menu"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginTop="@dimen/title_top_margin"
-        android:layout_marginStart="16dp"
-        android:background="@drawable/cell_white_bg"
-        android:src="@drawable/ic_menu"
-        app:tint="@color/sidebar_bg"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/tv_offline_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="28dp"
-        android:background="@drawable/notification_pill_bg"
-        android:backgroundTint="@color/sidebar_btn_critical"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="4dp"
-        android:text="Offline Mode"
-        android:textColor="@color/white"
-        android:textSize="12sp"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="@id/btn_toggle_menu"
-        app:layout_constraintBottom_toBottomOf="@id/btn_toggle_menu"
-        app:layout_constraintEnd_toEndOf="parent" />
 
 
 

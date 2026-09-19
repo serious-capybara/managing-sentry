@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6pWcsUgwjAn8TXKyWiEvcJcecYE5IDpzWpQqwYlIzPyOHozgQv7te9fYr8cSS05
+\restrict 2XxOeJwRdAUiaF2v1FfCnOf3ChzginER7kIbDykmAwnqENfMuvLAC71AMyKBXds
 
 -- Dumped from database version 18.6 (Debian 18.6-1.pgdg13+2)
 -- Dumped by pg_dump version 18.6
 
--- Started on 2026-09-14 22:09:44 PST
+-- Started on 2026-09-19 00:35:51 PST
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -150,6 +150,7 @@ CREATE TABLE public.orders (
     total_amount numeric(12,2) NOT NULL,
     amount_tendered numeric(12,2) NOT NULL,
     change_given numeric(12,2) NOT NULL,
+    notes text,
     CONSTRAINT orders_total_amount_check CHECK ((total_amount >= (0)::numeric))
 );
 
@@ -270,12 +271,20 @@ ALTER TABLE public.users ALTER COLUMN user_id ADD GENERATED ALWAYS AS IDENTITY (
 -- Data for Name: histories; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (1, 1, '2026-09-13 21:40:19.414626+00', 'COMPLETED') ON CONFLICT DO NOTHING;
-INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (2, 2, '2026-09-14 14:41:16.110696+00', 'COMPLETED') ON CONFLICT DO NOTHING;
-INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (3, 3, '2026-09-14 15:00:27.001777+00', 'COMPLETED') ON CONFLICT DO NOTHING;
-INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (4, 4, '2026-09-14 15:00:59.382545+00', 'COMPLETED') ON CONFLICT DO NOTHING;
-INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (5, 5, '2026-09-14 15:02:33.888411+00', 'COMPLETED') ON CONFLICT DO NOTHING;
-INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (6, 6, '2026-09-14 15:48:52.960411+00', 'COMPLETED') ON CONFLICT DO NOTHING;
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (1, 1, '2026-09-13 21:40:19.414626+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (2, 2, '2026-09-14 14:41:16.110696+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (3, 3, '2026-09-14 15:00:27.001777+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (4, 4, '2026-09-14 15:00:59.382545+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (5, 5, '2026-09-14 15:02:33.888411+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (6, 6, '2026-09-14 15:48:52.960411+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (7, 7, '2026-09-16 11:15:44.44384+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (8, 8, '2026-09-16 11:16:52.12506+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (9, 9, '2026-09-16 11:16:52.136017+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (10, 10, '2026-09-17 20:19:44.69911+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (11, 11, '2026-09-17 20:19:44.765639+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (12, 12, '2026-09-18 21:00:05.71289+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (13, 13, '2026-09-18 21:24:03.192654+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (14, 14, '2026-09-18 22:56:13.917552+00', 'COMPLETED');
 
 
 --
@@ -284,14 +293,34 @@ INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (6, 6, '2026-09-14 1
 -- Data for Name: order_items; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (1, 1, 6, 2, 52.50, 75.00, 150.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (2, 2, 2, 3, 4.20, 6.00, 18.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (3, 2, 5, 1, 5.60, 8.00, 8.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (4, 2, 9, 1, 45.50, 65.00, 65.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (5, 3, 2, 7, 4.20, 6.00, 42.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (6, 4, 2, 2, 4.20, 6.00, 12.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (7, 5, 2, 3, 4.20, 6.00, 18.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (8, 6, 9, 3, 45.50, 65.00, 195.00) ON CONFLICT DO NOTHING;
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (1, 1, 6, 2, 52.50, 75.00, 150.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (2, 2, 2, 3, 4.20, 6.00, 18.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (3, 2, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (4, 2, 9, 1, 45.50, 65.00, 65.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (5, 3, 2, 7, 4.20, 6.00, 42.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (6, 4, 2, 2, 4.20, 6.00, 12.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (7, 5, 2, 3, 4.20, 6.00, 18.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (8, 6, 9, 3, 45.50, 65.00, 195.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (9, 7, 7, 4, 80.50, 115.00, 460.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (10, 8, 7, 1, 80.50, 115.00, 115.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (11, 9, 7, 1, 80.50, 115.00, 115.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (12, 10, 1, 2, 3.85, 5.50, 11.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (13, 11, 2, 4, 4.20, 6.00, 24.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (14, 12, 1, 1, 3.85, 5.50, 5.50);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (15, 12, 2, 1, 4.20, 6.00, 6.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (16, 12, 3, 1, 33.60, 48.00, 48.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (17, 12, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (18, 12, 6, 1, 52.50, 75.00, 75.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (19, 12, 7, 1, 80.50, 115.00, 115.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (20, 12, 8, 1, 26.60, 38.00, 38.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (21, 12, 9, 1, 45.50, 65.00, 65.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (22, 12, 10, 1, 5.25, 7.50, 7.50);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (23, 13, 2, 1, 4.20, 6.00, 6.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (24, 13, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (25, 13, 6, 1, 52.50, 75.00, 75.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (26, 14, 2, 1, 4.20, 6.00, 6.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (27, 14, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (28, 14, 6, 1, 52.50, 75.00, 75.00);
 
 
 --
@@ -300,12 +329,20 @@ INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (8, 6, 9, 3, 45.50
 -- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (1, 4, '2026-09-13 21:40:19.414626+00', 150.00, 200.00, 50.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (2, 4, '2026-09-14 14:41:16.110696+00', 91.00, 91.00, 0.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (3, 4, '2026-09-14 15:00:27.001777+00', 42.00, 100.00, 58.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (4, 4, '2026-09-14 15:00:59.382545+00', 12.00, 20.00, 8.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (5, 4, '2026-09-14 15:02:33.888411+00', 18.00, 20.00, 2.00) ON CONFLICT DO NOTHING;
-INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (6, 4, '2026-09-14 15:48:52.960411+00', 195.00, 200.00, 5.00) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (1, 4, '2026-09-13 21:40:19.414626+00', 150.00, 200.00, 50.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (2, 4, '2026-09-14 14:41:16.110696+00', 91.00, 91.00, 0.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (3, 4, '2026-09-14 15:00:27.001777+00', 42.00, 100.00, 58.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (4, 4, '2026-09-14 15:00:59.382545+00', 12.00, 20.00, 8.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (5, 4, '2026-09-14 15:02:33.888411+00', 18.00, 20.00, 2.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (6, 4, '2026-09-14 15:48:52.960411+00', 195.00, 200.00, 5.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (7, 4, '2026-09-16 11:15:44.44384+00', 460.00, 500.00, 40.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (8, 4, '2026-09-16 11:16:52.12506+00', 115.00, 120.00, 5.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (9, 4, '2026-09-16 11:16:52.136017+00', 115.00, 120.00, 5.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (10, 1, '2026-09-17 20:19:44.69911+00', 11.00, 15.00, 4.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (11, 1, '2026-09-17 20:19:44.765639+00', 24.00, 25.00, 1.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (12, 1, '2026-09-18 21:00:05.71289+00', 368.00, 400.00, 32.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (13, 1, '2026-09-18 21:24:03.192654+00', 89.00, 50.00, -39.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (14, 1, '2026-09-18 22:56:13.917552+00', 89.00, 80.00, -9.00, 'fgihcg');
 
 
 --
@@ -314,16 +351,16 @@ INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (6, 4, '2026-09-14 15:4
 -- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.products VALUES (1, 'Biogesic 500mg', 'Medicine', 3.85, 1.65, 5.50, 150, NULL, 20) ON CONFLICT DO NOTHING;
-INSERT INTO public.products VALUES (2, 'Neozep Forte', 'Medicine', 4.20, 1.80, 6.00, 15, NULL, 20) ON CONFLICT DO NOTHING;
-INSERT INTO public.products VALUES (3, 'Safeguard White 130g', 'Personal Care', 33.60, 14.40, 48.00, 75, NULL, 20) ON CONFLICT DO NOTHING;
-INSERT INTO public.products VALUES (4, 'Colgate Regular 150g', 'Personal Care', 66.50, 28.50, 95.00, 0, NULL, 20) ON CONFLICT DO NOTHING;
-INSERT INTO public.products VALUES (5, 'Kopiko Black 3-in-1', 'Beverages', 5.60, 2.40, 8.00, 200, NULL, 20) ON CONFLICT DO NOTHING;
-INSERT INTO public.products VALUES (6, 'Gardenia White Bread', 'Bakery', 52.50, 22.50, 75.00, 25, NULL, 20) ON CONFLICT DO NOTHING;
-INSERT INTO public.products VALUES (7, 'Bear Brand Milk 320g', 'Dairy', 80.50, 34.50, 115.00, 10, NULL, 20) ON CONFLICT DO NOTHING;
-INSERT INTO public.products VALUES (8, 'Century Tuna Oil 155g', 'Canned Goods', 26.60, 11.40, 38.00, 60, NULL, 20) ON CONFLICT DO NOTHING;
-INSERT INTO public.products VALUES (9, 'Pale Pilsen 330ml Can', 'Beverages', 45.50, 19.50, 65.00, 110, NULL, 20) ON CONFLICT DO NOTHING;
-INSERT INTO public.products VALUES (10, 'Poten-Cee Vitamin C', 'Medicine', 5.25, 2.25, 7.50, 86, NULL, 20) ON CONFLICT DO NOTHING;
+INSERT INTO public.products VALUES (4, 'Colgate Regular 150g', 'Personal Care', 66.50, 28.50, 95.00, 0, NULL, 20);
+INSERT INTO public.products VALUES (1, 'Biogesic 500mg', 'Medicine', 3.85, 1.65, 5.50, 147, NULL, 20);
+INSERT INTO public.products VALUES (3, 'Safeguard White 130g', 'Personal Care', 33.60, 14.40, 48.00, 74, NULL, 20);
+INSERT INTO public.products VALUES (7, 'Bear Brand Milk 320g', 'Dairy', 80.50, 34.50, 115.00, 3, NULL, 20);
+INSERT INTO public.products VALUES (8, 'Century Tuna Oil 155g', 'Canned Goods', 26.60, 11.40, 38.00, 59, NULL, 20);
+INSERT INTO public.products VALUES (9, 'Pale Pilsen 330ml Can', 'Beverages', 45.50, 19.50, 65.00, 109, NULL, 20);
+INSERT INTO public.products VALUES (10, 'Poten-Cee Vitamin C', 'Medicine', 5.25, 2.25, 7.50, 85, NULL, 20);
+INSERT INTO public.products VALUES (2, 'Neozep Forte', 'Medicine', 4.20, 1.80, 6.00, 8, NULL, 20);
+INSERT INTO public.products VALUES (5, 'Kopiko Black 3-in-1', 'Beverages', 5.60, 2.40, 8.00, 197, NULL, 20);
+INSERT INTO public.products VALUES (6, 'Gardenia White Bread', 'Bakery', 52.50, 22.50, 75.00, 22, NULL, 20);
 
 
 --
@@ -340,10 +377,10 @@ INSERT INTO public.products VALUES (10, 'Poten-Cee Vitamin C', 'Medicine', 5.25,
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (1, 'Alekos Owner', 'admin', '$2y$10$abcdef1234567890abcdef', 'Admin') ON CONFLICT DO NOTHING;
-INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (2, 'Maria Santos', 'cashier1', '$2y$10$abcdef1234567890abcdef', 'Staff') ON CONFLICT DO NOTHING;
-INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (3, 'Juan Dela Cruz', 'manager1', '$2y$10$abcdef1234567890abcdef', 'Manager') ON CONFLICT DO NOTHING;
-INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (4, 'Resty Aldave', 'cid', '$2y$12$ARqU8.iOVuLSwHMy6T.JZ.bKrlFp760.rVey3rPO4NnIvZVJ5NfW.', 'Developer') ON CONFLICT DO NOTHING;
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (1, 'Alekos Owner', 'admin', '$2y$10$abcdef1234567890abcdef', 'Admin');
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (2, 'Maria Santos', 'cashier1', '$2y$10$abcdef1234567890abcdef', 'Staff');
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (3, 'Juan Dela Cruz', 'manager1', '$2y$10$abcdef1234567890abcdef', 'Manager');
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (4, 'Resty Aldave', 'cid', '$2y$12$ARqU8.iOVuLSwHMy6T.JZ.bKrlFp760.rVey3rPO4NnIvZVJ5NfW.', 'Developer');
 
 
 --
@@ -361,7 +398,7 @@ SELECT pg_catalog.setval('public.capital_configs_config_id_seq', 1, false);
 -- Name: histories_history_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.histories_history_id_seq', 6, true);
+SELECT pg_catalog.setval('public.histories_history_id_seq', 14, true);
 
 
 --
@@ -370,7 +407,7 @@ SELECT pg_catalog.setval('public.histories_history_id_seq', 6, true);
 -- Name: order_items_order_item_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.order_items_order_item_id_seq', 8, true);
+SELECT pg_catalog.setval('public.order_items_order_item_id_seq', 28, true);
 
 
 --
@@ -379,7 +416,7 @@ SELECT pg_catalog.setval('public.order_items_order_item_id_seq', 8, true);
 -- Name: orders_order_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.orders_order_id_seq', 6, true);
+SELECT pg_catalog.setval('public.orders_order_id_seq', 14, true);
 
 
 --
@@ -526,11 +563,11 @@ ALTER TABLE ONLY public.stock_adjustments
     ADD CONSTRAINT fk_stock_adjustments_user FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE RESTRICT;
 
 
--- Completed on 2026-09-14 22:09:44 PST
+-- Completed on 2026-09-19 00:35:51 PST
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6pWcsUgwjAn8TXKyWiEvcJcecYE5IDpzWpQqwYlIzPyOHozgQv7te9fYr8cSS05
+\unrestrict 2XxOeJwRdAUiaF2v1FfCnOf3ChzginER7kIbDykmAwnqENfMuvLAC71AMyKBXds
 

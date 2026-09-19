@@ -5,15 +5,15 @@ router = APIRouter(tags=["sales"])
 
 
 @router.post("/sales", response_model=SaleResponse, status_code=201)
-@router.post("/make_sale.php", response_model=SaleResponse, include_in_schema=False)
+@router.post("/api/make_sale.php", response_model=SaleResponse, include_in_schema=False)
 async def make_sale(sale: SaleCreate, request: Request):
     async with request.app.state.pool.acquire() as conn:
         async with conn.transaction():
             try:
                 order_row = await conn.fetchrow(
-                    "INSERT INTO orders (user_id, total_amount, amount_tendered, change_given) "
-                    "VALUES ($1, $2, $3, $4) RETURNING order_id",
-                    sale.user_id, sale.total_amount, sale.amount_tendered, sale.change_given
+                    "INSERT INTO orders (user_id, total_amount, amount_tendered, change_given, notes) "
+                    "VALUES ($1, $2, $3, $4, $5) RETURNING order_id",
+                    sale.user_id, sale.total_amount, sale.amount_tendered, sale.change_given, sale.notes
                 )
                 order_id = order_row["order_id"]
 

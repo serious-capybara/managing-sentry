@@ -2,8 +2,9 @@
 
 require_once __DIR__ . '/../init.php';
 
-use Config\Database;
-use Core\Response;
+use config\Database;
+use core\Response;
+use Exception;
 
 $database = new Database();
 $conn = $database->getConnection();

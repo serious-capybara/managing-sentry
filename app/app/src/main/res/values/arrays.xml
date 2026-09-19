@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="default_options">
+        <item>Sort By</item>
         <item>A-Z</item>
         <item>Low on Stock</item>
         <item>High on Stock</item>
     </string-array>
 
     <string-array name="history_sort_options">
+        <item>Sort By</item>
         <item>All Data</item>
         <item>Today</item>
         <item>This Week</item>
