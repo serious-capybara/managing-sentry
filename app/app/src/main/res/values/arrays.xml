@@ -8,7 +8,6 @@
     </string-array>
 
     <string-array name="history_sort_options">
-        <item>Sort By</item>
         <item>All Data</item>
         <item>Today</item>
         <item>This Week</item>

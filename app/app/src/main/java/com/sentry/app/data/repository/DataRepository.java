@@ -39,7 +39,7 @@ public class DataRepository {
     
     private static long sLastProductsRefreshTime = 0;
     private static long sLastHistoryRefreshTime = 0;
-    private static final long REFRESH_COOLDOWN = 10000; // 10 seconds cooldown
+    private static final long REFRESH_COOLDOWN = 10000;
 
     public static boolean hasSyncedProducts() {
         return sHasSyncedProductsThisSession;
@@ -57,9 +57,6 @@ public class DataRepository {
         sHasSyncedHistoryThisSession = true;
     }
     
-    /**
-     * Returns remaining cooldown time in seconds for Products refresh.
-     */
     public static int getProductsCooldownSeconds() {
         long elapsed = System.currentTimeMillis() - sLastProductsRefreshTime;
         return (int) Math.max(0, (REFRESH_COOLDOWN - elapsed) / 1000);
@@ -69,9 +66,6 @@ public class DataRepository {
         sLastProductsRefreshTime = System.currentTimeMillis();
     }
     
-    /**
-     * Returns remaining cooldown time in seconds for History refresh.
-     */
     public static int getHistoryCooldownSeconds() {
         long elapsed = System.currentTimeMillis() - sLastHistoryRefreshTime;
         return (int) Math.max(0, (REFRESH_COOLDOWN - elapsed) / 1000);
@@ -127,7 +121,6 @@ public class DataRepository {
                         List<History> history = response.body();
                         sortHistoryDescending(history);
                         executor.execute(() -> {
-                            db.historyDao().deleteSyncedHistory();
                             db.historyDao().insertHistory(history);
                             remoteCallback.onSuccess(history);
                         });

@@ -10,8 +10,6 @@ import com.sentry.app.ui.common.NotificationHelper;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -41,10 +39,10 @@ public class DashboardFragment extends BaseFragment {
     private String currentSort = "Sort By";
     private final Map<Integer, Integer> cart = new LinkedHashMap<>();
     private DataRepository repository;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isNetworkSyncDone = false;
     private boolean isSlowPillShown = false;
     private boolean isAlreadyAnimated = false;
+    private boolean isBatchLoadingPending = false;
 
     @Nullable
     @Override
@@ -56,12 +54,15 @@ public class DashboardFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         repository = new DataRepository(requireContext());
-        hideAllRows(view);
         setupUI(view);
         setupResizableDividers(view);
         setupSearchAndSort(view);
+        
+        mainHandler.postDelayed(() -> {
+            if (isAdded()) fetchProducts(false, true);
+        }, 500);
+        
         setupSwipeRefresh(view);
-        fetchProducts(false, true);
     }
 
     private void setupSwipeRefresh(View view) {
@@ -69,30 +70,6 @@ public class DashboardFragment extends BaseFragment {
         if (swipeRefresh == null) return;
         swipeRefresh.setColorSchemeResources(R.color.sidebar_bg, R.color.sidebar_btn_primary);
         swipeRefresh.setOnRefreshListener(() -> fetchProducts(true, true));
-    }
-
-    private void hideAllRows(View view) {
-        int[] rowIds = {R.id.row_1, R.id.row_2, R.id.row_3, R.id.row_4, R.id.row_5, R.id.row_6, R.id.row_7, R.id.row_8, R.id.row_9, R.id.row_10};
-        for (int id : rowIds) {
-            View row = view.findViewById(id);
-            if (row != null) {
-                row.animate().cancel();
-                row.setScaleX(1f);
-                row.setScaleY(1f);
-                row.setAlpha(1f);
-                row.setVisibility(View.GONE);
-            }
-        }
-        int[] cartRowIds = {
-                R.id.cart_row_1, R.id.cart_row_2, R.id.cart_row_3, R.id.cart_row_4, R.id.cart_row_5,
-                R.id.cart_row_6, R.id.cart_row_7, R.id.cart_row_8, R.id.cart_row_9, R.id.cart_row_10,
-                R.id.cart_row_11, R.id.cart_row_12, R.id.cart_row_13, R.id.cart_row_14, R.id.cart_row_15,
-                R.id.cart_row_16, R.id.cart_row_17, R.id.cart_row_18, R.id.cart_row_19, R.id.cart_row_20
-        };
-        for (int id : cartRowIds) {
-            View row = view.findViewById(id);
-            if (row != null) row.setVisibility(View.GONE);
-        }
     }
 
     private void setupSearchAndSort(View view) {
@@ -161,18 +138,19 @@ public class DashboardFragment extends BaseFragment {
         isNetworkSyncDone = false;
         isSlowPillShown = false;
         isAlreadyAnimated = false;
+        isBatchLoadingPending = false;
         boolean firstSessionSync = !DataRepository.hasSyncedProducts();
         boolean canShowPills = isManualRefresh || firstSessionSync;
 
         mainHandler.postDelayed(() -> {
-            if (!isNetworkSyncDone && getActivity() != null) {
+            if (!isNetworkSyncDone && isAdded()) {
                 if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                if (canShowPills && !isSlowPillShown) {
+                if (canShowPills && !isSlowPillShown && repository.isOnline()) {
                     isSlowPillShown = true;
                     NotificationHelper.showNotification(getActivity(), 
                         "Slow connection.", 
                         "Working with saved data...", 
-                        getResources().getColor(R.color.pill_bg_logout, getActivity().getTheme()));
+                        getResources().getColor(R.color.pill_bg_logout, requireActivity().getTheme()));
                 }
             }
         }, 5000);
@@ -184,11 +162,10 @@ public class DashboardFragment extends BaseFragment {
                     if (!isNetworkSyncDone) {
                         hideSkeleton(container);
                         productList = data;
-                        applyFilters(false);
-                        if (shouldAnimate && !isManualRefresh && !isAlreadyAnimated) {
-                            animateTableRows(container);
-                            isAlreadyAnimated = true;
-                        }
+                        
+                        boolean needsAnimation = shouldAnimate && !isManualRefresh && !isAlreadyAnimated;
+                        applyFilters(needsAnimation);
+                        if (needsAnimation) isAlreadyAnimated = true;
                     }
                 });
             },
@@ -201,12 +178,10 @@ public class DashboardFragment extends BaseFragment {
                         hideSkeleton(container);
                         if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
                         productList = data;
-                        applyFilters(false);
                         
-                        if (shouldAnimate && (!isAlreadyAnimated || isManualRefresh)) {
-                            animateTableRows(container);
-                            isAlreadyAnimated = true;
-                        }
+                        boolean needsAnimation = shouldAnimate && (!isAlreadyAnimated || isManualRefresh);
+                        applyFilters(needsAnimation);
+                        if (needsAnimation) isAlreadyAnimated = true;
                         
                         if (canShowPills) {
                             NotificationHelper.showNotification(getActivity(), 
@@ -374,51 +349,85 @@ public class DashboardFragment extends BaseFragment {
         ViewGroup container = view.findViewById(R.id.dashboard_content);
         if (container == null) return;
         hideSkeleton(container);
+        
         View emptyStateContainer = view.findViewById(R.id.empty_state_products);
-        TextView emptyView = view.findViewById(R.id.tv_empty_products);
         View scrollView = view.findViewById(R.id.dashboard_scrollview);
+        
         if (filteredList.isEmpty()) {
-            if (emptyStateContainer != null) {
-                emptyStateContainer.setVisibility(View.VISIBLE);
-                if (productList.isEmpty()) {
-                    if (emptyView != null) emptyView.setText(R.string.empty_products);
-                } else if (emptyView != null) emptyView.setText(R.string.products_not_found);
-            }
+            if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
             if (scrollView != null) scrollView.setVisibility(View.GONE);
+            container.removeAllViews();
+            isBatchLoadingPending = false;
             return;
         }
+        
         if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
         if (scrollView != null) scrollView.setVisibility(View.VISIBLE);
 
-        int[] rowIds = {R.id.row_1, R.id.row_2, R.id.row_3, R.id.row_4, R.id.row_5, R.id.row_6, R.id.row_7, R.id.row_8, R.id.row_9, R.id.row_10};
-        int index = 0;
-        for (int id : rowIds) {
-            View row = view.findViewById(id);
-            if (row != null) {
-                if (index < filteredList.size()) {
-                    Product p = filteredList.get(index);
-                    hideViews(row, R.id.row_timestamp, R.id.row_order, R.id.row_category, R.id.row_sales, R.id.row_subtotal, R.id.row_status_container, R.id.row_cart_actions);
-                    showViews(row, R.id.row_name, R.id.row_quantity, R.id.row_srp, R.id.row_action_container, R.id.row_checkout);
-                    setText(row, R.id.row_name, p.getName());
-                    setText(row, R.id.row_quantity, String.valueOf(p.getStockQuantity()));
-                    setText(row, R.id.row_srp, String.format(Locale.US, "₱ %.2f", p.getRetailPrice()));
-                    View checkoutBtn = row.findViewById(R.id.row_checkout);
-                    if (checkoutBtn != null) {
-                        checkoutBtn.setEnabled(p.getStockQuantity() > 0);
-                        checkoutBtn.setAlpha(p.getStockQuantity() > 0 ? 1.0f : 0.5f);
-                        checkoutBtn.setOnClickListener(v -> addToCart(p));
-                    }
-                    row.setVisibility(View.VISIBLE);
-                } else {
-                    row.animate().cancel();
-                    row.setScaleX(1f);
-                    row.setScaleY(1f);
-                    row.setAlpha(1f);
-                    row.setVisibility(View.GONE);
-                }
-            }
-            index++;
+        int currentChildCount = container.getChildCount();
+        int targetCount = filteredList.size();
+        int maxInitialItems = 20;
+
+        int initialLimit;
+        if (shouldAnimate) {
+            initialLimit = Math.min(targetCount, maxInitialItems);
+            isBatchLoadingPending = targetCount > maxInitialItems;
+        } else if (isBatchLoadingPending) {
+            initialLimit = Math.min(targetCount, maxInitialItems);
+        } else {
+            initialLimit = targetCount;
         }
+
+        if (currentChildCount > initialLimit) {
+            container.removeViews(initialLimit, currentChildCount - initialLimit);
+        }
+
+        for (int i = 0; i < initialLimit; i++) {
+            Product p = filteredList.get(i);
+            View row;
+            if (i < container.getChildCount()) {
+                row = container.getChildAt(i);
+            } else {
+                row = LayoutInflater.from(requireContext()).inflate(R.layout.item_product, container, false);
+                container.addView(row);
+            }
+            bindProductRow(row, p);
+        }
+
+        if (shouldAnimate) {
+            animateTableRows(container);
+            
+            if (isBatchLoadingPending) {
+                mainHandler.postDelayed(() -> {
+                    if (!isAdded()) return;
+                    isBatchLoadingPending = false;
+                    for (int i = maxInitialItems; i < filteredList.size(); i++) {
+                        View row = LayoutInflater.from(requireContext()).inflate(R.layout.item_product, container, false);
+                        container.addView(row);
+                        bindProductRow(row, filteredList.get(i));
+                        row.setAlpha(0f);
+                        row.animate().alpha(1f).setDuration(400).start();
+                    }
+                }, 900); 
+            }
+        }
+    }
+
+    private void bindProductRow(View row, Product p) {
+        hideViews(row, R.id.row_timestamp, R.id.row_order, R.id.row_category, R.id.row_sales, R.id.row_subtotal, R.id.row_status_container, R.id.row_cart_actions);
+        showViews(row, R.id.row_name, R.id.row_quantity, R.id.row_srp, R.id.row_action_container, R.id.row_checkout);
+        
+        setText(row, R.id.row_name, p.getName());
+        setText(row, R.id.row_quantity, String.valueOf(p.getStockQuantity()));
+        setText(row, R.id.row_srp, String.format(Locale.US, "₱ %.2f", p.getRetailPrice()));
+        
+        View checkoutBtn = row.findViewById(R.id.row_checkout);
+        if (checkoutBtn != null) {
+            checkoutBtn.setEnabled(p.getStockQuantity() > 0);
+            checkoutBtn.setAlpha(p.getStockQuantity() > 0 ? 1.0f : 0.5f);
+            checkoutBtn.setOnClickListener(v -> addToCart(p));
+        }
+        row.setVisibility(View.VISIBLE);
     }
 
     private void addToCart(Product p) {
@@ -435,62 +444,71 @@ public class DashboardFragment extends BaseFragment {
     private void updateCartUI() {
         View view = getView();
         if (view == null) return;
+        
         View emptyCartTv = view.findViewById(R.id.tv_empty_cart);
         View cartScrollView = view.findViewById(R.id.cart_scrollview);
+        ViewGroup cartContainer = view.findViewById(R.id.cart_items_container);
+        
         boolean isCartEmpty = cart.isEmpty();
         if (emptyCartTv != null) emptyCartTv.setVisibility(isCartEmpty ? View.VISIBLE : View.GONE);
         if (cartScrollView != null) cartScrollView.setVisibility(isCartEmpty ? View.GONE : View.VISIBLE);
-        int[] cartRowIds = {
-                R.id.cart_row_1, R.id.cart_row_2, R.id.cart_row_3, R.id.cart_row_4, R.id.cart_row_5,
-                R.id.cart_row_6, R.id.cart_row_7, R.id.cart_row_8, R.id.cart_row_9, R.id.cart_row_10,
-                R.id.cart_row_11, R.id.cart_row_12, R.id.cart_row_13, R.id.cart_row_14, R.id.cart_row_15,
-                R.id.cart_row_16, R.id.cart_row_17, R.id.cart_row_18, R.id.cart_row_19, R.id.cart_row_20
-        };
+        if (cartContainer == null) return;
+
         List<Integer> cartProductIds = new ArrayList<>(cart.keySet());
-        int rowIndex = 0;
-        for (int id : cartRowIds) {
-            View row = view.findViewById(id);
-            if (row != null) {
-                if (rowIndex < cartProductIds.size()) {
-                    int pid = cartProductIds.get(rowIndex);
-                    Product p = findProduct(pid);
-                    int qty = Objects.requireNonNullElse(cart.get(pid), 0);
-                    hideViews(row, R.id.row_category, R.id.row_srp, R.id.row_timestamp, R.id.row_order, R.id.row_sales, R.id.row_checkout, R.id.row_status_container);
-                    showViews(row, R.id.row_name, R.id.row_quantity, R.id.row_subtotal, R.id.row_action_container, R.id.row_cart_actions);
-                    setText(row, R.id.row_name, p != null ? p.getName() : "Unknown");
-                    setText(row, R.id.row_quantity, String.valueOf(qty));
-                    setText(row, R.id.row_subtotal, String.format(Locale.US, "₱ %.2f", (p != null ? p.getRetailPrice() : 0) * qty));
-                    View btnPlus = row.findViewById(R.id.btn_plus);
-                    View btnMinus = row.findViewById(R.id.btn_minus);
-                    if (btnPlus != null && p != null) {
-                        btnPlus.setEnabled(p.getStockQuantity() > 0);
-                        btnPlus.setOnClickListener(v -> {
-                            if (p.getStockQuantity() > 0) {
-                                p.setStockQuantity(p.getStockQuantity() - 1);
-                                cart.put(pid, qty + 1);
-                                updateProductTable(false);
-                                updateCartUI();
-                            }
-                        });
-                    }
-                    if (btnMinus != null && p != null) {
-                        btnMinus.setOnClickListener(v -> {
-                            p.setStockQuantity(p.getStockQuantity() + 1);
-                            int newQty = qty - 1;
-                            if (newQty <= 0) cart.remove(pid);
-                            else cart.put(pid, newQty);
-                            updateProductTable(false);
-                            updateCartUI();
-                        });
-                    }
-                    if (row.getVisibility() != View.VISIBLE) {
-                        row.setVisibility(View.VISIBLE);
-                        animateSingleRow(row, rowIndex);
-                    }
-                } else row.setVisibility(View.GONE);
-            }
-            rowIndex++;
+        int currentChildCount = cartContainer.getChildCount();
+        int targetCount = cartProductIds.size();
+
+        if (currentChildCount > targetCount) {
+            cartContainer.removeViews(targetCount, currentChildCount - targetCount);
         }
+
+        for (int i = 0; i < targetCount; i++) {
+            int pid = cartProductIds.get(i);
+            Product p = findProduct(pid);
+            int qty = Objects.requireNonNullElse(cart.get(pid), 0);
+            
+            View row;
+            if (i < cartContainer.getChildCount()) {
+                row = cartContainer.getChildAt(i);
+            } else {
+                row = LayoutInflater.from(requireContext()).inflate(R.layout.item_product, cartContainer, false);
+                cartContainer.addView(row);
+                animateSingleRow(row, i);
+            }
+            
+            hideViews(row, R.id.row_category, R.id.row_srp, R.id.row_timestamp, R.id.row_order, R.id.row_sales, R.id.row_checkout, R.id.row_status_container);
+            showViews(row, R.id.row_name, R.id.row_quantity, R.id.row_subtotal, R.id.row_action_container, R.id.row_cart_actions);
+            
+            setText(row, R.id.row_name, p != null ? p.getName() : "Unknown");
+            setText(row, R.id.row_quantity, String.valueOf(qty));
+            setText(row, R.id.row_subtotal, String.format(Locale.US, "₱ %.2f", (p != null ? p.getRetailPrice() : 0) * qty));
+            
+            View btnPlus = row.findViewById(R.id.btn_plus);
+            View btnMinus = row.findViewById(R.id.btn_minus);
+            if (btnPlus != null && p != null) {
+                btnPlus.setEnabled(p.getStockQuantity() > 0);
+                btnPlus.setOnClickListener(v -> {
+                    if (p.getStockQuantity() > 0) {
+                        p.setStockQuantity(p.getStockQuantity() - 1);
+                        cart.put(pid, qty + 1);
+                        updateProductTable(false);
+                        updateCartUI();
+                    }
+                });
+            }
+            if (btnMinus != null && p != null) {
+                btnMinus.setOnClickListener(v -> {
+                    p.setStockQuantity(p.getStockQuantity() + 1);
+                    int newQty = qty - 1;
+                    if (newQty <= 0) cart.remove(pid);
+                    else cart.put(pid, newQty);
+                    updateProductTable(false);
+                    updateCartUI();
+                });
+            }
+            row.setVisibility(View.VISIBLE);
+        }
+        
         TextView totalAmountTv = view.findViewById(R.id.total_amount);
         if (totalAmountTv != null) totalAmountTv.setText(String.format(Locale.US, "₱ %.2f", calculateTotal()));
     }

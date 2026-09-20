@@ -10,9 +10,6 @@ import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-/**
- * RetrofitClient provides a thread-safe singleton for the ApiService.
- */
 public class RetrofitClient {
     private static volatile Retrofit retrofit;
     private static final String BASE_URL = "http://192.168.123.52:8001/";
