@@ -7,8 +7,6 @@ import com.sentry.app.data.repository.DataRepository;
 import com.sentry.app.ui.common.NotificationHelper;
 
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,8 +14,6 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-
-import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,10 +27,10 @@ public class ProductsFragment extends BaseFragment {
     private String currentSearch = "";
     private String currentSort = "Sort By";
     private DataRepository repository;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean isNetworkSyncDone = false;
     private boolean isSlowPillShown = false;
     private boolean isAlreadyAnimated = false;
+    private boolean isBatchLoadingPending = false;
 
     @Nullable
     @Override
@@ -46,10 +42,13 @@ public class ProductsFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         repository = new DataRepository(requireContext());
-        hideAllRows(view);
         setupUI(view);
         setupSearchAndSort(view);
-        fetchProducts(false, true);
+        
+        mainHandler.postDelayed(() -> {
+            if (isAdded()) fetchProducts(false, true);
+        }, 500);
+        
         setupSwipeRefresh(view);
     }
 
@@ -58,20 +57,6 @@ public class ProductsFragment extends BaseFragment {
         if (swipeRefresh == null) return;
         swipeRefresh.setColorSchemeResources(R.color.sidebar_bg, R.color.sidebar_btn_primary);
         swipeRefresh.setOnRefreshListener(() -> fetchProducts(true, true));
-    }
-
-    private void hideAllRows(View view) {
-        int[] rowIds = {R.id.row_1, R.id.row_2, R.id.row_3, R.id.row_4, R.id.row_5, R.id.row_6, R.id.row_7, R.id.row_8, R.id.row_9, R.id.row_10};
-        for (int id : rowIds) {
-            View row = view.findViewById(id);
-            if (row != null) {
-                row.animate().cancel();
-                row.setScaleX(1f);
-                row.setScaleY(1f);
-                row.setAlpha(1f);
-                row.setVisibility(View.GONE);
-            }
-        }
     }
 
     private void setupSearchAndSort(View view) {
@@ -114,7 +99,7 @@ public class ProductsFragment extends BaseFragment {
             filteredList.sort((p1, p2) -> Integer.compare(p2.getStockQuantity(), p1.getStockQuantity()));
         }
         
-        updateTableRows(filteredList, shouldAnimate);
+        updateTableRows(shouldAnimate);
     }
 
     private void fetchProducts(boolean isManualRefresh, boolean shouldAnimate) {
@@ -140,18 +125,19 @@ public class ProductsFragment extends BaseFragment {
         isNetworkSyncDone = false;
         isSlowPillShown = false;
         isAlreadyAnimated = false;
+        isBatchLoadingPending = false;
         boolean firstSessionSync = !DataRepository.hasSyncedProducts();
         boolean canShowPills = isManualRefresh || firstSessionSync;
 
         mainHandler.postDelayed(() -> {
-            if (!isNetworkSyncDone && getActivity() != null) {
+            if (!isNetworkSyncDone && isAdded()) {
                 if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                if (canShowPills && !isSlowPillShown) {
+                if (canShowPills && !isSlowPillShown && repository.isOnline()) {
                     isSlowPillShown = true;
                     NotificationHelper.showNotification(getActivity(), 
                         "Slow connection.", 
                         "Working with saved data...", 
-                        getResources().getColor(R.color.pill_bg_logout, getActivity().getTheme()));
+                        getResources().getColor(R.color.pill_bg_logout, requireActivity().getTheme()));
                 }
             }
         }, 5000);
@@ -163,11 +149,10 @@ public class ProductsFragment extends BaseFragment {
                     if (!isNetworkSyncDone) {
                         hideSkeleton(container);
                         productList = data;
-                        applyFilters(false);
-                        if (shouldAnimate && !isManualRefresh && !isAlreadyAnimated) {
-                            animateTableRows(container);
-                            isAlreadyAnimated = true;
-                        }
+                        
+                        boolean needsAnimation = shouldAnimate && !isManualRefresh && !isAlreadyAnimated;
+                        applyFilters(needsAnimation);
+                        if (needsAnimation) isAlreadyAnimated = true;
                     }
                 });
             },
@@ -180,12 +165,10 @@ public class ProductsFragment extends BaseFragment {
                         hideSkeleton(container);
                         if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
                         productList = data;
-                        applyFilters(false);
                         
-                        if (shouldAnimate && (!isAlreadyAnimated || isManualRefresh)) {
-                            animateTableRows(container);
-                            isAlreadyAnimated = true;
-                        }
+                        boolean needsAnimation = shouldAnimate && (!isAlreadyAnimated || isManualRefresh);
+                        applyFilters(needsAnimation);
+                        if (needsAnimation) isAlreadyAnimated = true;
                         
                         if (canShowPills) {
                             NotificationHelper.showNotification(getActivity(), 
@@ -222,14 +205,14 @@ public class ProductsFragment extends BaseFragment {
 
     private void setupHeader(View header) {
         if (header == null) return;
-        hideViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_category, R.id.header_sales, R.id.header_subtotal, R.id.header_checkout);
+        hideViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_category, R.id.header_sales, R.id.header_subtotal, R.id.header_status);
         showViews(header, R.id.header_name, R.id.header_quantity, R.id.header_srp, R.id.header_status);
         setText(header, R.id.header_quantity, "Stock");
         setText(header, R.id.header_status, "Status");
     }
 
     @SuppressWarnings("all")
-    private void updateTableRows(List<Product> products, boolean shouldAnimate) {
+    private void updateTableRows(boolean shouldAnimate) {
         View view = getView();
         if (view == null) return;
 
@@ -238,49 +221,76 @@ public class ProductsFragment extends BaseFragment {
         hideSkeleton(container);
 
         View emptyStateContainer = view.findViewById(R.id.empty_state_products);
-        TextView emptyView = view.findViewById(R.id.tv_empty_products);
         View scrollView = view.findViewById(R.id.products_scrollview);
 
-        if (products.isEmpty()) {
-            if (emptyStateContainer != null) {
-                emptyStateContainer.setVisibility(View.VISIBLE);
-                if (productList.isEmpty()) {
-                    if (emptyView != null) emptyView.setText(R.string.empty_products);
-                } else {
-                    if (emptyView != null) emptyView.setText(R.string.products_not_found);
-                }
-            }
+        if (filteredList.isEmpty()) {
+            if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.VISIBLE);
             if (scrollView != null) scrollView.setVisibility(View.GONE);
+            container.removeAllViews();
+            isBatchLoadingPending = false;
             return;
         }
 
         if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
         if (scrollView != null) scrollView.setVisibility(View.VISIBLE);
 
-        int[] rowIds = {R.id.row_1, R.id.row_2, R.id.row_3, R.id.row_4, R.id.row_5, R.id.row_6, R.id.row_7, R.id.row_8, R.id.row_9, R.id.row_10};
-        int index = 0;
-        for (int id : rowIds) {
-            View row = view.findViewById(id);
-            if (row != null) {
-                if (index < products.size()) {
-                    Product p = products.get(index);
-                    showViews(row, R.id.row_name, R.id.row_quantity, R.id.row_srp, R.id.row_status_container);
-                    hideViews(row, R.id.row_timestamp, R.id.row_order, R.id.row_category, R.id.row_sales, R.id.row_subtotal, R.id.row_checkout, R.id.row_action_container, R.id.row_cart_actions);
-                    
-                    setText(row, R.id.row_name, p.getName());
-                    setText(row, R.id.row_quantity, String.valueOf(p.getStockQuantity()));
-                    setText(row, R.id.row_srp, String.format(Locale.US, "₱ %.2f", p.getRetailPrice()));
-                    setText(row, R.id.row_status, p.getStatus());
-                    row.setVisibility(View.VISIBLE);
-                } else {
-                    row.animate().cancel();
-                    row.setScaleX(1f);
-                    row.setScaleY(1f);
-                    row.setAlpha(1f);
-                    row.setVisibility(View.GONE);
-                }
-            }
-            index++;
+        int currentChildCount = container.getChildCount();
+        int targetCount = filteredList.size();
+        int maxInitialItems = 20;
+
+        int initialLimit;
+        if (shouldAnimate) {
+            initialLimit = Math.min(targetCount, maxInitialItems);
+            isBatchLoadingPending = targetCount > maxInitialItems;
+        } else if (isBatchLoadingPending) {
+            initialLimit = Math.min(targetCount, maxInitialItems);
+        } else {
+            initialLimit = targetCount;
         }
+
+        if (currentChildCount > initialLimit) {
+            container.removeViews(initialLimit, currentChildCount - initialLimit);
+        }
+
+        for (int i = 0; i < initialLimit; i++) {
+            Product p = filteredList.get(i);
+            View row;
+            if (i < container.getChildCount()) {
+                row = container.getChildAt(i);
+            } else {
+                row = LayoutInflater.from(requireContext()).inflate(R.layout.item_product, container, false);
+                container.addView(row);
+            }
+            bindProductRow(row, p);
+        }
+
+        if (shouldAnimate) {
+            animateTableRows(container);
+            
+            if (isBatchLoadingPending) {
+                mainHandler.postDelayed(() -> {
+                    if (!isAdded()) return;
+                    isBatchLoadingPending = false;
+                    for (int i = maxInitialItems; i < filteredList.size(); i++) {
+                        View row = LayoutInflater.from(requireContext()).inflate(R.layout.item_product, container, false);
+                        container.addView(row);
+                        bindProductRow(row, filteredList.get(i));
+                        row.setAlpha(0f);
+                        row.animate().alpha(1f).setDuration(400).start();
+                    }
+                }, 900);
+            }
+        }
+    }
+
+    private void bindProductRow(View row, Product p) {
+        showViews(row, R.id.row_name, R.id.row_quantity, R.id.row_srp, R.id.row_status_container);
+        hideViews(row, R.id.row_timestamp, R.id.row_order, R.id.row_category, R.id.row_sales, R.id.row_subtotal, R.id.row_checkout, R.id.row_action_container, R.id.row_cart_actions);
+        
+        setText(row, R.id.row_name, p.getName());
+        setText(row, R.id.row_quantity, String.valueOf(p.getStockQuantity()));
+        setText(row, R.id.row_srp, String.format(Locale.US, "₱ %.2f", p.getRetailPrice()));
+        setText(row, R.id.row_status, p.getStatus());
+        row.setVisibility(View.VISIBLE);
     }
 }

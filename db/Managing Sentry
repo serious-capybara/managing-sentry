@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict leuXBTcMYg97Hc3IUUyKDsbfbhbWarGr0enaIyE1933KOZaCv0arq3XHqwNwDLE
+\restrict CpIbEW2SUfg37H7PBeGH5CxR2Sa4cvoDL1P4ytX4FfymJtpeceV5QmJKesW6jGP
 
 -- Dumped from database version 18.6 (Debian 18.6-1.pgdg13+2)
 -- Dumped by pg_dump version 18.6
 
--- Started on 2026-09-20 16:46:36 PST
+-- Started on 2026-09-20 21:16:18 PST
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -361,6 +361,31 @@ INSERT INTO public.products VALUES (10, 'Poten-Cee Vitamin C', 'Medicine', 5.25,
 INSERT INTO public.products VALUES (2, 'Neozep Forte', 'Medicine', 4.20, 1.80, 6.00, 8, NULL, 20);
 INSERT INTO public.products VALUES (5, 'Kopiko Black 3-in-1', 'Beverages', 5.60, 2.40, 8.00, 197, NULL, 20);
 INSERT INTO public.products VALUES (6, 'Gardenia White Bread', 'Bakery', 52.50, 22.50, 75.00, 22, NULL, 20);
+INSERT INTO public.products VALUES (11, 'Lucky Me Pancit Canton 80g', 'Snacks', 10.50, 4.50, 15.00, 120, NULL, 20);
+INSERT INTO public.products VALUES (12, 'San Mig Light 330ml Can', 'Beverages', 49.00, 21.00, 70.00, 85, NULL, 20);
+INSERT INTO public.products VALUES (13, 'Milo Powder Drink 22g', 'Beverages', 7.00, 3.00, 10.00, 250, NULL, 20);
+INSERT INTO public.products VALUES (14, 'Alaxan FR 200mg', 'Medicine', 7.00, 3.00, 10.00, 90, NULL, 20);
+INSERT INTO public.products VALUES (15, 'Palmolive Shampoo 12ml Sachet', 'Personal Care', 4.90, 2.10, 7.00, 180, NULL, 20);
+INSERT INTO public.products VALUES (16, 'SkyFlakes Crackers 250g', 'Snacks', 35.00, 15.00, 50.00, 45, NULL, 20);
+INSERT INTO public.products VALUES (17, 'Argentina Corned Beef 150g', 'Canned Goods', 29.40, 12.60, 42.00, 65, NULL, 20);
+INSERT INTO public.products VALUES (18, 'Datu Puti Soy Sauce 385ml', 'Condiments', 16.80, 7.20, 24.00, 40, NULL, 20);
+INSERT INTO public.products VALUES (19, 'Nature Spring Water 500ml', 'Beverages', 10.50, 4.50, 15.00, 140, NULL, 20);
+INSERT INTO public.products VALUES (20, 'Bioflu Tablet', 'Medicine', 6.30, 2.70, 9.00, 110, NULL, 20);
+INSERT INTO public.products VALUES (21, 'Cream Silk Conditioner 180ml', 'Personal Care', 84.00, 36.00, 120.00, 35, NULL, 20);
+INSERT INTO public.products VALUES (22, 'Nescafe Classic 25g', 'Beverages', 15.40, 6.60, 22.00, 150, NULL, 20);
+INSERT INTO public.products VALUES (23, 'Surf Powder Detergent 80g', 'Household', 8.40, 3.60, 12.00, 200, NULL, 20);
+INSERT INTO public.products VALUES (24, 'San Marino Corned Tuna 180g', 'Canned Goods', 31.50, 13.50, 45.00, 50, NULL, 20);
+INSERT INTO public.products VALUES (25, 'Medicol Advance 200mg', 'Medicine', 5.95, 2.55, 8.50, 95, NULL, 20);
+INSERT INTO public.products VALUES (26, 'Piattos Cheese 85g', 'Snacks', 26.60, 11.40, 38.00, 65, NULL, 20);
+INSERT INTO public.products VALUES (27, 'Mang Tomas All-Purpose Sauce 325g', 'Condiments', 25.20, 10.80, 36.00, 40, NULL, 20);
+INSERT INTO public.products VALUES (28, 'Datu Puti Vinegar 385ml', 'Condiments', 14.00, 6.00, 20.00, 55, NULL, 20);
+INSERT INTO public.products VALUES (29, 'C2 Green Tea Apple 500ml', 'Beverages', 19.60, 8.40, 28.00, 90, NULL, 20);
+INSERT INTO public.products VALUES (30, 'Solmux 500mg Capsule', 'Medicine', 9.80, 4.20, 14.00, 80, NULL, 20);
+INSERT INTO public.products VALUES (31, 'Oishi Prawn Crackers 60g', 'Snacks', 12.60, 5.40, 18.00, 100, NULL, 20);
+INSERT INTO public.products VALUES (32, 'Downy Sunrise Fresh Sachet 28ml', 'Household', 5.60, 2.40, 8.00, 160, NULL, 20);
+INSERT INTO public.products VALUES (33, 'Selecta Fortified Milk 1L', 'Dairy', 64.40, 27.60, 92.00, 18, NULL, 20);
+INSERT INTO public.products VALUES (34, 'Red Horse Beer 330ml Can', 'Beverages', 47.60, 20.40, 68.00, 70, NULL, 20);
+INSERT INTO public.products VALUES (35, 'Tang Orange Juice Powder 20g', 'Beverages', 13.30, 5.70, 19.00, 130, NULL, 20);
 
 
 --
@@ -563,11 +588,11 @@ ALTER TABLE ONLY public.stock_adjustments
     ADD CONSTRAINT fk_stock_adjustments_user FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE RESTRICT;
 
 
--- Completed on 2026-09-20 16:46:36 PST
+-- Completed on 2026-09-20 21:16:18 PST
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict leuXBTcMYg97Hc3IUUyKDsbfbhbWarGr0enaIyE1933KOZaCv0arq3XHqwNwDLE
+\unrestrict CpIbEW2SUfg37H7PBeGH5CxR2Sa4cvoDL1P4ytX4FfymJtpeceV5QmJKesW6jGP
 

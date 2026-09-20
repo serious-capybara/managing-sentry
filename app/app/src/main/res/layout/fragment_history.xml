@@ -119,24 +119,14 @@
                 <ScrollView
                     android:id="@+id/history_scrollview"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="4dp">
 
                     <LinearLayout
                         android:id="@+id/history_content"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical">
-                        <include android:id="@+id/row_1" layout="@layout/item_product" />
-                        <include android:id="@+id/row_2" layout="@layout/item_product" />
-                        <include android:id="@+id/row_3" layout="@layout/item_product" />
-                        <include android:id="@+id/row_4" layout="@layout/item_product" />
-                        <include android:id="@+id/row_5" layout="@layout/item_product" />
-                        <include android:id="@+id/row_6" layout="@layout/item_product" />
-                        <include android:id="@+id/row_7" layout="@layout/item_product" />
-                        <include android:id="@+id/row_8" layout="@layout/item_product" />
-                        <include android:id="@+id/row_9" layout="@layout/item_product" />
-                        <include android:id="@+id/row_10" layout="@layout/item_product" />
-                    </LinearLayout>
+                        android:orientation="vertical" />
                 </ScrollView>
             </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
         </FrameLayout>

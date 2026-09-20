@@ -4,15 +4,20 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.TextView;
 
 import androidx.annotation.ArrayRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.sentry.app.R;
 import com.sentry.app.utils.NetworkUtils;
 
@@ -21,11 +26,30 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 public abstract class BaseFragment extends Fragment {
 
     private ConnectivityManager.NetworkCallback networkCallback;
+    protected final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         setupConnectionStatusMonitoring(view);
+        setupSwipeRefreshLogic(view);
+    }
+
+    private void setupSwipeRefreshLogic(View view) {
+        SwipeRefreshLayout swipeRefresh = view.findViewById(R.id.swipe_refresh);
+        if (swipeRefresh == null) return;
+
+        View scrollable = findScrollableChild(view);
+        if (scrollable != null) {
+            swipeRefresh.setOnChildScrollUpCallback((parent, child) -> scrollable.canScrollVertically(-1));
+        }
+    }
+
+    private View findScrollableChild(View root) {
+        View v = root.findViewById(R.id.dashboard_scrollview);
+        if (v == null) v = root.findViewById(R.id.products_scrollview);
+        if (v == null) v = root.findViewById(R.id.history_scrollview);
+        return v;
     }
 
     protected void setupConnectionStatusMonitoring(View root) {
@@ -89,6 +113,8 @@ public abstract class BaseFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        mainHandler.removeCallbacksAndMessages(null); 
+        
         View view = getView();
         if (view != null) {
             View dot = view.findViewById(R.id.connection_status_dot);
@@ -241,7 +267,6 @@ public abstract class BaseFragment extends Fragment {
     @SuppressWarnings("all")
     private void removeSkeletonViews(ViewGroup container) {
         if (container == null) return;
-        // Iterate multiple times or use a while loop to ensure all are gone
         boolean found;
         do {
             found = false;
@@ -264,10 +289,17 @@ public abstract class BaseFragment extends Fragment {
     protected void animateTableRows(ViewGroup container) {
         if (container == null) return;
         int animatedIndex = 0;
+        int maxAnimatedItems = 20; 
+        
         for (int i = 0; i < container.getChildCount(); i++) {
             View child = container.getChildAt(i);
             if (child != null && child.getVisibility() == View.VISIBLE && !"skeleton".equals(child.getTag())) {
-                animateSingleRow(child, animatedIndex);
+                if (animatedIndex < maxAnimatedItems) {
+                    animateSingleRow(child, animatedIndex);
+                } else {
+                    child.setAlpha(0f);
+                    child.animate().alpha(1f).setDuration(250).setStartDelay(0).start();
+                }
                 animatedIndex++;
             }
         }
@@ -277,15 +309,14 @@ public abstract class BaseFragment extends Fragment {
         if (row == null) return;
         row.animate().cancel();
         row.setAlpha(0f);
-        row.setScaleX(0.85f);
-        row.setScaleY(0.85f);
+        row.setTranslationY(30f);
+        
         row.animate()
                 .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(260)
-                .setStartDelay(animatedIndex * 25L)
-                .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                .translationY(0f)
+                .setDuration(350)
+                .setStartDelay(animatedIndex * 40L)
+                .setInterpolator(new DecelerateInterpolator(1.2f))
                 .start();
     }
 }

@@ -20,7 +20,6 @@ async def get_history(request: Request):
         LEFT JOIN order_items oi ON o.order_id = oi.order_id
         GROUP BY o.order_id, o.transaction_timestamp, o.total_amount, o.notes, h.order_status
         ORDER BY o.transaction_timestamp DESC
-        LIMIT 20
     """
     try:
         async with request.app.state.pool.acquire() as conn:

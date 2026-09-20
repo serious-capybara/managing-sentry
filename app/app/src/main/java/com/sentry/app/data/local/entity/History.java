@@ -4,6 +4,9 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 import com.google.gson.annotations.SerializedName;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 @Entity(tableName = "histories")
 public class History {
@@ -32,33 +35,27 @@ public class History {
     }
 
     public String getDisplayTimestamp() {
-        if (timestamp == null) return "";
-        try {
-            // PostgreSQL format can sometimes include milliseconds
-            String cleanTimestamp = timestamp.split("\\.")[0];
-            java.text.SimpleDateFormat inputSdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US);
-            java.text.SimpleDateFormat outputSdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US);
-            java.util.Date date = inputSdf.parse(cleanTimestamp);
-            if (date != null) {
-                return outputSdf.format(date);
-            }
-        } catch (Exception e) {
-            // Fallback
-        }
-        return timestamp;
+        if (timestamp == null || timestamp.isEmpty()) return "";
+        long millis = getParsedTimestampMillis();
+        if (millis == 0) return timestamp;
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(new Date(millis));
     }
 
     public long getParsedTimestampMillis() {
         if (timestamp == null || timestamp.trim().isEmpty()) return 0L;
-        try {
-            String clean = timestamp.split("\\.")[0].replace("T", " ").replace("Z", "").trim();
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US);
-            java.util.Date date = sdf.parse(clean);
-            return date != null ? date.getTime() : 0L;
-        } catch (Exception e) {
-            return 0L;
+        String clean = timestamp.split("\\.")[0].replace("T", " ").replace("Z", "").trim();
+        
+        String[] formats = {"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm"};
+        for (String format : formats) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.US);
+                Date date = sdf.parse(clean);
+                if (date != null) return date.getTime();
+            } catch (Exception ignored) {}
         }
+        return 0L;
     }
+
     public String getOrderNumber() { return "ORD-" + orderId; }
     public int getOrderId() { return orderId; }
     public int getTotalQuantity() { return totalQuantity; }

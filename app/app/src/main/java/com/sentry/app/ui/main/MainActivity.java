@@ -163,16 +163,22 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupNavigation() {
         findViewById(R.id.btn_dashboard).setOnClickListener(v -> {
-            loadFragment(new DashboardFragment(), true);
-            toggleSidebar(false);
+            if (currentLevel != 0) {
+                loadFragment(new DashboardFragment(), true);
+                toggleSidebar(false);
+            }
         });
         findViewById(R.id.btn_products).setOnClickListener(v -> {
-            loadFragment(new ProductsFragment(), true);
-            toggleSidebar(false);
+            if (currentLevel != 1) {
+                loadFragment(new ProductsFragment(), true);
+                toggleSidebar(false);
+            }
         });
         findViewById(R.id.btn_history).setOnClickListener(v -> {
-            loadFragment(new HistoryFragment(), true);
-            toggleSidebar(false);
+            if (currentLevel != 2) {
+                loadFragment(new HistoryFragment(), true);
+                toggleSidebar(false);
+            }
         });
         findViewById(R.id.btn_log_out).setOnClickListener(v -> {
             showLogoutDialog();
@@ -185,6 +191,8 @@ public class MainActivity extends AppCompatActivity {
         if (targetLevel == null) targetLevel = 0;
 
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.setReorderingAllowed(true);
+        
         if (animate) {
             if (targetLevel > currentLevel) {
                 ft.setCustomAnimations(R.anim.slide_in_up, R.anim.fade_out, R.anim.fade_in, R.anim.slide_out_down);
