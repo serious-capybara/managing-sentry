@@ -4,8 +4,11 @@ import com.sentry.app.R;
 import com.sentry.app.ui.base.BaseFragment;
 import com.sentry.app.data.local.entity.Product;
 import com.sentry.app.data.repository.DataRepository;
+import com.sentry.app.ui.common.NotificationHelper;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,16 +19,22 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
 public class ProductsFragment extends BaseFragment {
 
-    private java.util.List<Product> productList = new java.util.ArrayList<>();
-    private java.util.List<Product> filteredList = new java.util.ArrayList<>();
+    private List<Product> productList = new ArrayList<>();
+    private final List<Product> filteredList = new ArrayList<>();
     private String currentSearch = "";
     private String currentSort = "Sort By";
     private DataRepository repository;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private boolean isNetworkSyncDone = false;
+    private boolean isSlowPillShown = false;
+    private boolean isAlreadyAnimated = false;
 
     @Nullable
     @Override
@@ -40,7 +49,7 @@ public class ProductsFragment extends BaseFragment {
         hideAllRows(view);
         setupUI(view);
         setupSearchAndSort(view);
-        fetchProducts();
+        fetchProducts(false, true);
         setupSwipeRefresh(view);
     }
 
@@ -48,7 +57,7 @@ public class ProductsFragment extends BaseFragment {
         SwipeRefreshLayout swipeRefresh = view.findViewById(R.id.swipe_refresh);
         if (swipeRefresh == null) return;
         swipeRefresh.setColorSchemeResources(R.color.sidebar_bg, R.color.sidebar_btn_primary);
-        swipeRefresh.setOnRefreshListener(() -> fetchProducts());
+        swipeRefresh.setOnRefreshListener(() -> fetchProducts(true, true));
     }
 
     private void hideAllRows(View view) {
@@ -72,7 +81,7 @@ public class ProductsFragment extends BaseFragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 currentSearch = s.toString().toLowerCase().trim();
-                applyFilters();
+                applyFilters(false);
             }
             @Override
             public void afterTextChanged(android.text.Editable s) {}
@@ -80,17 +89,15 @@ public class ProductsFragment extends BaseFragment {
 
         setupSortListener(view, (parent, v, position, id) -> {
             currentSort = (String) parent.getItemAtPosition(position);
-            applyFilters();
+            applyFilters(true);
         });
     }
 
-    private void applyFilters() {
+    private void applyFilters(boolean shouldAnimate) {
         filteredList.clear();
         for (Product p : productList) {
             String name = p.getName() != null ? p.getName().toLowerCase() : "";
-            boolean matchesSearch = name.contains(currentSearch);
-            
-            if (matchesSearch) {
+            if (name.contains(currentSearch)) {
                 filteredList.add(p);
             }
         }
@@ -102,44 +109,105 @@ public class ProductsFragment extends BaseFragment {
                 return n1.compareToIgnoreCase(n2);
             });
         } else if (currentSort.contains("Low on Stock")) {
-            filteredList.sort((p1, p2) -> Integer.compare(p1.getStockQuantity(), p2.getStockQuantity()));
+            filteredList.sort(Comparator.comparingInt(Product::getStockQuantity));
         } else if (currentSort.contains("High on Stock")) {
             filteredList.sort((p1, p2) -> Integer.compare(p2.getStockQuantity(), p1.getStockQuantity()));
         }
         
-        updateTableRows(filteredList);
+        updateTableRows(filteredList, shouldAnimate);
     }
 
-    private void fetchProducts() {
-        ViewGroup container = getView().findViewById(R.id.products_content);
+    private void fetchProducts(boolean isManualRefresh, boolean shouldAnimate) {
         View view = getView();
-        SwipeRefreshLayout swipeRefresh = view != null ? view.findViewById(R.id.swipe_refresh) : null;
-        if (swipeRefresh == null || !swipeRefresh.isRefreshing()) showSkeleton(container, 8);
+        if (view == null) return;
 
-        repository.getProducts(true, new DataRepository.DataCallback<List<Product>>() {
-            @Override
-            public void onSuccess(List<Product> data) {
+        ViewGroup container = view.findViewById(R.id.products_content);
+        if (container == null) return;
+
+        SwipeRefreshLayout swipeRefresh = view.findViewById(R.id.swipe_refresh);
+        
+        if (isManualRefresh) {
+            int cooldown = DataRepository.getProductsCooldownSeconds();
+            if (cooldown > 0) {
+                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                return;
+            }
+            DataRepository.markProductsRefreshStarted();
+        }
+
+        if (productList.isEmpty()) showSkeleton(container, 8);
+
+        isNetworkSyncDone = false;
+        isSlowPillShown = false;
+        isAlreadyAnimated = false;
+        boolean firstSessionSync = !DataRepository.hasSyncedProducts();
+        boolean canShowPills = isManualRefresh || firstSessionSync;
+
+        mainHandler.postDelayed(() -> {
+            if (!isNetworkSyncDone && getActivity() != null) {
+                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                if (canShowPills && !isSlowPillShown) {
+                    isSlowPillShown = true;
+                    NotificationHelper.showNotification(getActivity(), 
+                        "Slow connection.", 
+                        "Working with saved data...", 
+                        getResources().getColor(R.color.pill_bg_logout, getActivity().getTheme()));
+                }
+            }
+        }, 5000);
+
+        repository.getProductsWithSafetyNet(
+            data -> {
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() -> {
-                    hideSkeleton(container);
-                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                    productList = data;
-                    applyFilters();
-                    animateTableRows(container);
+                    if (!isNetworkSyncDone) {
+                        hideSkeleton(container);
+                        productList = data;
+                        applyFilters(false);
+                        if (shouldAnimate && !isManualRefresh && !isAlreadyAnimated) {
+                            animateTableRows(container);
+                            isAlreadyAnimated = true;
+                        }
+                    }
                 });
-            }
+            },
+            new DataRepository.DataCallback<>() {
+                @Override
+                public void onSuccess(List<Product> data) {
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        isNetworkSyncDone = true;
+                        hideSkeleton(container);
+                        if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                        productList = data;
+                        applyFilters(false);
+                        
+                        if (shouldAnimate && (!isAlreadyAnimated || isManualRefresh)) {
+                            animateTableRows(container);
+                            isAlreadyAnimated = true;
+                        }
+                        
+                        if (canShowPills) {
+                            NotificationHelper.showNotification(getActivity(), 
+                                "Products are up to date!", 
+                                null, 
+                                getResources().getColor(R.color.sidebar_btn_primary, getActivity().getTheme()));
+                        }
+                        DataRepository.markProductsSynced();
+                    });
+                }
 
-            @Override
-            public void onError(String error) {
-                if (getActivity() == null) return;
-                getActivity().runOnUiThread(() -> {
-                    hideSkeleton(container);
-                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                    productList.clear();
-                    applyFilters();
-                });
+                @Override
+                public void onError(String error) {
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        isNetworkSyncDone = true;
+                        hideSkeleton(container);
+                        if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                    });
+                }
             }
-        });
+        );
     }
 
     @Override
@@ -154,18 +222,19 @@ public class ProductsFragment extends BaseFragment {
 
     private void setupHeader(View header) {
         if (header == null) return;
-        // Products Table: Name, Stock, SRP, Status
         hideViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_category, R.id.header_sales, R.id.header_subtotal, R.id.header_checkout);
         showViews(header, R.id.header_name, R.id.header_quantity, R.id.header_srp, R.id.header_status);
         setText(header, R.id.header_quantity, "Stock");
         setText(header, R.id.header_status, "Status");
     }
 
-    private void updateTableRows(List<Product> products) {
+    @SuppressWarnings("all")
+    private void updateTableRows(List<Product> products, boolean shouldAnimate) {
         View view = getView();
         if (view == null) return;
 
         ViewGroup container = view.findViewById(R.id.products_content);
+        if (container == null) return;
         hideSkeleton(container);
 
         View emptyStateContainer = view.findViewById(R.id.empty_state_products);
@@ -189,12 +258,12 @@ public class ProductsFragment extends BaseFragment {
         if (scrollView != null) scrollView.setVisibility(View.VISIBLE);
 
         int[] rowIds = {R.id.row_1, R.id.row_2, R.id.row_3, R.id.row_4, R.id.row_5, R.id.row_6, R.id.row_7, R.id.row_8, R.id.row_9, R.id.row_10};
-
-        for (int i = 0; i < rowIds.length; i++) {
-            View row = view.findViewById(rowIds[i]);
+        int index = 0;
+        for (int id : rowIds) {
+            View row = view.findViewById(id);
             if (row != null) {
-                if (i < products.size()) {
-                    Product p = products.get(i);
+                if (index < products.size()) {
+                    Product p = products.get(index);
                     showViews(row, R.id.row_name, R.id.row_quantity, R.id.row_srp, R.id.row_status_container);
                     hideViews(row, R.id.row_timestamp, R.id.row_order, R.id.row_category, R.id.row_sales, R.id.row_subtotal, R.id.row_checkout, R.id.row_action_container, R.id.row_cart_actions);
                     
@@ -211,6 +280,7 @@ public class ProductsFragment extends BaseFragment {
                     row.setVisibility(View.GONE);
                 }
             }
+            index++;
         }
     }
 }

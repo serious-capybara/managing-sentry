@@ -102,6 +102,10 @@
     <string name="products_not_found">Products not found.</string>
     <string name="empty_cart">Your cart is empty. Add products to start checkout.</string>
 
+    <string name="status_back_online">Back Online</string>
+    <string name="status_offline_mode">Offline Mode</string>
+    <string name="username_at_placeholder">\@%1$s</string>
+
     <string-array name="payment_methods">
         <item>Cash</item>
         <item>GCash</item>

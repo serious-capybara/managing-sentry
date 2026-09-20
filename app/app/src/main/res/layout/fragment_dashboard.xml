@@ -88,60 +88,66 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <FrameLayout
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_refresh"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <LinearLayout
-                android:id="@+id/empty_state_products"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <ImageView
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:src="@drawable/ic_search_empty"
-                    app:tint="@color/slate_200"
-                    android:contentDescription="@null" />
-
-                <TextView
-                    android:id="@+id/tv_empty_products"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/empty_products"
-                    android:textColor="@color/slate_400"
-                    android:textSize="16sp" />
-            </LinearLayout>
-
-            <ScrollView
-                android:id="@+id/dashboard_scrollview"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="4dp">
+                android:layout_height="match_parent">
 
                 <LinearLayout
-                    android:id="@+id/dashboard_content"
-                    android:layout_width="match_parent"
+                    android:id="@+id/empty_state_products"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <include android:id="@+id/row_1" layout="@layout/item_product" />
-                    <include android:id="@+id/row_2" layout="@layout/item_product" />
-                    <include android:id="@+id/row_3" layout="@layout/item_product" />
-                    <include android:id="@+id/row_4" layout="@layout/item_product" />
-                    <include android:id="@+id/row_5" layout="@layout/item_product" />
-                    <include android:id="@+id/row_6" layout="@layout/item_product" />
-                    <include android:id="@+id/row_7" layout="@layout/item_product" />
-                    <include android:id="@+id/row_8" layout="@layout/item_product" />
-                    <include android:id="@+id/row_9" layout="@layout/item_product" />
-                    <include android:id="@+id/row_10" layout="@layout/item_product" />
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:src="@drawable/ic_search_empty"
+                        app:tint="@color/slate_200"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:id="@+id/tv_empty_products"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/empty_products"
+                        android:textColor="@color/slate_400"
+                        android:textSize="16sp" />
                 </LinearLayout>
-            </ScrollView>
-        </FrameLayout>
+
+                <ScrollView
+                    android:id="@+id/dashboard_scrollview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="4dp">
+
+                    <LinearLayout
+                        android:id="@+id/dashboard_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <include android:id="@+id/row_1" layout="@layout/item_product" />
+                        <include android:id="@+id/row_2" layout="@layout/item_product" />
+                        <include android:id="@+id/row_3" layout="@layout/item_product" />
+                        <include android:id="@+id/row_4" layout="@layout/item_product" />
+                        <include android:id="@+id/row_5" layout="@layout/item_product" />
+                        <include android:id="@+id/row_6" layout="@layout/item_product" />
+                        <include android:id="@+id/row_7" layout="@layout/item_product" />
+                        <include android:id="@+id/row_8" layout="@layout/item_product" />
+                        <include android:id="@+id/row_9" layout="@layout/item_product" />
+                        <include android:id="@+id/row_10" layout="@layout/item_product" />
+                    </LinearLayout>
+                </ScrollView>
+            </FrameLayout>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     </LinearLayout>
 
     <View

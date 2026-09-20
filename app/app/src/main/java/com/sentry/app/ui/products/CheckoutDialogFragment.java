@@ -1,69 +1,82 @@
 package com.sentry.app.ui.products;
 
 import android.app.Dialog;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.Gravity;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import androidx.print.PrintHelper;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
+import androidx.print.PrintHelper;
 
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.sentry.app.R;
-import com.sentry.app.data.remote.api.RetrofitClient;
-import com.sentry.app.data.remote.dto.ApiResponse;
+import com.sentry.app.data.local.prefs.SessionManager;
 import com.sentry.app.data.remote.dto.SaleItem;
 import com.sentry.app.data.remote.dto.SaleRequest;
-import com.sentry.app.data.local.prefs.SessionManager;
 import com.sentry.app.data.repository.DataRepository;
 
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class CheckoutDialogFragment extends DialogFragment {
 
     private double totalAmount = 0.0;
     private List<SaleItem> saleItems = new ArrayList<>();
-    private EditText etTotalAmount, etAmountReceived, etReference, etChange, etNotes;
+    private EditText etAmountReceived, etReference, etChange, etNotes;
     private LinearLayout receiptContainer;
     private View containerReference;
     private MaterialAutoCompleteTextView actvPaymentMethod;
     private Button btnOk, btnCancel;
-    private Runnable onSaleSuccessListener;
+    private OnSaleSuccessListener listener;
     private boolean isProcessing = false;
     private boolean isSaleCompleted = false;
+    private int generatedOrderId = -1;
 
-    public void setOnSaleSuccessListener(Runnable listener) {
-        this.onSaleSuccessListener = listener;
+    private static final String KEY_TOTAL = "total_amount";
+    private static final String KEY_ITEMS = "sale_items";
+    private static final String KEY_COMPLETED = "is_completed";
+    private static final String KEY_RECEIVED = "received_text";
+    private static final String KEY_NOTES = "notes_text";
+    private static final String KEY_REF = "ref_text";
+    private static final String KEY_PAYMENT = "payment_method";
+    private static final String KEY_ORDER_ID = "order_id";
+
+    public interface OnSaleSuccessListener {
+        void onSaleSuccess();
+    }
+
+    public void setOnSaleSuccessListener(OnSaleSuccessListener listener) {
+        this.listener = listener;
     }
 
     public static CheckoutDialogFragment newInstance(double totalAmount, ArrayList<SaleItem> items) {
         CheckoutDialogFragment fragment = new CheckoutDialogFragment();
         Bundle args = new Bundle();
-        args.putDouble("total_amount", totalAmount);
-        args.putSerializable("sale_items", items);
+        args.putDouble(KEY_TOTAL, totalAmount);
+        args.putSerializable(KEY_ITEMS, items);
         fragment.setArguments(args);
         return fragment;
     }
@@ -71,10 +84,38 @@ public class CheckoutDialogFragment extends DialogFragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            totalAmount = getArguments().getDouble("total_amount", 0.0);
-            saleItems = (List<SaleItem>) getArguments().getSerializable("sale_items");
+        if (savedInstanceState != null) {
+            totalAmount = savedInstanceState.getDouble(KEY_TOTAL);
+            isSaleCompleted = savedInstanceState.getBoolean(KEY_COMPLETED);
+            generatedOrderId = savedInstanceState.getInt(KEY_ORDER_ID, -1);
+            Serializable serializable = savedInstanceState.getSerializable(KEY_ITEMS);
+            if (serializable instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<SaleItem> list = (List<SaleItem>) serializable;
+                saleItems = list;
+            }
+        } else if (getArguments() != null) {
+            totalAmount = getArguments().getDouble(KEY_TOTAL, 0.0);
+            Serializable serializable = getArguments().getSerializable(KEY_ITEMS);
+            if (serializable instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<SaleItem> list = (List<SaleItem>) serializable;
+                saleItems = list;
+            }
         }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putDouble(KEY_TOTAL, totalAmount);
+        outState.putSerializable(KEY_ITEMS, (ArrayList<SaleItem>) saleItems);
+        outState.putBoolean(KEY_COMPLETED, isSaleCompleted);
+        outState.putInt(KEY_ORDER_ID, generatedOrderId);
+        if (etAmountReceived != null) outState.putString(KEY_RECEIVED, etAmountReceived.getText().toString());
+        if (etNotes != null) outState.putString(KEY_NOTES, etNotes.getText().toString());
+        if (etReference != null) outState.putString(KEY_REF, etReference.getText().toString());
+        if (actvPaymentMethod != null) outState.putString(KEY_PAYMENT, actvPaymentMethod.getText().toString());
     }
 
     @NonNull
@@ -101,10 +142,26 @@ public class CheckoutDialogFragment extends DialogFragment {
         setupPaymentMethodDropdown();
         setupCalculations();
         setupActions();
+
+        if (savedInstanceState != null) {
+            if (etAmountReceived != null) etAmountReceived.setText(savedInstanceState.getString(KEY_RECEIVED));
+            if (etNotes != null) etNotes.setText(savedInstanceState.getString(KEY_NOTES));
+            if (etReference != null) etReference.setText(savedInstanceState.getString(KEY_REF));
+            if (actvPaymentMethod != null) {
+                String payment = savedInstanceState.getString(KEY_PAYMENT);
+                actvPaymentMethod.setText(payment, false);
+                updateReferenceVisibility(payment != null ? payment : "");
+            }
+        }
+
+        if (isSaleCompleted) {
+            applyCompletedState();
+        }
+        calculateChange();
     }
 
     private void initializeViews(View view) {
-        etTotalAmount = view.findViewById(R.id.et_total_amount);
+        EditText etTotalAmountLocal = view.findViewById(R.id.et_total_amount);
         etAmountReceived = view.findViewById(R.id.et_amount_received);
         etReference = view.findViewById(R.id.et_reference);
         containerReference = view.findViewById(R.id.container_reference);
@@ -115,8 +172,9 @@ public class CheckoutDialogFragment extends DialogFragment {
         etNotes = view.findViewById(R.id.et_notes);
         receiptContainer = view.findViewById(R.id.receipt_container);
 
-        etTotalAmount.setText(String.format(Locale.US, "₱ %.2f", totalAmount));
-        updateReceiptPreview(0.0, 0.0);
+        if (etTotalAmountLocal != null) {
+            etTotalAmountLocal.setText(String.format(Locale.US, "₱ %.2f", totalAmount));
+        }
     }
 
     private void updateReceiptPreview(double received, double change) {
@@ -125,114 +183,104 @@ public class CheckoutDialogFragment extends DialogFragment {
 
         SessionManager sessionManager = new SessionManager(requireContext());
         String cashierName = sessionManager.getUsername() != null ? sessionManager.getUsername() : "Cashier";
+        String dateStr = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(new Date());
 
-        // Store Info
-        addVerticalSpace(30);
+        addVerticalSpace(24);
         addCenteredRow(getString(R.string.receipt_store_name), true);
-        addVerticalSpace(30);
-
-        addCenteredRow("Cashier: " + cashierName, false);
         addCenteredRow(getString(R.string.receipt_store_place), false);
         addCenteredRow(getString(R.string.receipt_store_phone), false);
-
-        addVerticalSpace(24);
+        
+        addVerticalSpace(16);
         addSeparator();
-        addVerticalSpace(24);
+        addVerticalSpace(16);
 
-        // Items
+        String orderIdText = isSaleCompleted && generatedOrderId != -1 ? "ORD-" + generatedOrderId : "PENDING";
+        addColumnRow("Order ID:", orderIdText);
+        addColumnRow("Date:", dateStr);
+        addColumnRow("Cashier:", cashierName);
+        
+        addVerticalSpace(16);
+        addSeparator();
+        addVerticalSpace(16);
+
         for (SaleItem item : saleItems) {
             String name = item.getProductName() != null ? item.getProductName() : "Item #" + item.getProductId();
-            String qty = item.getQuantity() > 1 ? item.getQuantity() + "x " : "";
+            String qtyStr = item.getQuantity() > 1 ? item.getQuantity() + "x " : "";
             String price = String.format(Locale.US, "%.2f", item.getLineSubtotal());
-            addColumnRow(qty + name, price);
+            addColumnRow(qtyStr + name, price);
         }
-        addVerticalSpace(24);
+        
+        addVerticalSpace(16);
         addSeparator();
-        addVerticalSpace(24);
-
-        // Totals
+        addVerticalSpace(16);
+        
         addColumnRow(getString(R.string.receipt_label_total), String.format(Locale.US, "%.2f", totalAmount));
         addColumnRow(getString(R.string.receipt_label_cash), String.format(Locale.US, "%.2f", received));
-
-        addVerticalSpace(24);
+        addColumnRow(getString(R.string.receipt_label_change), String.format(Locale.US, "%.2f", change));
+        
+        addVerticalSpace(16);
         addSeparator();
-        addVerticalSpace(24);
+        addVerticalSpace(16);
 
         String notes = etNotes != null ? etNotes.getText().toString().trim() : "";
         if (!notes.isEmpty()) {
-            addVerticalSpace(16);
+            addVerticalSpace(12);
             addLeftRow(getString(R.string.label_notes) + ": " + notes);
         }
-        addVerticalSpace(24);
-
+        
+        addVerticalSpace(16);
         addCenteredRow(getString(R.string.receipt_thank_you), true);
-
-        addVerticalSpace(30);
+        addVerticalSpace(24);
     }
 
     private void setupPaymentMethodDropdown() {
+        if (actvPaymentMethod == null) return;
         String[] methods = getResources().getStringArray(R.array.payment_methods);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, methods);
         actvPaymentMethod.setAdapter(adapter);
-        actvPaymentMethod.setText(methods[0], false); // Default to Cash
+        if (actvPaymentMethod.getText().toString().isEmpty()) {
+            actvPaymentMethod.setText(methods[0], false);
+        }
 
         actvPaymentMethod.setOnItemClickListener((parent, view, position, id) -> {
             String selected = (String) parent.getItemAtPosition(position);
-            boolean isOnline = !selected.equalsIgnoreCase("Cash");
-            
-            if (containerReference != null) {
-                containerReference.setVisibility(isOnline ? View.VISIBLE : View.GONE);
-            }
-            if (!isOnline) {
-                etReference.setText("");
-            }
+            updateReferenceVisibility(selected);
         });
     }
 
-    private void setupCalculations() {
-        etAmountReceived.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                calculateChange();
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
-
-        if (etNotes != null) {
-            etNotes.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    calculateChange();
-                }
-
-                @Override
-                public void afterTextChanged(Editable s) {}
-            });
+    private void updateReferenceVisibility(String method) {
+        boolean isOnline = !method.equalsIgnoreCase("Cash");
+        if (containerReference != null) {
+            containerReference.setVisibility(isOnline ? View.VISIBLE : View.GONE);
         }
+        if (!isOnline && etReference != null) {
+            etReference.setText("");
+        }
+    }
+
+    private void setupCalculations() {
+        TextWatcher watcher = new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { calculateChange(); }
+            @Override public void afterTextChanged(Editable s) {}
+        };
+        if (etAmountReceived != null) etAmountReceived.addTextChangedListener(watcher);
+        if (etNotes != null) etNotes.addTextChangedListener(watcher);
     }
 
     private void calculateChange() {
         try {
             double received = parseAmount(etAmountReceived.getText().toString());
-            double change = received - totalAmount;
-
-            if (change < 0) {
-                etChange.setText(getString(R.string.currency_zero));
+            double change = Math.max(0.0, received - totalAmount);
+            if (received < totalAmount) {
+                if (etChange != null) etChange.setText(getString(R.string.currency_zero));
                 updateReceiptPreview(received, 0.0);
             } else {
-                etChange.setText(String.format(Locale.US, getString(R.string.currency_format), change));
+                if (etChange != null) etChange.setText(String.format(Locale.US, getString(R.string.currency_format), change));
                 updateReceiptPreview(received, change);
             }
-        } catch (NumberFormatException e) {
-            etChange.setText(getString(R.string.currency_zero));
+        } catch (Exception e) {
+            if (etChange != null) etChange.setText(getString(R.string.currency_zero));
             updateReceiptPreview(0.0, 0.0);
         }
     }
@@ -255,22 +303,14 @@ public class CheckoutDialogFragment extends DialogFragment {
     private void addColumnRow(String left, String right) {
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
-
+        row.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         TextView tvLeft = createBaseTextView();
         tvLeft.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f));
         tvLeft.setText(left);
-        tvLeft.setGravity(Gravity.START);
-
         TextView tvRight = createBaseTextView();
-        tvRight.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
+        tvRight.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         tvRight.setText(right);
         tvRight.setGravity(Gravity.END);
-
         row.addView(tvLeft);
         row.addView(tvRight);
         receiptContainer.addView(row);
@@ -278,9 +318,7 @@ public class CheckoutDialogFragment extends DialogFragment {
 
     private void addSeparator() {
         View line = new View(requireContext());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 2);
-        line.setLayoutParams(params);
+        line.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2));
         line.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.slate_200));
         receiptContainer.addView(line);
     }
@@ -288,47 +326,51 @@ public class CheckoutDialogFragment extends DialogFragment {
     private void addVerticalSpace(int dp) {
         View space = new View(requireContext());
         int height = (int) (dp * getResources().getDisplayMetrics().density);
-        space.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, height));
+        space.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, height));
         receiptContainer.addView(space);
     }
 
     private TextView createBaseTextView() {
         TextView tv = new TextView(requireContext());
         tv.setTextColor(ContextCompat.getColor(requireContext(), R.color.slate_900));
-        tv.setTextSize(13);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.body_three));
         return tv;
     }
 
     private double parseAmount(String amount) {
         if (amount == null || amount.isEmpty()) return 0.0;
         String clean = amount.replaceAll("[^\\d.]", "");
-        if (clean.isEmpty()) return 0.0;
-        return Double.parseDouble(clean);
+        return clean.isEmpty() ? 0.0 : Double.parseDouble(clean);
     }
 
     private void setupActions() {
-        btnCancel.setOnClickListener(v -> dismiss());
-        btnOk.setOnClickListener(v -> {
-            if (isSaleCompleted) {
-                doPrint();
-            } else {
-                if (isProcessing) return;
-                performSale();
-            }
-        });
+        if (btnCancel != null) btnCancel.setOnClickListener(v -> dismiss());
+        if (btnOk != null) {
+            btnOk.setOnClickListener(v -> {
+                if (isSaleCompleted) doPrint();
+                else if (!isProcessing) performSale();
+            });
+        }
+    }
+
+    private void applyCompletedState() {
+        if (btnOk != null) {
+            btnOk.setText(R.string.btn_print_receipt);
+            btnOk.setEnabled(true);
+        }
+        if (btnCancel != null) btnCancel.setText(R.string.btn_done);
+        if (etAmountReceived != null) etAmountReceived.setEnabled(false);
+        if (etReference != null) etReference.setEnabled(false);
+        if (etNotes != null) etNotes.setEnabled(false);
+        if (actvPaymentMethod != null) actvPaymentMethod.setEnabled(false);
     }
 
     private void doPrint() {
         if (receiptContainer == null) return;
-
-        // Create a bitmap of the receipt
         Bitmap bitmap = Bitmap.createBitmap(receiptContainer.getWidth(), receiptContainer.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
-        canvas.drawColor(Color.WHITE); // Ensure white background for the printed receipt
+        canvas.drawColor(Color.WHITE);
         receiptContainer.draw(canvas);
-
-        // Print the bitmap
         PrintHelper photoPrinter = new PrintHelper(requireContext());
         photoPrinter.setScaleMode(PrintHelper.SCALE_MODE_FIT);
         photoPrinter.printBitmap("Sentry Receipt", bitmap);
@@ -340,49 +382,25 @@ public class CheckoutDialogFragment extends DialogFragment {
             etAmountReceived.setError(getString(R.string.error_insufficient_amount));
             return;
         }
-        
-        String notes = etNotes != null ? etNotes.getText().toString() : "";
-
         isProcessing = true;
         btnOk.setEnabled(false);
         btnOk.setText(R.string.processing);
+        
+        SessionManager sm = new SessionManager(requireContext());
+        SaleRequest req = new SaleRequest(sm.getUserId(), totalAmount, received, received - totalAmount, saleItems, etNotes.getText().toString());
+        if (etReference != null) req.setReferenceNumber(etReference.getText().toString().trim());
 
-        double change = received - totalAmount;
-        
-        SessionManager sessionManager = new SessionManager(requireContext());
-        int userId = sessionManager.getUserId();
-        
-        SaleRequest request = new SaleRequest(userId, totalAmount, received, change, saleItems, notes);
-        
-        DataRepository repository = new DataRepository(requireContext());
-        repository.performSale(request, new DataRepository.DataCallback<Boolean>() {
-            @Override
-            public void onSuccess(Boolean success) {
-                if (getActivity() == null) return;
-                getActivity().runOnUiThread(() -> {
-                    if (onSaleSuccessListener != null) onSaleSuccessListener.run();
-                    
-                    isSaleCompleted = true;
-                    isProcessing = false;
-                    btnOk.setEnabled(true);
-                    btnOk.setText(R.string.btn_print_receipt);
-                    btnCancel.setText(R.string.btn_done);
-                    
-                    // Show a toast or feedback
-                    if (getContext() != null) {
-                        android.widget.Toast.makeText(getContext(), R.string.sale_success, android.widget.Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-
-            @Override
-            public void onError(String error) {
-                if (getActivity() == null) return;
-                getActivity().runOnUiThread(() -> {
-                    if (onSaleSuccessListener != null) onSaleSuccessListener.run();
-                    dismiss();
-                });
-            }
+        new DataRepository(requireContext()).performSale(req, orderId -> {
+            if (getActivity() == null) return;
+            getActivity().runOnUiThread(() -> {
+                if (listener != null) listener.onSaleSuccess();
+                generatedOrderId = orderId;
+                isSaleCompleted = true;
+                isProcessing = false;
+                calculateChange();
+                applyCompletedState();
+                Toast.makeText(getContext(), R.string.sale_success, Toast.LENGTH_SHORT).show();
+            });
         });
     }
 
@@ -390,20 +408,8 @@ public class CheckoutDialogFragment extends DialogFragment {
     public void onStart() {
         super.onStart();
         if (getDialog() != null && getDialog().getWindow() != null) {
-            getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-
-            // Add a small buffer to the window width to prevent black corner artifacts
-            // without changing the actual visible width of the card.
-            int buffer = (int) (8 * getResources().getDisplayMetrics().density); // 4dp each side
-
-            boolean isTablet = getResources().getConfiguration().smallestScreenWidthDp >= 600;
-            int width;
-            if (isTablet) {
-                width = (int) (getResources().getDisplayMetrics().widthPixels * 0.85);
-            } else {
-                width = (int) (getResources().getDisplayMetrics().widthPixels * 0.90);
-            }
-            getDialog().getWindow().setLayout(width + buffer, ViewGroup.LayoutParams.WRAP_CONTENT);
+            int width = (int) (getResources().getDisplayMetrics().widthPixels * (getResources().getConfiguration().smallestScreenWidthDp >= 600 ? 0.80 : 0.90));
+            getDialog().getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
         }
     }
 }

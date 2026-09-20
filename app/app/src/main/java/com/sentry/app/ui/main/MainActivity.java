@@ -2,7 +2,6 @@ package com.sentry.app.ui.main;
 
 import com.sentry.app.data.local.prefs.SessionManager;
 import com.sentry.app.R;
-import com.sentry.app.utils.NetworkUtils;
 import com.sentry.app.ui.dashboard.DashboardFragment;
 import com.sentry.app.ui.products.ProductsFragment;
 import com.sentry.app.ui.history.HistoryFragment;
@@ -15,7 +14,6 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -29,16 +27,26 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.transition.ChangeBounds;
 import androidx.transition.Fade;
 import androidx.transition.Slide;
 import androidx.transition.TransitionManager;
 import androidx.transition.TransitionSet;
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    private int currentFragmentIndex = 0;
+    private View scrim, sidebar;
+    private ViewGroup sidebarContents;
+    private TextView tvOfflineStatus;
     private SessionManager sessionManager;
+    private int currentLevel = 0;
+    private final Map<Class<? extends Fragment>, Integer> fragmentLevels = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,285 +54,190 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         
-        sessionManager = new SessionManager(this);
-        sessionManager.refreshTimestamp();
-
-        if (savedInstanceState != null) {
-            currentFragmentIndex = savedInstanceState.getInt("current_fragment_index", 0);
-        }
-
-        setupEdgeToEdge();
-        setupNavigation(savedInstanceState);
-        setupSidebarButtons();
-        setupToggleMenu();
-        setupScrim();
-        updateProfileUI();
-        checkLoginStatus();
-        scheduleSync();
-        monitorConnectivity();
-    }
-
-    private void monitorConnectivity() {
-        boolean isConnected = NetworkUtils.isNetworkConnected(this);
-        TextView status = findViewById(R.id.tv_offline_status);
-        if (status != null) {
-            status.setVisibility(isConnected ? View.GONE : View.VISIBLE);
-        }
-
-        android.net.ConnectivityManager connectivityManager = (android.net.ConnectivityManager) getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
-        if (connectivityManager == null) return;
-
-        connectivityManager.registerDefaultNetworkCallback(new android.net.ConnectivityManager.NetworkCallback() {
-            @Override
-            public void onAvailable(@NonNull android.net.Network network) {
-                runOnUiThread(() -> {
-                    TextView tvStatus = findViewById(R.id.tv_offline_status);
-                    if (tvStatus != null && tvStatus.getVisibility() == View.VISIBLE) {
-                        tvStatus.setText("Back Online");
-                        tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#22C55E")));
-                        tvStatus.postDelayed(() -> {
-                            tvStatus.animate().alpha(0f).setDuration(400).withEndAction(() -> {
-                                tvStatus.setVisibility(View.GONE);
-                                tvStatus.setAlpha(1f);
-                                tvStatus.setText("Offline Mode");
-                                tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.sidebar_btn_critical, getTheme())));
-                            }).start();
-                        }, 2000);
-                    }
-
-                    // Immediately sync any offline sales — don't wait for the 15-min periodic window
-                    androidx.work.OneTimeWorkRequest immediateSyncRequest =
-                            new androidx.work.OneTimeWorkRequest.Builder(
-                                    com.sentry.app.worker.SyncWorker.class).build();
-                    androidx.work.WorkManager.getInstance(MainActivity.this)
-                            .enqueue(immediateSyncRequest);
-                });
-            }
-
-            @Override
-            public void onLost(@NonNull android.net.Network network) {
-                runOnUiThread(() -> {
-                    TextView tvStatus = findViewById(R.id.tv_offline_status);
-                    if (tvStatus != null) {
-                        tvStatus.animate().cancel();
-                        tvStatus.setAlpha(1f);
-                        tvStatus.setText("Offline Mode");
-                        tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.sidebar_btn_critical, getTheme())));
-                        tvStatus.setVisibility(View.VISIBLE);
-                    }
-                });
-            }
-        });
-    }
-
-
-    private void scheduleSync() {
-        androidx.work.Constraints constraints = new androidx.work.Constraints.Builder()
-                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
-                .build();
-
-        androidx.work.PeriodicWorkRequest syncRequest =
-                new androidx.work.PeriodicWorkRequest.Builder(com.sentry.app.worker.SyncWorker.class, 15, java.util.concurrent.TimeUnit.MINUTES)
-                        .setConstraints(constraints)
-                        .build();
-
-        androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                "SentrySync",
-                androidx.work.ExistingPeriodicWorkPolicy.KEEP,
-                syncRequest
-        );
-    }
-
-    private void checkLoginStatus() {
-        if (getIntent().getBooleanExtra("show_login_success", false)) {
-            getIntent().removeExtra("show_login_success");
-            String userName = sessionManager.getUsername();
-            NotificationHelper.showNotification(this, 
-                getString(R.string.notif_login_success), 
-                userName,
-                getResources().getColor(R.color.sidebar_bg, getTheme()));
-        }
-    }
-
-    private void updateProfileUI() {
-        String fullName = sessionManager.getFullName();
-        String userName = sessionManager.getUsername();
-
-        TextView tvFullName = findViewById(R.id.tv_profile_full_name);
-        TextView tvUserName = findViewById(R.id.tv_profile_username);
-        TextView tvAvatar = findViewById(R.id.tv_avatar);
-
-        if (tvFullName != null) tvFullName.setText(fullName);
-        if (tvUserName != null) tvUserName.setText("@" + userName);
-
-        if (tvAvatar != null && fullName != null && !fullName.isEmpty()) {
-            String initials = getInitials(fullName);
-            tvAvatar.setText(initials);
-        }
-    }
-
-    private String getInitials(String fullName) {
-        String[] parts = fullName.trim().split("\\s+");
-        if (parts.length == 1) {
-            String name = parts[0];
-            if (name.length() >= 2) {
-                return (name.substring(0, 1) + name.substring(name.length() - 1)).toUpperCase();
-            }
-            return name.toUpperCase();
-        } else {
-            String firstPart = parts[0];
-            String lastPart = parts[parts.length - 1];
-            return (firstPart.substring(0, 1) + lastPart.substring(0, 1)).toUpperCase();
-        }
-    }
-
-    private void setupScrim() {
-        View scrim = findViewById(R.id.scrim);
-        if (scrim != null) {
-            scrim.setOnClickListener(v -> toggleSidebar());
-        }
-    }
-
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt("current_fragment_index", currentFragmentIndex);
-    }
-
-    private void setupEdgeToEdge() {
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
         controller.setAppearanceLightNavigationBars(true);
 
-        View mainView = findViewById(R.id.main);
-        if (mainView != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-                return insets;
-            });
-        }
-    }
+        fragmentLevels.put(DashboardFragment.class, 0);
+        fragmentLevels.put(ProductsFragment.class, 1);
+        fragmentLevels.put(HistoryFragment.class, 2);
 
-    private void setupNavigation(Bundle savedInstanceState) {
+        sessionManager = new SessionManager(this);
+        initializeUI();
+        setupInsets();
+        setupNetworkMonitoring();
+        setupWorker();
+
         if (savedInstanceState == null) {
-            loadFragment(new DashboardFragment(), 0);
+            boolean showLoginSuccess = getIntent().getBooleanExtra("show_login_success", false);
+            if (showLoginSuccess) {
+                getIntent().removeExtra("show_login_success");
+                NotificationHelper.showNotification(this, 
+                    getString(R.string.notif_login_success), 
+                    sessionManager.getFullName(),
+                    getResources().getColor(R.color.sidebar_bg, getTheme()));
+            }
+            loadFragment(new DashboardFragment(), false);
         }
     }
 
-    private void setupSidebarButtons() {
-        setSidebarClickListener(R.id.btn_dashboard, new DashboardFragment(), 0);
-        setSidebarClickListener(R.id.btn_products, new ProductsFragment(), 1);
-        setSidebarClickListener(R.id.btn_history, new HistoryFragment(), 2);
-
-        Button btnLogout = findViewById(R.id.btn_log_out);
-        if (btnLogout != null) {
-            btnLogout.setOnClickListener(v -> showLogoutConfirmation());
-        }
-    }
-
-    private void showLogoutConfirmation() {
-        LogoutDialogFragment dialog = new LogoutDialogFragment();
-        dialog.setLogoutListener(() -> {
-            String userName = sessionManager.getUsername();
-            sessionManager.clear();
-            Intent intent = new Intent(this, LoginActivity.class);
-            intent.putExtra("show_logout_success", true);
-            intent.putExtra("logged_out_username", userName);
-            startActivity(intent);
-            finish();
+    private void setupNetworkMonitoring() {
+        tvOfflineStatus = findViewById(R.id.tv_offline_status);
+        ViewCompat.setOnApplyWindowInsetsListener(tvOfflineStatus, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
+            params.topMargin = systemBars.top + (int) (16 * getResources().getDisplayMetrics().density);
+            return insets;
         });
+    }
+
+    public void updateGlobalNetworkStatus(boolean isConnected) {
+        if (tvOfflineStatus == null) return;
+        if (isConnected) {
+            if (tvOfflineStatus.getVisibility() == View.VISIBLE) {
+                tvOfflineStatus.setText(R.string.status_back_online);
+                tvOfflineStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.sidebar_btn_primary, getTheme())));
+                tvOfflineStatus.postDelayed(this::hideOfflinePill, 2000);
+            }
+        } else {
+            tvOfflineStatus.setVisibility(View.VISIBLE);
+            tvOfflineStatus.setAlpha(1f);
+            tvOfflineStatus.setText(R.string.status_offline_mode);
+            tvOfflineStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.sidebar_btn_critical, getTheme())));
+        }
+    }
+
+    private void hideOfflinePill() {
+        tvOfflineStatus.animate().alpha(0f).setDuration(400).withEndAction(() -> {
+            tvOfflineStatus.setVisibility(View.GONE);
+            tvOfflineStatus.setAlpha(1f);
+            tvOfflineStatus.setText(R.string.status_offline_mode);
+            tvOfflineStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.sidebar_btn_critical, getTheme())));
+        }).start();
+    }
+
+    private void setupInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+    }
+
+    private void initializeUI() {
+        scrim = findViewById(R.id.scrim);
+        sidebar = findViewById(R.id.dash_menu);
+        sidebarContents = findViewById(R.id.dash_menu_contents);
+        ImageButton btnToggle = findViewById(R.id.btn_toggle_menu);
+
+        btnToggle.setOnClickListener(v -> toggleSidebar(true));
+        scrim.setOnClickListener(v -> toggleSidebar(false));
+
+        setupProfile();
+        setupNavigation();
+    }
+
+    private void setupProfile() {
+        TextView tvInitials = findViewById(R.id.tv_avatar);
+        TextView tvFullName = findViewById(R.id.tv_profile_full_name);
+        TextView tvUserName = findViewById(R.id.tv_profile_username);
+
+        String fullName = sessionManager.getFullName();
+        String userName = sessionManager.getUsername();
+
+        if (tvFullName != null) tvFullName.setText(fullName);
+        if (tvUserName != null) tvUserName.setText(getString(R.string.username_at_placeholder, userName));
+        if (tvInitials != null) tvInitials.setText(getInitials(fullName));
+    }
+
+    private String getInitials(String fullName) {
+        if (fullName == null || fullName.isEmpty()) return "??";
+        String[] parts = fullName.trim().split("\\s+");
+        if (parts.length == 1) {
+            String name = parts[0];
+            return name.length() >= 2 ? (name.charAt(0) + "" + name.charAt(name.length() - 1)).toUpperCase() : name.toUpperCase();
+        } else {
+            return (parts[0].charAt(0) + "" + parts[parts.length - 1].charAt(0)).toUpperCase();
+        }
+    }
+
+    private void setupNavigation() {
+        findViewById(R.id.btn_dashboard).setOnClickListener(v -> {
+            loadFragment(new DashboardFragment(), true);
+            toggleSidebar(false);
+        });
+        findViewById(R.id.btn_products).setOnClickListener(v -> {
+            loadFragment(new ProductsFragment(), true);
+            toggleSidebar(false);
+        });
+        findViewById(R.id.btn_history).setOnClickListener(v -> {
+            loadFragment(new HistoryFragment(), true);
+            toggleSidebar(false);
+        });
+        findViewById(R.id.btn_log_out).setOnClickListener(v -> {
+            showLogoutDialog();
+            toggleSidebar(false);
+        });
+    }
+
+    private void loadFragment(Fragment fragment, boolean animate) {
+        Integer targetLevel = fragmentLevels.get(fragment.getClass());
+        if (targetLevel == null) targetLevel = 0;
+
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        if (animate) {
+            if (targetLevel > currentLevel) {
+                ft.setCustomAnimations(R.anim.slide_in_up, R.anim.fade_out, R.anim.fade_in, R.anim.slide_out_down);
+            } else if (targetLevel < currentLevel) {
+                ft.setCustomAnimations(R.anim.slide_in_down, R.anim.fade_out, R.anim.fade_in, R.anim.slide_out_up);
+            } else {
+                ft.setCustomAnimations(R.anim.fade_in, R.anim.fade_out);
+            }
+        }
+        currentLevel = targetLevel;
+        ft.replace(R.id.fragment_container, fragment);
+        ft.commit();
+    }
+
+    private void toggleSidebar(boolean show) {
+        TransitionSet set = new TransitionSet()
+                .addTransition(new Slide(Gravity.START).addTarget(R.id.dash_menu).addTarget(R.id.dash_menu_contents))
+                .addTransition(new Fade().addTarget(R.id.scrim))
+                .setDuration(300);
+
+        TransitionManager.beginDelayedTransition((ViewGroup) findViewById(R.id.main), set);
+        
+        scrim.setVisibility(show ? View.VISIBLE : View.GONE);
+        sidebar.setVisibility(show ? View.VISIBLE : View.GONE);
+        sidebarContents.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    private void showLogoutDialog() {
+        LogoutDialogFragment dialog = new LogoutDialogFragment();
+        dialog.setLogoutListener(this::performLogout);
         dialog.show(getSupportFragmentManager(), "LogoutDialog");
     }
 
-    private void setSidebarClickListener(int buttonId, Fragment fragment, int index) {
-        Button button = findViewById(buttonId);
-        if (button != null) {
-            button.setOnClickListener(v -> {
-                loadFragment(fragment, index);
-                toggleSidebar();
-            });
-        }
+    private void performLogout() {
+        String userName = sessionManager.getFullName();
+        sessionManager.clear();
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.putExtra("show_logout_success", true);
+        intent.putExtra("logged_out_username", userName);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
-    private void setupToggleMenu() {
-        ImageButton btnToggleMenu = findViewById(R.id.btn_toggle_menu);
-        if (btnToggleMenu != null) {
-            btnToggleMenu.setOnClickListener(v -> toggleSidebar());
-        }
-    }
+    private void setupWorker() {
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
 
-    private void toggleSidebar() {
-        ViewGroup root = findViewById(R.id.main);
-        View sidebar = findViewById(R.id.dash_menu);
-        View contents = findViewById(R.id.dash_menu_contents);
-        
-        if (sidebar == null || contents == null || root == null) return;
+        OneTimeWorkRequest syncRequest = new OneTimeWorkRequest.Builder(com.sentry.app.worker.SyncWorker.class)
+                .setConstraints(constraints)
+                .build();
 
-        TransitionManager.endTransitions(root);
-
-        boolean isVisible = sidebar.getVisibility() == View.VISIBLE;
-        int nextVisibility = isVisible ? View.GONE : View.VISIBLE;
-
-        applySidebarTransition(isVisible);
-
-        sidebar.setVisibility(nextVisibility);
-        contents.setVisibility(nextVisibility);
-        
-        View scrim = findViewById(R.id.scrim);
-        if (scrim != null) {
-            scrim.setVisibility(nextVisibility);
-        }
-        
-        View btnToggleMenu = findViewById(R.id.btn_toggle_menu);
-        if (btnToggleMenu != null) {
-            btnToggleMenu.setVisibility(View.VISIBLE);
-            btnToggleMenu.setClickable(isVisible);
-        }
-    }
-
-    private void applySidebarTransition(boolean isHiding) {
-        TransitionSet set = new TransitionSet();
-        set.setOrdering(TransitionSet.ORDERING_TOGETHER);
-
-        long duration = 300;
-        android.view.animation.Interpolator interpolator = new androidx.interpolator.view.animation.FastOutSlowInInterpolator();
-
-        Slide sidebarSlide = new Slide(Gravity.START);
-        sidebarSlide.addTarget(R.id.dash_menu);
-        sidebarSlide.setDuration(duration);
-        sidebarSlide.setInterpolator(interpolator);
-        set.addTransition(sidebarSlide);
-
-        Slide contentSlide = new Slide(Gravity.START);
-        contentSlide.addTarget(R.id.dash_menu_contents);
-        contentSlide.setDuration(duration);
-        contentSlide.setInterpolator(interpolator);
-        set.addTransition(contentSlide);
-
-        Fade scrimFade = new Fade();
-        scrimFade.addTarget(R.id.scrim);
-        scrimFade.setDuration(duration);
-        set.addTransition(scrimFade);
-
-        set.addTransition(new ChangeBounds().setDuration(duration));
-
-        TransitionManager.beginDelayedTransition((ViewGroup) findViewById(R.id.main), set);
-    }
-
-    private void loadFragment(Fragment fragment, int targetIndex) {
-        if (findViewById(R.id.fragment_container) != null) {
-            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            
-            if (targetIndex > currentFragmentIndex) {
-                transaction.setCustomAnimations(R.anim.slide_in_up, R.anim.slide_out_up);
-            } else if (targetIndex < currentFragmentIndex) {
-                transaction.setCustomAnimations(R.anim.slide_in_down, R.anim.slide_out_down);
-            }
-            
-            currentFragmentIndex = targetIndex;
-            transaction.replace(R.id.fragment_container, fragment);
-            transaction.commit();
-        }
+        WorkManager.getInstance(this).enqueue(syncRequest);
     }
 }

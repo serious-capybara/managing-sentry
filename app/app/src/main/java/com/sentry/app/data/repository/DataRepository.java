@@ -24,9 +24,6 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-/**
- * DataRepository coordinates data operations between remote API and local database.
- */
 public class DataRepository {
     private final AppDatabase db;
     private final Context context;
@@ -37,6 +34,53 @@ public class DataRepository {
     private static final String STATUS_PENDING = "Pending Sync";
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
+    private static boolean sHasSyncedProductsThisSession = false;
+    private static boolean sHasSyncedHistoryThisSession = false;
+    
+    private static long sLastProductsRefreshTime = 0;
+    private static long sLastHistoryRefreshTime = 0;
+    private static final long REFRESH_COOLDOWN = 10000; // 10 seconds cooldown
+
+    public static boolean hasSyncedProducts() {
+        return sHasSyncedProductsThisSession;
+    }
+
+    public static void markProductsSynced() {
+        sHasSyncedProductsThisSession = true;
+    }
+
+    public static boolean hasSyncedHistory() {
+        return sHasSyncedHistoryThisSession;
+    }
+
+    public static void markHistorySynced() {
+        sHasSyncedHistoryThisSession = true;
+    }
+    
+    /**
+     * Returns remaining cooldown time in seconds for Products refresh.
+     */
+    public static int getProductsCooldownSeconds() {
+        long elapsed = System.currentTimeMillis() - sLastProductsRefreshTime;
+        return (int) Math.max(0, (REFRESH_COOLDOWN - elapsed) / 1000);
+    }
+    
+    public static void markProductsRefreshStarted() {
+        sLastProductsRefreshTime = System.currentTimeMillis();
+    }
+    
+    /**
+     * Returns remaining cooldown time in seconds for History refresh.
+     */
+    public static int getHistoryCooldownSeconds() {
+        long elapsed = System.currentTimeMillis() - sLastHistoryRefreshTime;
+        return (int) Math.max(0, (REFRESH_COOLDOWN - elapsed) / 1000);
+    }
+    
+    public static void markHistoryRefreshStarted() {
+        sLastHistoryRefreshTime = System.currentTimeMillis();
+    }
+
     public DataRepository(Context context) {
         this.context = context.getApplicationContext();
         this.db = AppDatabase.getInstance(context);
@@ -44,12 +88,13 @@ public class DataRepository {
 
     public interface DataCallback<T> {
         void onSuccess(T data);
-        @SuppressWarnings("unused")
-        void onError(String error);
+        default void onError(String error) {}
     }
 
-    public void getProducts(boolean forceRefresh, DataCallback<List<Product>> callback) {
-        if (isOnline() && forceRefresh) {
+    public void getProductsWithSafetyNet(DataCallback<List<Product>> localCallback, DataCallback<List<Product>> remoteCallback) {
+        loadProductsFromDb(localCallback);
+
+        if (isOnline()) {
             RetrofitClient.getApiService().getProducts().enqueue(new Callback<>() {
                 @Override
                 public void onResponse(@NonNull Call<List<Product>> call, @NonNull Response<List<Product>> response) {
@@ -57,32 +102,24 @@ public class DataRepository {
                         List<Product> products = response.body();
                         executor.execute(() -> {
                             db.productDao().insertProducts(products);
-                            callback.onSuccess(products);
+                            remoteCallback.onSuccess(products);
                         });
                     } else {
-                        loadProductsFromDb(callback);
+                        remoteCallback.onError("Server error");
                     }
                 }
-
                 @Override
                 public void onFailure(@NonNull Call<List<Product>> call, @NonNull Throwable t) {
-                    loadProductsFromDb(callback);
+                    remoteCallback.onError(t.getMessage());
                 }
             });
-        } else {
-            loadProductsFromDb(callback);
         }
     }
 
-    private void loadProductsFromDb(DataCallback<List<Product>> callback) {
-        executor.execute(() -> {
-            List<Product> products = db.productDao().getAllProducts();
-            callback.onSuccess(products);
-        });
-    }
+    public void getHistoryWithSafetyNet(DataCallback<List<History>> localCallback, DataCallback<List<History>> remoteCallback) {
+        loadHistoryFromDb(localCallback);
 
-    public void getHistory(boolean forceRefresh, DataCallback<List<History>> callback) {
-        if (isOnline() && forceRefresh) {
+        if (isOnline()) {
             RetrofitClient.getApiService().getHistory().enqueue(new Callback<>() {
                 @Override
                 public void onResponse(@NonNull Call<List<History>> call, @NonNull Response<List<History>> response) {
@@ -92,24 +129,28 @@ public class DataRepository {
                         executor.execute(() -> {
                             db.historyDao().deleteSyncedHistory();
                             db.historyDao().insertHistory(history);
-                            callback.onSuccess(history);
+                            remoteCallback.onSuccess(history);
                         });
                     } else {
-                        loadHistoryFromDb(callback);
+                        remoteCallback.onError("Server error");
                     }
                 }
-
                 @Override
                 public void onFailure(@NonNull Call<List<History>> call, @NonNull Throwable t) {
-                    loadHistoryFromDb(callback);
+                    remoteCallback.onError(t.getMessage());
                 }
             });
-        } else {
-            loadHistoryFromDb(callback);
         }
     }
 
-    private void loadHistoryFromDb(DataCallback<List<History>> callback) {
+    public void loadProductsFromDb(DataCallback<List<Product>> callback) {
+        executor.execute(() -> {
+            List<Product> products = db.productDao().getAllProducts();
+            callback.onSuccess(products);
+        });
+    }
+
+    public void loadHistoryFromDb(DataCallback<List<History>> callback) {
         executor.execute(() -> {
             List<History> history = db.historyDao().getAllHistory();
             sortHistoryDescending(history);
@@ -126,14 +167,16 @@ public class DataRepository {
         });
     }
 
-    public void performSale(SaleRequest request, DataCallback<Boolean> callback) {
+    public void performSale(SaleRequest request, DataCallback<Integer> callback) {
         if (isOnline()) {
             RetrofitClient.getApiService().makeSale(request).enqueue(new Callback<>() {
                 @Override
                 public void onResponse(@NonNull Call<com.sentry.app.data.remote.dto.ApiResponse> call, @NonNull Response<com.sentry.app.data.remote.dto.ApiResponse> response) {
                     if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                        executor.execute(() -> applyLocalSaleEffects(request, STATUS_SUCCESS));
-                        callback.onSuccess(true);
+                        executor.execute(() -> {
+                            int orderId = applyLocalSaleEffects(request, STATUS_SUCCESS);
+                            callback.onSuccess(orderId);
+                        });
                     } else {
                         handleSaleOffline(request, callback);
                     }
@@ -149,19 +192,19 @@ public class DataRepository {
         }
     }
 
-    private void handleSaleOffline(SaleRequest request, DataCallback<Boolean> callback) {
+    private void handleSaleOffline(SaleRequest request, DataCallback<Integer> callback) {
         executor.execute(() -> {
-            applyLocalSaleEffects(request, STATUS_PENDING);
+            int orderId = applyLocalSaleEffects(request, STATUS_PENDING);
             queuePendingSale(request);
+            callback.onSuccess(orderId);
         });
-        callback.onSuccess(true);
     }
 
-    private void applyLocalSaleEffects(SaleRequest request, String status) {
-        if (request.getItems() == null) return;
+    private int applyLocalSaleEffects(SaleRequest request, String status) {
+        if (request.getItems() == null) return -1;
 
         updateLocalStock(request.getItems());
-        recordSaleInHistory(request, status);
+        return recordSaleInHistory(request, status);
     }
 
     private void updateLocalStock(List<SaleItem> items) {
@@ -170,10 +213,11 @@ public class DataRepository {
         }
     }
 
-    private void recordSaleInHistory(SaleRequest request, String status) {
+    private int recordSaleInHistory(SaleRequest request, String status) {
         int totalQty = calculateTotalQuantity(request.getItems());
-        String timestamp = new SimpleDateFormat(DATE_FORMAT, Locale.US).format(new Date());
-        int nextOrderId = db.historyDao().getMaxOrderId() + 1;
+        String timestamp = new SimpleDateFormat(STATUS_PENDING.equals(status) ? DATE_FORMAT : "yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(new Date());
+        int maxOrderId = db.historyDao().getMaxOrderId();
+        int nextOrderId = (maxOrderId > 0) ? maxOrderId + 1 : 1;
 
         History localHistory = new History();
         localHistory.setOrderId(nextOrderId);
@@ -184,6 +228,7 @@ public class DataRepository {
         localHistory.setNotes(request.getNotes());
 
         db.historyDao().insertSingle(localHistory);
+        return nextOrderId;
     }
 
     @SuppressWarnings("all")

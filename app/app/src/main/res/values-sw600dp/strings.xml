@@ -1,8 +1,12 @@
 <resources>
-    <string name="header_category">Category</string>
-    <string name="header_timestamp">TimeStamp</string>
-    <string name="header_qty">Quantity</string>
-    <string name="header_status">Status</string>
-    <string name="header_action">Checkout</string>
-    <string name="header_total">Subtotal</string>
+    <string name="header_name">Name</string>
+    <string name="header_category">Cat</string>
+    <string name="header_srp">SRP</string>
+    <string name="header_qty">Qty</string>
+    <string name="header_timestamp">Time</string>
+    <string name="header_order">Order</string>
+    <string name="header_sales">Sales</string>
+    <string name="header_total">Total</string>
+    <string name="header_action">Action</string>
+    <string name="header_status">Stat</string>
 </resources>

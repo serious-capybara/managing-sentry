@@ -5,8 +5,11 @@ import com.sentry.app.ui.base.BaseFragment;
 import com.sentry.app.data.local.entity.History;
 import com.sentry.app.data.repository.DataRepository;
 import com.sentry.app.ui.products.NotesModal;
+import com.sentry.app.ui.common.NotificationHelper;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,20 +19,24 @@ import androidx.annotation.Nullable;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.Calendar;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class HistoryFragment extends BaseFragment {
 
     private List<History> historyList = new ArrayList<>();
-    private List<History> filteredList = new ArrayList<>();
+    private final List<History> filteredList = new ArrayList<>();
     private String currentSearch = "";
     private String currentSort = "Sort By";
     private DataRepository repository;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private boolean isNetworkSyncDone = false;
+    private boolean isSlowPillShown = false;
+    private boolean isAlreadyAnimated = false;
 
     @Nullable
     @Override
@@ -44,7 +51,7 @@ public class HistoryFragment extends BaseFragment {
         hideAllRows(view);
         setupUI(view);
         setupSearchAndSort(view);
-        fetchHistory();
+        fetchHistory(false, true);
         setupSwipeRefresh(view);
     }
 
@@ -52,7 +59,7 @@ public class HistoryFragment extends BaseFragment {
         SwipeRefreshLayout swipeRefresh = view.findViewById(R.id.swipe_refresh);
         if (swipeRefresh == null) return;
         swipeRefresh.setColorSchemeResources(R.color.sidebar_bg, R.color.sidebar_btn_primary);
-        swipeRefresh.setOnRefreshListener(() -> fetchHistory());
+        swipeRefresh.setOnRefreshListener(() -> fetchHistory(true, true));
     }
 
     private void hideAllRows(View view) {
@@ -76,7 +83,7 @@ public class HistoryFragment extends BaseFragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 currentSearch = s.toString().toLowerCase().trim();
-                applyFilters();
+                applyFilters(false);
             }
             @Override
             public void afterTextChanged(android.text.Editable s) {}
@@ -84,96 +91,138 @@ public class HistoryFragment extends BaseFragment {
 
         setupSortListener(view, (parent, v, position, id) -> {
             currentSort = (String) parent.getItemAtPosition(position);
-            applyFilters();
+            applyFilters(true);
         });
     }
 
-    private void applyFilters() {
+    private void applyFilters(boolean shouldAnimate) {
         filteredList.clear();
-        
         Calendar cal = Calendar.getInstance();
-        
-        // Reset to midnight today
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
         long todayStart = cal.getTimeInMillis();
-        
-        // This Week (Start of current week)
         Calendar weekCal = (Calendar) cal.clone();
         weekCal.set(Calendar.DAY_OF_WEEK, weekCal.getFirstDayOfWeek());
         long weekStart = weekCal.getTimeInMillis();
-        
-        // Last Week (Start of last week to start of this week)
         Calendar lastWeekCal = (Calendar) weekCal.clone();
         lastWeekCal.add(Calendar.WEEK_OF_YEAR, -1);
         long lastWeekStart = lastWeekCal.getTimeInMillis();
-        long lastWeekEnd = weekStart;
 
         for (History h : historyList) {
             String orderNum = h.getOrderNumber() != null ? h.getOrderNumber().toLowerCase() : "";
             boolean matchesSearch = orderNum.contains(currentSearch);
-            boolean matchesDate = true;
-
-            if (h.getTimestamp() != null && !currentSort.equals("Sort By") && !currentSort.equals("All Data")) {
+            boolean isDateMatch;
+            
+            if (h.getTimestamp() != null && !Objects.equals(currentSort, "Sort By") && !Objects.equals(currentSort, "All Data")) {
                 long time = h.getParsedTimestampMillis();
                 if (time > 0) {
-                    if (currentSort.equalsIgnoreCase("Today")) {
-                        matchesDate = time >= todayStart;
-                    } else if (currentSort.equalsIgnoreCase("This Week")) {
-                        matchesDate = time >= weekStart;
-                    } else if (currentSort.equalsIgnoreCase("Last Week")) {
-                        matchesDate = time >= lastWeekStart && time < lastWeekEnd;
-                    }
+                    if (currentSort.equalsIgnoreCase("Today")) isDateMatch = time >= todayStart;
+                    else if (currentSort.equalsIgnoreCase("This Week")) isDateMatch = time >= weekStart;
+                    else if (currentSort.equalsIgnoreCase("Last Week")) isDateMatch = (time >= lastWeekStart && time < weekStart);
+                    else isDateMatch = true;
                 } else {
-                    matchesDate = false; // Invalid timestamp
+                    isDateMatch = false;
                 }
+            } else {
+                isDateMatch = true;
             }
-
-            if (matchesSearch && matchesDate) {
-                filteredList.add(h);
-            }
+            
+            if (matchesSearch && isDateMatch) filteredList.add(h);
         }
-        updateHistoryTable();
+        updateHistoryTable(shouldAnimate);
     }
 
-    private void fetchHistory() {
-        ViewGroup container = getView().findViewById(R.id.history_content);
+    private void fetchHistory(boolean isManualRefresh, boolean shouldAnimate) {
         View view = getView();
-        SwipeRefreshLayout swipeRefresh = view != null ? view.findViewById(R.id.swipe_refresh) : null;
-        if (swipeRefresh == null || !swipeRefresh.isRefreshing()) showSkeleton(container, 6);
-
-        repository.getHistory(true, new DataRepository.DataCallback<List<History>>() {
-            @Override
-            public void onSuccess(List<History> data) {
-                if (getActivity() == null) return;
-                getActivity().runOnUiThread(() -> {
-                    hideSkeleton(container);
-                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                    historyList = data != null ? data : new ArrayList<>();
-                    java.util.Collections.sort(historyList, (h1, h2) -> {
-                        long t1 = h1.getParsedTimestampMillis();
-                        long t2 = h2.getParsedTimestampMillis();
-                        if (t1 != t2) return Long.compare(t2, t1);
-                        return Integer.compare(h2.getOrderId(), h1.getOrderId());
-                    });
-                    applyFilters();
-                    animateTableRows(container);
-                });
+        if (view == null) return;
+        ViewGroup container = view.findViewById(R.id.history_content);
+        if (container == null) return;
+        SwipeRefreshLayout swipeRefresh = view.findViewById(R.id.swipe_refresh);
+        
+        if (isManualRefresh) {
+            int cooldown = DataRepository.getHistoryCooldownSeconds();
+            if (cooldown > 0) {
+                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                return;
             }
+            DataRepository.markHistoryRefreshStarted();
+        }
 
-            @Override
-            public void onError(String error) {
-                if (getActivity() == null) return;
-                getActivity().runOnUiThread(() -> {
-                    hideSkeleton(container);
-                    if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
-                    historyList.clear();
-                    applyFilters();
-                });
+        if (historyList.isEmpty()) showSkeleton(container, 6);
+
+        isNetworkSyncDone = false;
+        isSlowPillShown = false;
+        isAlreadyAnimated = false;
+        boolean canShowPills = isManualRefresh || !DataRepository.hasSyncedHistory();
+
+        mainHandler.postDelayed(() -> {
+            if (!isNetworkSyncDone && getActivity() != null) {
+                if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                if (canShowPills && !isSlowPillShown) {
+                    isSlowPillShown = true;
+                    NotificationHelper.showNotification(getActivity(), 
+                        "Slow connection.", 
+                        "Working with saved history...", 
+                        getResources().getColor(R.color.pill_bg_logout, getActivity().getTheme()));
+                }
             }
+        }, 5000);
+
+        repository.loadHistoryFromDb(data -> {
+            if (getActivity() == null) return;
+            getActivity().runOnUiThread(() -> {
+                if (!isNetworkSyncDone) {
+                    hideSkeleton(container);
+                    historyList = Objects.requireNonNullElseGet(data, ArrayList::new);
+                    applyFilters(false);
+                    if (shouldAnimate && !isManualRefresh && !isAlreadyAnimated) {
+                        animateTableRows(container);
+                        isAlreadyAnimated = true;
+                    }
+                }
+            });
         });
+
+        repository.getHistoryWithSafetyNet(
+            data -> {},
+            new DataRepository.DataCallback<>() {
+                @Override
+                public void onSuccess(List<History> data) {
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        isNetworkSyncDone = true;
+                        hideSkeleton(container);
+                        if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                        historyList = Objects.requireNonNullElseGet(data, ArrayList::new);
+                        applyFilters(false);
+                        
+                        if (shouldAnimate && (!isAlreadyAnimated || isManualRefresh)) {
+                            animateTableRows(container);
+                            isAlreadyAnimated = true;
+                        }
+
+                        if (canShowPills) {
+                            NotificationHelper.showNotification(getActivity(), 
+                                "History is up to date!", 
+                                null, 
+                                getResources().getColor(R.color.sidebar_btn_primary, getActivity().getTheme()));
+                        }
+                        DataRepository.markHistorySynced();
+                    });
+                }
+                @Override
+                public void onError(String error) {
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        isNetworkSyncDone = true;
+                        hideSkeleton(container);
+                        if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+                    });
+                }
+            }
+        );
     }
 
     @Override
@@ -188,61 +237,50 @@ public class HistoryFragment extends BaseFragment {
 
     private void setupHeader(View header) {
         if (header == null) return;
-        // History Table: Time, Order, Qty, Sales, Status
         hideViews(header, R.id.header_name, R.id.header_category, R.id.header_srp, R.id.header_subtotal, R.id.header_checkout);
         showViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_quantity, R.id.header_sales, R.id.header_status);
         setText(header, R.id.header_status, "Status");
     }
 
-    private void updateHistoryTable() {
+    @SuppressWarnings("all")
+    private void updateHistoryTable(boolean shouldAnimate) {
         View view = getView();
         if (view == null) return;
-
         ViewGroup container = view.findViewById(R.id.history_content);
+        if (container == null) return;
         hideSkeleton(container);
-
         View emptyStateContainer = view.findViewById(R.id.empty_state_history);
         TextView emptyView = view.findViewById(R.id.tv_empty_history);
         View scrollView = view.findViewById(R.id.history_scrollview);
-
         if (filteredList.isEmpty()) {
             if (emptyStateContainer != null) {
                 emptyStateContainer.setVisibility(View.VISIBLE);
                 if (historyList.isEmpty()) {
                     if (emptyView != null) emptyView.setText(R.string.empty_history);
-                } else {
-                    if (emptyView != null) emptyView.setText(R.string.history_not_found);
-                }
+                } else if (emptyView != null) emptyView.setText(R.string.history_not_found);
             }
             if (scrollView != null) scrollView.setVisibility(View.GONE);
             return;
         }
-
         if (emptyStateContainer != null) emptyStateContainer.setVisibility(View.GONE);
         if (scrollView != null) scrollView.setVisibility(View.VISIBLE);
-
         int[] rowIds = {R.id.row_1, R.id.row_2, R.id.row_3, R.id.row_4, R.id.row_5, R.id.row_6, R.id.row_7, R.id.row_8, R.id.row_9, R.id.row_10};
-
-        for (int i = 0; i < rowIds.length; i++) {
-            View row = view.findViewById(rowIds[i]);
+        int index = 0;
+        for (int id : rowIds) {
+            View row = view.findViewById(id);
             if (row != null) {
-                if (i < filteredList.size()) {
-                    History h = filteredList.get(i);
+                if (index < filteredList.size()) {
+                    History h = filteredList.get(index);
                     hideViews(row, R.id.row_name, R.id.row_category, R.id.row_srp, R.id.row_subtotal, R.id.row_checkout, R.id.row_action_container, R.id.row_cart_actions);
                     showViews(row, R.id.row_timestamp, R.id.row_order, R.id.row_quantity, R.id.row_sales, R.id.row_status_container);
-                    
                     setText(row, R.id.row_timestamp, h.getDisplayTimestamp());
                     setText(row, R.id.row_order, h.getOrderNumber());
                     setText(row, R.id.row_quantity, String.valueOf(h.getTotalQuantity()));
                     setText(row, R.id.row_sales, String.format(Locale.US, "₱ %.2f", h.getTotalAmount()));
                     setText(row, R.id.row_status, h.getStatus());
-
                     View dot = row.findViewById(R.id.row_notes_dot);
                     boolean hasNotes = h.getNotes() != null && !h.getNotes().trim().isEmpty();
-                    if (dot != null) {
-                        dot.setVisibility(hasNotes ? View.VISIBLE : View.GONE);
-                    }
-
+                    if (dot != null) dot.setVisibility(hasNotes ? View.VISIBLE : View.GONE);
                     View statusView = row.findViewById(R.id.row_status_container);
                     if (statusView != null && hasNotes) {
                         statusView.setOnLongClickListener(v -> {
@@ -252,10 +290,7 @@ public class HistoryFragment extends BaseFragment {
                             }
                             return true;
                         });
-                    } else if (statusView != null) {
-                        statusView.setOnLongClickListener(null);
-                    }
-
+                    } else if (statusView != null) statusView.setOnLongClickListener(null);
                     row.setVisibility(View.VISIBLE);
                 } else {
                     row.animate().cancel();
@@ -265,6 +300,7 @@ public class HistoryFragment extends BaseFragment {
                     row.setVisibility(View.GONE);
                 }
             }
+            index++;
         }
     }
 }

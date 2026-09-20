@@ -115,12 +115,14 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1.5"
-        android:layout_marginEnd="2dp">
+        android:layout_marginEnd="2dp"
+        android:background="@drawable/cell_white_bg">
 
         <Button
             android:id="@+id/row_checkout"
-            android:layout_width="match_parent"
+            android:layout_width="120dp"
             android:layout_height="match_parent"
+            android:layout_gravity="center"
             android:layout_marginTop="6dp"
             android:layout_marginBottom="6dp"
             android:background="@drawable/bg_button_green"
@@ -129,14 +131,16 @@
             android:insetBottom="0dp"
             android:insetLeft="0dp"
             android:insetRight="0dp"
+            android:padding="0dp"
             android:minHeight="0dp"
             android:minWidth="0dp"
             android:text="@string/btn_add_to_cart"
             android:textAllCaps="false"
-            android:textSize="@dimen/body_two"
+            android:textSize="@dimen/body_three"
             android:textStyle="bold"
             android:textColor="@android:color/white"
-            android:gravity="center" />
+            android:gravity="center"
+            android:includeFontPadding="false" />
 
         <LinearLayout
             android:id="@+id/row_cart_actions"
@@ -144,7 +148,7 @@
             android:layout_height="match_parent"
             android:orientation="horizontal"
             android:gravity="center"
-            android:background="@drawable/cell_white_bg"
+            android:paddingHorizontal="16dp"
             android:visibility="gone">
 
             <ImageButton

@@ -25,4 +25,6 @@
     <dimen name="header_min_height">28dp</dimen>
     <dimen name="title_start_margin">48dp</dimen>
     <dimen name="title_top_margin">16dp</dimen>
+
+    <dimen name="checkout_btn_text_size">14sp</dimen>
 </resources>

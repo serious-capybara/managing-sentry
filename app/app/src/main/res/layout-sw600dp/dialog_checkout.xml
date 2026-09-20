@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@android:color/transparent"
-    android:padding="32dp">
+    android:padding="20dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="32dp">
+            android:padding="20dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -27,18 +27,18 @@
                 android:textSize="@dimen/title"
                 android:textStyle="bold"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="32dp" />
+                android:layout_marginBottom="16dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="500dp"
+                android:layout_height="560dp"
                 android:orientation="horizontal">
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="1.2"
-                    android:layout_marginEnd="16dp"
+                    android:layout_weight="1.4"
+                    android:layout_marginEnd="12dp"
                     app:cardBackgroundColor="@color/slate_50"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="0dp">
@@ -53,7 +53,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center_horizontal"
-                            android:layout_marginTop="24dp"
+                            android:layout_marginTop="16dp"
                             android:text="@string/receipt_preview_title"
                             android:textColor="@color/slate_600"
                             android:textSize="@dimen/header_two"
@@ -62,7 +62,7 @@
                         <androidx.core.widget.NestedScrollView
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:layout_marginTop="16dp"
+                            android:layout_marginTop="12dp"
                             android:fillViewport="true"
                             android:scrollbars="none">
 
@@ -71,7 +71,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:orientation="vertical"
-                                android:padding="24dp" />
+                                android:padding="16dp" />
                         </androidx.core.widget.NestedScrollView>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
@@ -80,7 +80,7 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:layout_marginStart="16dp"
+                    android:layout_marginStart="12dp"
                     android:scrollbars="none">
 
                     <LinearLayout
@@ -100,8 +100,8 @@
                             android:id="@+id/et_total_amount"
                             android:layout_width="match_parent"
                             android:layout_height="@dimen/input_height"
-                            android:layout_marginTop="8dp"
-                            android:layout_marginBottom="24dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="12dp"
                             android:background="@drawable/login_input_bg"
                             android:enabled="false"
                             android:focusable="false"
@@ -124,8 +124,8 @@
                             android:id="@+id/et_amount_received"
                             android:layout_width="match_parent"
                             android:layout_height="@dimen/input_height"
-                            android:layout_marginTop="8dp"
-                            android:layout_marginBottom="24dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="12dp"
                             android:background="@drawable/login_input_bg"
                             android:gravity="center_vertical"
                             android:inputType="numberDecimal"
@@ -148,8 +148,8 @@
                             style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:layout_marginBottom="24dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="12dp"
                             app:boxBackgroundColor="@color/input_bg_color"
                             app:boxCornerRadiusBottomEnd="12dp"
                             app:boxCornerRadiusBottomStart="12dp"
@@ -190,8 +190,8 @@
                                 android:id="@+id/et_reference"
                                 android:layout_width="match_parent"
                                 android:layout_height="@dimen/input_height"
-                                android:layout_marginTop="8dp"
-                                android:layout_marginBottom="24dp"
+                                android:layout_marginTop="4dp"
+                                android:layout_marginBottom="12dp"
                                 android:background="@drawable/login_input_bg"
                                 android:gravity="center_vertical"
                                 android:hint="@string/hint_reference"
@@ -215,8 +215,8 @@
                             android:id="@+id/et_change"
                             android:layout_width="match_parent"
                             android:layout_height="@dimen/input_height"
-                            android:layout_marginTop="8dp"
-                            android:layout_marginBottom="24dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="12dp"
                             android:background="@drawable/login_input_bg"
                             android:enabled="false"
                             android:focusable="false"
@@ -239,8 +239,8 @@
                             android:id="@+id/et_notes"
                             android:layout_width="match_parent"
                             android:layout_height="@dimen/input_height"
-                            android:layout_marginTop="8dp"
-                            android:layout_marginBottom="48dp"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="16dp"
                             android:background="@drawable/login_input_bg"
                             android:gravity="center_vertical"
                             android:hint="@string/hint_notes"
@@ -254,33 +254,32 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-
-                            <Button
-                                android:id="@+id/btn_modal_cancel"
-                                android:layout_width="0dp"
-                                android:layout_height="@dimen/input_height"
-                                android:layout_marginEnd="16dp"
-                                android:layout_weight="1"
-                                android:background="@drawable/button_slate_bg"
-                                app:backgroundTint="@null"
-                                android:text="@string/btn_cancel"
-                                android:textAllCaps="false"
-                                android:textColor="@color/slate_900"
-                                android:textSize="@dimen/header_two"
-                                android:textStyle="bold" />
+                            android:orientation="vertical"
+                            android:layout_marginBottom="4dp">
 
                             <Button
                                 android:id="@+id/btn_modal_ok"
-                                android:layout_width="0dp"
+                                android:layout_width="match_parent"
                                 android:layout_height="@dimen/input_height"
-                                android:layout_weight="1"
                                 android:background="@drawable/bg_button_green"
                                 app:backgroundTint="@null"
                                 android:text="@string/btn_ok"
                                 android:textAllCaps="false"
                                 android:textColor="@color/white"
-                                android:textSize="@dimen/header_two"
+                                android:textSize="@dimen/checkout_btn_text_size"
+                                android:textStyle="bold" />
+
+                            <Button
+                                android:id="@+id/btn_modal_cancel"
+                                android:layout_width="match_parent"
+                                android:layout_height="@dimen/input_height"
+                                android:layout_marginTop="8dp"
+                                android:background="@drawable/button_slate_bg"
+                                app:backgroundTint="@null"
+                                android:text="@string/btn_cancel"
+                                android:textAllCaps="false"
+                                android:textColor="@color/slate_900"
+                                android:textSize="@dimen/checkout_btn_text_size"
                                 android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
