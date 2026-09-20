@@ -4,6 +4,8 @@
     <string name="products">Products</string>
     <string name="history">History</string>
     <string name="logout">Log Out</string>
+    <string name="logout_confirm_title">Log Out</string>
+    <string name="logout_confirm_msg">Are you sure you want to end your session?</string>
 
     <!-- Table Headers -->
     <string name="header_name">Name</string>
@@ -36,4 +38,78 @@
     <string name="login_button_text">Log In</string>
     <string name="login_error_invalid">Invalid email or password</string>
     <string name="login_carousel_desc">Carousel image</string>
+
+    <!-- Sidebar / Profile -->
+    <string name="dummy_initials">JD</string>
+    <string name="dummy_full_name">Full Name</string>
+    <string name="dummy_username">username</string>
+
+    <!-- Notifications -->
+    <string name="notif_login_success">Successfully logged in as</string>
+    <string name="notif_logout_success">Successfully logged out as</string>
+
+    <!-- UI Labels -->
+    <string name="label_cart">Cart</string>
+    <string name="label_total_colon">Total :</string>
+    <string name="label_sort_by">Sort By: </string>
+    <string name="hint_search">Search&#8230;</string>
+
+    <!-- Dummy Table Data -->
+    <string name="dummy_amount">₱ 0.00</string>
+    <string name="dummy_name">Name</string>
+    <string name="dummy_category">Category</string>
+    <string name="dummy_time">Time</string>
+    <string name="dummy_order">ORD-0</string>
+    <string name="dummy_qty">0</string>
+    <string name="dummy_status">Status</string>
+    <string name="currency_format">₱ %.2f</string>
+    <string name="currency_zero">₱ 0.00</string>
+
+    <!-- Checkout Modal -->
+    <string name="checkout_title">Checkout Confirmation</string>
+    <string name="label_total_amount">Total Amount</string>
+    <string name="label_amount_received">Amount Received</string>
+    <string name="label_payment_method">Payment Method</string>
+    <string name="label_reference">Reference</string>
+    <string name="hint_reference">Reference #</string>
+    <string name="hint_zero_amount">0.00</string>
+    <string name="label_change">Change</string>
+    <string name="label_notes">Notes</string>
+    <string name="hint_notes">Add transaction notes</string>
+    <string name="btn_ok">Ok</string>
+    <string name="btn_print_receipt">Print Receipt</string>
+    <string name="btn_done">Done</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="sale_success">Sale successful!</string>
+    <string name="processing">Processing…</string>
+    <string name="error_insufficient_amount">The amount received is less than the total amount.</string>
+    <string name="receipt_preview_title">ASCII Receipts</string>
+
+    <!-- Receipt ASCII String Config Templates -->
+    <string name="receipt_store_name">Axiom Market</string>
+    <string name="receipt_store_place">Manila, Philippines</string>
+    <string name="receipt_store_phone">Tel: +63 9123456789</string>
+    <string name="receipt_thank_you">THANK YOU!</string>
+    <string name="receipt_label_subtotal">Subtotal</string>
+    <string name="receipt_label_total">TOTAL</string>
+    <string name="receipt_label_cash">Cash</string>
+    <string name="receipt_label_change">Change Due</string>
+    <string name="receipt_label_item_count">Item Count:</string>
+
+    <string name="empty_history">History is empty. Process a sale to see your history.</string>
+    <string name="history_not_found">Order not found.</string>
+    <string name="empty_products">No products available.</string>
+    <string name="products_not_found">Products not found.</string>
+    <string name="empty_cart">Your cart is empty. Add products to start checkout.</string>
+
+    <string name="status_back_online">Back Online</string>
+    <string name="status_offline_mode">Offline Mode</string>
+    <string name="username_at_placeholder">\@%1$s</string>
+
+    <string-array name="payment_methods">
+        <item>Cash</item>
+        <item>GCash</item>
+        <item>Maya</item>
+        <item>Bank Transfer</item>
+    </string-array>
 </resources>

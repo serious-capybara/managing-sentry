@@ -1,0 +1,573 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict leuXBTcMYg97Hc3IUUyKDsbfbhbWarGr0enaIyE1933KOZaCv0arq3XHqwNwDLE
+
+-- Dumped from database version 18.6 (Debian 18.6-1.pgdg13+2)
+-- Dumped by pg_dump version 18.6
+
+-- Started on 2026-09-20 16:46:36 PST
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 4 (class 2615 OID 2200)
+-- Name: public; Type: SCHEMA; Schema: -; Owner: pg_database_owner
+--
+
+CREATE SCHEMA public;
+
+
+ALTER SCHEMA public OWNER TO pg_database_owner;
+
+--
+-- TOC entry 3513 (class 0 OID 0)
+-- Dependencies: 4
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: pg_database_owner
+--
+
+COMMENT ON SCHEMA public IS 'standard public schema';
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 222 (class 1259 OID 24643)
+-- Name: capital_configs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.capital_configs (
+    config_id integer NOT NULL,
+    starting_capital numeric(12,2) NOT NULL,
+    current_balance numeric(12,2) NOT NULL,
+    last_updated_at timestamp with time zone DEFAULT (now() AT TIME ZONE 'Asia/Manila'::text)
+);
+
+
+ALTER TABLE public.capital_configs OWNER TO postgres;
+
+--
+-- TOC entry 221 (class 1259 OID 24642)
+-- Name: capital_configs_config_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.capital_configs ALTER COLUMN config_id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.capital_configs_config_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 230 (class 1259 OID 24736)
+-- Name: histories; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.histories (
+    history_id integer NOT NULL,
+    order_id integer NOT NULL,
+    status_timestamp timestamp with time zone DEFAULT (now() AT TIME ZONE 'Asia/Manila'::text),
+    order_status character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.histories OWNER TO postgres;
+
+--
+-- TOC entry 229 (class 1259 OID 24735)
+-- Name: histories_history_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.histories ALTER COLUMN history_id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.histories_history_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 226 (class 1259 OID 24687)
+-- Name: order_items; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.order_items (
+    order_item_id integer NOT NULL,
+    order_id integer NOT NULL,
+    product_id integer NOT NULL,
+    quantity integer NOT NULL,
+    cost_snapshot numeric(10,2) NOT NULL,
+    price_snapshot numeric(10,2) NOT NULL,
+    line_subtotal numeric(12,2) NOT NULL,
+    CONSTRAINT order_items_quantity_check CHECK ((quantity > 0))
+);
+
+
+ALTER TABLE public.order_items OWNER TO postgres;
+
+--
+-- TOC entry 225 (class 1259 OID 24686)
+-- Name: order_items_order_item_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.order_items ALTER COLUMN order_item_id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.order_items_order_item_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 224 (class 1259 OID 24669)
+-- Name: orders; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.orders (
+    order_id integer NOT NULL,
+    user_id integer NOT NULL,
+    transaction_timestamp timestamp with time zone DEFAULT (now() AT TIME ZONE 'Asia/Manila'::text),
+    total_amount numeric(12,2) NOT NULL,
+    amount_tendered numeric(12,2) NOT NULL,
+    change_given numeric(12,2) NOT NULL,
+    notes text,
+    CONSTRAINT orders_total_amount_check CHECK ((total_amount >= (0)::numeric))
+);
+
+
+ALTER TABLE public.orders OWNER TO postgres;
+
+--
+-- TOC entry 223 (class 1259 OID 24668)
+-- Name: orders_order_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.orders ALTER COLUMN order_id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.orders_order_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 231 (class 1259 OID 32821)
+-- Name: products; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.products (
+    product_id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    category character varying(100) NOT NULL,
+    base_cost numeric(10,2) NOT NULL,
+    markup_amount numeric(10,2) NOT NULL,
+    retail_price numeric(10,2) NOT NULL,
+    stock_quantity integer DEFAULT 0 NOT NULL,
+    expiration_date date,
+    low_stock_alert_level integer DEFAULT 20
+);
+
+
+ALTER TABLE public.products OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1259 OID 24711)
+-- Name: stock_adjustments; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.stock_adjustments (
+    adjustment_id integer NOT NULL,
+    product_id integer NOT NULL,
+    user_id integer NOT NULL,
+    adjustment_type character varying(50) NOT NULL,
+    quantity_changed integer NOT NULL,
+    unit_cost numeric(10,2) NOT NULL,
+    transaction_date timestamp with time zone DEFAULT (now() AT TIME ZONE 'Asia/Manila'::text),
+    audit_notes text
+);
+
+
+ALTER TABLE public.stock_adjustments OWNER TO postgres;
+
+--
+-- TOC entry 227 (class 1259 OID 24710)
+-- Name: stock_adjustments_adjustment_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.stock_adjustments ALTER COLUMN adjustment_id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.stock_adjustments_adjustment_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 220 (class 1259 OID 24630)
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.users (
+    user_id integer NOT NULL,
+    full_name character varying(100) NOT NULL,
+    username character varying(50) NOT NULL,
+    password_hash character varying(255) NOT NULL,
+    role character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.users OWNER TO postgres;
+
+--
+-- TOC entry 219 (class 1259 OID 24629)
+-- Name: users_user_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.users ALTER COLUMN user_id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.users_user_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 3498 (class 0 OID 24643)
+-- Dependencies: 222
+-- Data for Name: capital_configs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 3506 (class 0 OID 24736)
+-- Dependencies: 230
+-- Data for Name: histories; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (1, 1, '2026-09-13 21:40:19.414626+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (2, 2, '2026-09-14 14:41:16.110696+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (3, 3, '2026-09-14 15:00:27.001777+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (4, 4, '2026-09-14 15:00:59.382545+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (5, 5, '2026-09-14 15:02:33.888411+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (6, 6, '2026-09-14 15:48:52.960411+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (7, 7, '2026-09-16 11:15:44.44384+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (8, 8, '2026-09-16 11:16:52.12506+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (9, 9, '2026-09-16 11:16:52.136017+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (10, 10, '2026-09-17 20:19:44.69911+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (11, 11, '2026-09-17 20:19:44.765639+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (12, 12, '2026-09-18 21:00:05.71289+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (13, 13, '2026-09-18 21:24:03.192654+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (14, 14, '2026-09-18 22:56:13.917552+00', 'COMPLETED');
+
+
+--
+-- TOC entry 3502 (class 0 OID 24687)
+-- Dependencies: 226
+-- Data for Name: order_items; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (1, 1, 6, 2, 52.50, 75.00, 150.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (2, 2, 2, 3, 4.20, 6.00, 18.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (3, 2, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (4, 2, 9, 1, 45.50, 65.00, 65.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (5, 3, 2, 7, 4.20, 6.00, 42.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (6, 4, 2, 2, 4.20, 6.00, 12.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (7, 5, 2, 3, 4.20, 6.00, 18.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (8, 6, 9, 3, 45.50, 65.00, 195.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (9, 7, 7, 4, 80.50, 115.00, 460.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (10, 8, 7, 1, 80.50, 115.00, 115.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (11, 9, 7, 1, 80.50, 115.00, 115.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (12, 10, 1, 2, 3.85, 5.50, 11.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (13, 11, 2, 4, 4.20, 6.00, 24.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (14, 12, 1, 1, 3.85, 5.50, 5.50);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (15, 12, 2, 1, 4.20, 6.00, 6.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (16, 12, 3, 1, 33.60, 48.00, 48.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (17, 12, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (18, 12, 6, 1, 52.50, 75.00, 75.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (19, 12, 7, 1, 80.50, 115.00, 115.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (20, 12, 8, 1, 26.60, 38.00, 38.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (21, 12, 9, 1, 45.50, 65.00, 65.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (22, 12, 10, 1, 5.25, 7.50, 7.50);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (23, 13, 2, 1, 4.20, 6.00, 6.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (24, 13, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (25, 13, 6, 1, 52.50, 75.00, 75.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (26, 14, 2, 1, 4.20, 6.00, 6.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (27, 14, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (28, 14, 6, 1, 52.50, 75.00, 75.00);
+
+
+--
+-- TOC entry 3500 (class 0 OID 24669)
+-- Dependencies: 224
+-- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (1, 4, '2026-09-13 21:40:19.414626+00', 150.00, 200.00, 50.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (2, 4, '2026-09-14 14:41:16.110696+00', 91.00, 91.00, 0.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (3, 4, '2026-09-14 15:00:27.001777+00', 42.00, 100.00, 58.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (4, 4, '2026-09-14 15:00:59.382545+00', 12.00, 20.00, 8.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (5, 4, '2026-09-14 15:02:33.888411+00', 18.00, 20.00, 2.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (6, 4, '2026-09-14 15:48:52.960411+00', 195.00, 200.00, 5.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (7, 4, '2026-09-16 11:15:44.44384+00', 460.00, 500.00, 40.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (8, 4, '2026-09-16 11:16:52.12506+00', 115.00, 120.00, 5.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (9, 4, '2026-09-16 11:16:52.136017+00', 115.00, 120.00, 5.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (10, 1, '2026-09-17 20:19:44.69911+00', 11.00, 15.00, 4.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (11, 1, '2026-09-17 20:19:44.765639+00', 24.00, 25.00, 1.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (12, 1, '2026-09-18 21:00:05.71289+00', 368.00, 400.00, 32.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (13, 1, '2026-09-18 21:24:03.192654+00', 89.00, 50.00, -39.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (14, 1, '2026-09-18 22:56:13.917552+00', 89.00, 80.00, -9.00, 'fgihcg');
+
+
+--
+-- TOC entry 3507 (class 0 OID 32821)
+-- Dependencies: 231
+-- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.products VALUES (4, 'Colgate Regular 150g', 'Personal Care', 66.50, 28.50, 95.00, 0, NULL, 20);
+INSERT INTO public.products VALUES (1, 'Biogesic 500mg', 'Medicine', 3.85, 1.65, 5.50, 147, NULL, 20);
+INSERT INTO public.products VALUES (3, 'Safeguard White 130g', 'Personal Care', 33.60, 14.40, 48.00, 74, NULL, 20);
+INSERT INTO public.products VALUES (7, 'Bear Brand Milk 320g', 'Dairy', 80.50, 34.50, 115.00, 3, NULL, 20);
+INSERT INTO public.products VALUES (8, 'Century Tuna Oil 155g', 'Canned Goods', 26.60, 11.40, 38.00, 59, NULL, 20);
+INSERT INTO public.products VALUES (9, 'Pale Pilsen 330ml Can', 'Beverages', 45.50, 19.50, 65.00, 109, NULL, 20);
+INSERT INTO public.products VALUES (10, 'Poten-Cee Vitamin C', 'Medicine', 5.25, 2.25, 7.50, 85, NULL, 20);
+INSERT INTO public.products VALUES (2, 'Neozep Forte', 'Medicine', 4.20, 1.80, 6.00, 8, NULL, 20);
+INSERT INTO public.products VALUES (5, 'Kopiko Black 3-in-1', 'Beverages', 5.60, 2.40, 8.00, 197, NULL, 20);
+INSERT INTO public.products VALUES (6, 'Gardenia White Bread', 'Bakery', 52.50, 22.50, 75.00, 22, NULL, 20);
+
+
+--
+-- TOC entry 3504 (class 0 OID 24711)
+-- Dependencies: 228
+-- Data for Name: stock_adjustments; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 3496 (class 0 OID 24630)
+-- Dependencies: 220
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (1, 'Alekos Owner', 'admin', '$2y$10$abcdef1234567890abcdef', 'Admin');
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (2, 'Maria Santos', 'cashier1', '$2y$10$abcdef1234567890abcdef', 'Staff');
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (3, 'Juan Dela Cruz', 'manager1', '$2y$10$abcdef1234567890abcdef', 'Manager');
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (4, 'Resty Aldave', 'cid', '$2y$12$ARqU8.iOVuLSwHMy6T.JZ.bKrlFp760.rVey3rPO4NnIvZVJ5NfW.', 'Developer');
+
+
+--
+-- TOC entry 3514 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: capital_configs_config_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.capital_configs_config_id_seq', 1, false);
+
+
+--
+-- TOC entry 3515 (class 0 OID 0)
+-- Dependencies: 229
+-- Name: histories_history_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.histories_history_id_seq', 14, true);
+
+
+--
+-- TOC entry 3516 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: order_items_order_item_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.order_items_order_item_id_seq', 28, true);
+
+
+--
+-- TOC entry 3517 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: orders_order_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.orders_order_id_seq', 14, true);
+
+
+--
+-- TOC entry 3518 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: stock_adjustments_adjustment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.stock_adjustments_adjustment_id_seq', 1, false);
+
+
+--
+-- TOC entry 3519 (class 0 OID 0)
+-- Dependencies: 219
+-- Name: users_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.users_user_id_seq', 4, true);
+
+
+--
+-- TOC entry 3331 (class 2606 OID 24651)
+-- Name: capital_configs capital_configs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.capital_configs
+    ADD CONSTRAINT capital_configs_pkey PRIMARY KEY (config_id);
+
+
+--
+-- TOC entry 3339 (class 2606 OID 24744)
+-- Name: histories histories_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.histories
+    ADD CONSTRAINT histories_pkey PRIMARY KEY (history_id);
+
+
+--
+-- TOC entry 3335 (class 2606 OID 24699)
+-- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.order_items
+    ADD CONSTRAINT order_items_pkey PRIMARY KEY (order_item_id);
+
+
+--
+-- TOC entry 3333 (class 2606 OID 24680)
+-- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_pkey PRIMARY KEY (order_id);
+
+
+--
+-- TOC entry 3341 (class 2606 OID 32834)
+-- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.products
+    ADD CONSTRAINT products_pkey PRIMARY KEY (product_id);
+
+
+--
+-- TOC entry 3337 (class 2606 OID 24724)
+-- Name: stock_adjustments stock_adjustments_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stock_adjustments
+    ADD CONSTRAINT stock_adjustments_pkey PRIMARY KEY (adjustment_id);
+
+
+--
+-- TOC entry 3327 (class 2606 OID 24639)
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (user_id);
+
+
+--
+-- TOC entry 3329 (class 2606 OID 24641)
+-- Name: users users_username_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_username_key UNIQUE (username);
+
+
+--
+-- TOC entry 3347 (class 2606 OID 24745)
+-- Name: histories fk_histories_order; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.histories
+    ADD CONSTRAINT fk_histories_order FOREIGN KEY (order_id) REFERENCES public.orders(order_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3343 (class 2606 OID 24700)
+-- Name: order_items fk_order_items_order; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.order_items
+    ADD CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES public.orders(order_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3344 (class 2606 OID 32835)
+-- Name: order_items fk_order_items_product; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.order_items
+    ADD CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES public.products(product_id);
+
+
+--
+-- TOC entry 3342 (class 2606 OID 24681)
+-- Name: orders fk_orders_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 3345 (class 2606 OID 32840)
+-- Name: stock_adjustments fk_stock_adjustments_product; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stock_adjustments
+    ADD CONSTRAINT fk_stock_adjustments_product FOREIGN KEY (product_id) REFERENCES public.products(product_id);
+
+
+--
+-- TOC entry 3346 (class 2606 OID 24730)
+-- Name: stock_adjustments fk_stock_adjustments_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.stock_adjustments
+    ADD CONSTRAINT fk_stock_adjustments_user FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE RESTRICT;
+
+
+-- Completed on 2026-09-20 16:46:36 PST
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict leuXBTcMYg97Hc3IUUyKDsbfbhbWarGr0enaIyE1933KOZaCv0arq3XHqwNwDLE
+

@@ -1,27 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Typography -->
-    <dimen name="title">30sp</dimen>
-    <dimen name="title_second">26sp</dimen>
-    <dimen name="header_one">22sp</dimen>
-    <dimen name="header_two">18sp</dimen>
-    <dimen name="header_three">17sp</dimen>
-    <dimen name="body_one">18sp</dimen>
-    <dimen name="body_two">16sp</dimen>
-    <dimen name="body_three">14sp</dimen>
+    <!-- Typography (Optimized for Tablet) -->
+    <dimen name="title">24sp</dimen>
+    <dimen name="title_second">20sp</dimen>
+    <dimen name="header_one">17sp</dimen>
+    <dimen name="header_two">15sp</dimen>
+    <dimen name="header_three">14sp</dimen>
+    <dimen name="body_one">14sp</dimen>
+    <dimen name="body_two">13sp</dimen>
+    <dimen name="body_three">12sp</dimen>
 
     <!-- Spacing -->
-    <dimen name="margin_standard">24dp</dimen>
-    <dimen name="margin_small">12dp</dimen>
-    <dimen name="cell_padding">8dp</dimen>
-    <dimen name="grid_spacing">3dp</dimen>
+    <dimen name="margin_standard">20dp</dimen>
+    <dimen name="margin_small">10dp</dimen>
+    <dimen name="cell_padding">6dp</dimen>
+    <dimen name="grid_spacing">2dp</dimen>
+    <dimen name="row_vertical_gap">1dp</dimen>
 
     <!-- Targets -->
-    <dimen name="action_button_size">48dp</dimen>
-    <dimen name="input_height">56dp</dimen>
-    <dimen name="filter_bar_height">42dp</dimen>
-    <dimen name="row_min_height">56dp</dimen>
-    <dimen name="header_min_height">48dp</dimen>
+    <dimen name="action_button_size">44dp</dimen>
+    <dimen name="input_height">46dp</dimen>
+    <dimen name="filter_bar_height">40dp</dimen>
+    <dimen name="row_min_height">48dp</dimen>
+    <dimen name="header_min_height">42dp</dimen>
     <dimen name="title_start_margin">72dp</dimen>
-    <dimen name="title_top_margin">28dp</dimen>
+    <dimen name="title_top_margin">24dp</dimen>
+
+    <dimen name="checkout_btn_text_size">13sp</dimen>
 </resources>

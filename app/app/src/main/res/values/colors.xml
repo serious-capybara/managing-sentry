@@ -33,4 +33,7 @@
     <color name="login_btn_color">@color/sidebar_bg</color>
     <color name="login_btn_pressed">#0A0F2B</color>
     <color name="input_bg_color">#F2F2F2</color>
+
+    <!-- Notification Pill Colors -->
+    <color name="pill_bg_logout">#991B1B</color> <!-- Professional Deep Red -->
 </resources>

@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:18
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  php:
+    image: php:8.2-cli
+    environment:
+      DB_HOST: ${P_DB_HOST}
+      DB_PORT: ${P_DB_PORT}
+      DB_USER: ${P_DB_USER}
+      DB_NAME: ${P_DB_NAME}
+      DB_PASSWORD: ${P_DB_PASSWORD}
+    restart: always
+    working_dir: /app
+    volumes:
+      - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend:/app
+    ports:
+      - "8000:8000"
+    command: sh -c "apt-get update && apt-get install -y libpq-dev && docker-php-ext-install pdo_pgsql && apt-get clean && rm -rf /var/lib/apt/lists/* && php -S 0.0.0.0:8000"
+    depends_on:
+      - db
+
+  fastapi:
+    image: python:3.11-slim
+    environment:
+      DB_HOST: ${F_DB_HOST}
+      DB_PORT: ${F_DB_PORT}
+      DB_USER: ${F_DB_USER}
+      DB_NAME: ${F_DB_NAME}
+      DB_PASSWORD: ${F_DB_PASSWORD}
+    restart: always
+    working_dir: /app
+    volumes:
+      - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend-fastapi:/app
+    ports:
+      - "8001:8000"
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
