@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict 2XxOeJwRdAUiaF2v1FfCnOf3ChzginER7kIbDykmAwnqENfMuvLAC71AMyKBXds
+\restrict leuXBTcMYg97Hc3IUUyKDsbfbhbWarGr0enaIyE1933KOZaCv0arq3XHqwNwDLE
 
 -- Dumped from database version 18.6 (Debian 18.6-1.pgdg13+2)
 -- Dumped by pg_dump version 18.6
 
--- Started on 2026-09-19 00:35:51 PST
+-- Started on 2026-09-20 16:46:36 PST
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -563,11 +563,11 @@ ALTER TABLE ONLY public.stock_adjustments
     ADD CONSTRAINT fk_stock_adjustments_user FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE RESTRICT;
 
 
--- Completed on 2026-09-19 00:35:51 PST
+-- Completed on 2026-09-20 16:46:36 PST
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 2XxOeJwRdAUiaF2v1FfCnOf3ChzginER7kIbDykmAwnqENfMuvLAC71AMyKBXds
+\unrestrict leuXBTcMYg97Hc3IUUyKDsbfbhbWarGr0enaIyE1933KOZaCv0arq3XHqwNwDLE
 
