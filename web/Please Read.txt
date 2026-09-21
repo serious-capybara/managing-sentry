@@ -1,1 +1,1 @@
----Delete this if you will start to develop the web admin---
+the database is not connected yet in this website
