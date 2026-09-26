@@ -12,7 +12,7 @@ services:
       - pgdata:/var/lib/postgresql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
-  php:
+  php-app:
     image: php:8.2-cli
     environment:
       DB_HOST: ${P_DB_HOST}
@@ -23,9 +23,27 @@ services:
     restart: always
     working_dir: /app
     volumes:
-      - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend:/app
+      - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend/app:/app
     ports:
       - "8000:8000"
+    command: sh -c "apt-get update && apt-get install -y libpq-dev && docker-php-ext-install pdo_pgsql && apt-get clean && rm -rf /var/lib/apt/lists/* && php -S 0.0.0.0:8000"
+    depends_on:
+      - db
+
+  php-web:
+    image: php:8.2-cli
+    environment:
+      DB_HOST: ${P_DB_HOST}
+      DB_PORT: ${P_DB_PORT}
+      DB_USER: ${P_DB_USER}
+      DB_NAME: ${P_DB_NAME}
+      DB_PASSWORD: ${P_DB_PASSWORD}
+    restart: always
+    working_dir: /app
+    volumes:
+      - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend/web:/app
+    ports:
+      - "8002:8000"
     command: sh -c "apt-get update && apt-get install -y libpq-dev && docker-php-ext-install pdo_pgsql && apt-get clean && rm -rf /var/lib/apt/lists/* && php -S 0.0.0.0:8000"
     depends_on:
       - db
