@@ -41,10 +41,10 @@ services:
     restart: always
     working_dir: /app
     volumes:
-      - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend-fastapi:/app
+      - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend-fastapi/app:/app
     ports:
       - "8001:8000"
-    command: sh -c "pip install --no-cache-dir -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
       - db
 
