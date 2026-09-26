@@ -1,181 +1,342 @@
 # Managing Sentry
 
-**Managing Sentry** is a custom Point of Sale (POS) and inventory management system built for Alekos’ Corner General Merchandise. The system is designed to streamline daily business operations by replacing inefficient paper-based processes with a reliable, hybrid digital solution.
+> **A hybrid Point of Sale and Inventory Management System** built for Alekos' Corner General Merchandise — digitizing daily business operations with offline resilience and real-time data access.
 
-The name reflects the system's core philosophy: **"Managing"** for organizing business data and **"Sentry"** for providing a reliable, safe, and dependable guardian for business records.
+---
+
+> [!NOTE]
+> **Dual Backend Notice:** This repository contains two parallel backend implementations maintained for academic evaluation purposes — a **PHP backend** (`backend/`) and a **FastAPI (Python) backend** (`backend-fastapi/`). Both implement the same core functionality. After project defense, the team will officially adopt one and archive the other. See [Architecture](#architecture) for details.
+
+---
 
 ## Table of Contents
-- [Executive Summary](#executive-summary)
-- [Project Background](#background-of-the-project)
-- [Statement of the Problem](#statement-of-the-problem)
-- [Project Objectives](#project-objectives)
-- [Scope and Limitations](#scope-and-limitations)
-- [Significance of the Project](#significance-of-the-project)
+
+- [Overview](#overview)
+- [Features](#features)
 - [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
 - [Architecture](#architecture)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Clone the Repository](#clone-the-repository)
+  - [Running the Backend (Docker)](#running-the-backend-docker)
+  - [Running the Android App](#running-the-android-app)
+  - [Running the Web Portal](#running-the-web-portal)
+- [Project Background](#project-background)
+- [Scope and Limitations](#scope-and-limitations)
+- [Significance](#significance)
 - [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Executive Summary
+## Overview
 
-| Item | Details |
-| :--- | :--- |
-| **Problem Addressed** | Paper-based processes, physical paperwork storage issues, and manual writing errors. |
-| **Proposed Solution** | A hybrid POS and inventory system operating both online and offline. |
-| **Target Users** | Administrators, Managers, and Staff Members. |
-| **Core Features** | Manual checkout, real-time stock updates, low stock alerts, and sales trend analytics. |
-| **Key Benefit** | Faster checkouts, accurate tracking, and dependable offline operations. |
+**Managing Sentry** is a custom business management system designed to replace the paper-based workflows of a small family-run general merchandise store. The system combines an **Android POS application**, a **web-based admin portal**, and a **dockerized backend** to provide reliable, accurate, and fast business operations — even without an internet connection.
 
----
+The name reflects the system's philosophy: **Managing** for organizing business data, and **Sentry** for being a dependable guardian of business records.
 
-## Background of the Project
-
-### Current Situation & Process Workflow
-Alekos’ Corner General Merchandise is a family-run business. Their standard daily process involves store opening, processing customer sales, manual inventory checks, and purchasing/restocking. Currently, transactions are tracked using physical paper receipts, which are prone to loss and damage. Errors are corrected manually by crossing out or writing over data, leading to inconsistent records.
-
-### Problems Encountered
-- **Manual Overhead**: Pricing and restocking take excessive time.
-- **Peak Hour Bottlenecks**: Manual writing slows down checkouts during busy late-night hours.
-- **Record Security**: Physical receipts are easily lost or misplaced.
-- **Reporting Gaps**: Lack of immediate access to sales trends or stock reports.
+| | |
+|:---|:---|
+| **Problem Solved** | Paper-based sales tracking, manual inventory errors, and lack of business reporting |
+| **Solution** | Hybrid POS + inventory system with offline support and real-time sync |
+| **Target Users** | Store owners, managers, and staff |
+| **Key Benefit** | Faster checkouts, accurate stock tracking, and data-driven decisions |
 
 ---
 
-## Statement of the Problem
+## Features
 
-### General Problem
-The business relies entirely on manual, paper-based processes for daily sales and inventory tracking, leading to slow checkouts, pricing errors, and high risk of financial record loss.
-
-### Specific Problems
-- **Inconsistent Receipt Management**: Vulnerable to physical loss or damage.
-- **Manual Tracking Errors**: Delays in restocking critical items due to manual pricing mistakes.
-- **Operational Bottlenecks**: handwriting receipts slows down service during peak times.
-- **Lack of Analytics**: No automated daily or weekly reports for business decisions.
-
----
-
-## Project Objectives
-
-### General Objective
-To design and implement **Managing Sentry**, a hybrid POS and inventory management system that digitizes transactions, automates tracking, and streamlines operations.
-
-### Specific Objectives
-- **Digitize Checkout**: Develop an Android application for fast, error-free sales processing.
-- **Automate Inventory**: Build real-time stock tracking and low-stock alert features.
-- **Web-Based Management**: Create a portal for owners to track trends and manage records.
-- **Offline Functionality**: Ensure continuous operation during internet downtime via a local database.
-- **Secure Storage**: Eliminate physical record risks through digital logs and backups.
-
----
-
-## Scope and Limitations
-
-### Project Scope
-- **Android POS Application**: Digital checkout for staff, offline storage, and auto-sync capabilities.
-- **Web Admin Portal**: Administrative controls, product catalog management, and sales monitoring.
-- **Inventory Module**: Real-time quantity tracking and reorder estimates.
-- **Reporting**: Automated daily/weekly movement reports.
-
-### Project Limitations
-- **Single-Business Customization**: Specifically built for Alekos’ Corner; not a multi-tenant retail system.
-- **In-Store Only**: No customer-facing e-commerce or online ordering features.
-- **Manual Input**: Relies on manual interface selection rather than barcode scanners.
-- **Payment Processing**: Records cash/manual transactions; no direct credit card terminal integration.
-
----
-
-## Significance of the Project
-
-- **For Owners/Managers**: Elimination of paper clutter, risk reduction, and data-driven management.
-- **For Staff/Workers**: Faster transactions, fewer manual errors, and uninterrupted operations.
-- **For Customers**: Shorter wait times and reliable, accurate pricing.
+- **Digital Checkout** — Fast, error-free sales processing on Android tablets
+- **Real-Time Inventory Tracking** — Automatic stock deduction on each transaction
+- **Low Stock Alerts** — Proactive notifications before items run out
+- **Offline Functionality** — Local SQLite database ensures uninterrupted operations during downtime
+- **Auto-Sync** — Synchronizes offline transactions with the central database on reconnection
+- **Web Admin Portal** — Browser-based dashboard for product management, sales monitoring, and reporting
+- **Transaction History** — Filterable logs of all past sales and inventory movements
+- **Sales Analytics** — Daily and weekly trend reports for informed restocking decisions
+- **Role-Based Access** — Separate access levels for Admins, Managers, and Staff
 
 ---
 
 ## Tech Stack
 
-- **Language**: Java 17+
-- **Framework**: Android SDK
-- **IDE**: Android Studio
-- **Architecture**: Single-Activity, Fragment-based Navigation
-- **UI Components**: 
-  - Material 3 Design
-  - Custom rounded "pill" cell layouts
-  - Responsive weight-based column system
-- **Optimization**: Tablet optimized (`layout-sw600dp`)
-- **Animations**: 
-  - 400ms Sliding Sidebar
-  - Fragment Fade transitions
-- **Database**: Local SQLite (for offline support)
+### Android Application (`app/`)
 
----
+| Layer | Technology |
+|:---|:---|
+| Language | Java |
+| Platform | Android SDK |
+| Build System | Gradle |
+| Architecture | Single-Activity, Fragment-based navigation |
+| Local Database | SQLite (offline storage) |
+| Networking | Retrofit (HTTP client) |
+| IDE | Android Studio (recommended) |
 
-## Getting Started
+### Web Portal (`web/`)
 
-### 1. Prerequisites
-- Android Studio Ladybug (or higher)
-- JDK 17
-- Android Tablet Emulator (sw600dp recommended)
+| Layer | Technology |
+|:---|:---|
+| Structure | HTML5 |
+| Styling | CSS3 |
+| Logic | Vanilla JavaScript |
 
-### 2. Installation
-```bash
-git clone https://github.com/your-repo/Managing-Sentry.git
-cd Managing-Sentry
-```
+### Backend — PHP (`backend/`)
 
-### 3. Build and Run
-1. Open the project in **Android Studio**.
-2. Sync Project with Gradle Files.
-3. Select a **Tablet Emulator** (e.g., Pixel Tablet).
-4. Click **Run**.
+| Layer | Technology |
+|:---|:---|
+| Language | PHP 8.2 |
+| Server | PHP built-in server (via Docker) |
+| Database Driver | PDO with `pdo_pgsql` |
+| Runtime | Docker (`php:8.2-cli`) |
+| Port | `8000` |
+
+### Backend — FastAPI (`backend-fastapi/`)
+
+| Layer | Technology |
+|:---|:---|
+| Language | Python 3.11 |
+| Framework | FastAPI |
+| Server | Uvicorn (ASGI) |
+| Runtime | Docker (`python:3.11-slim`) |
+| Port | `8001` |
+
+### Infrastructure
+
+| Component | Technology |
+|:---|:---|
+| Database | PostgreSQL 18 (Docker) |
+| Container Orchestration | Docker Compose |
+| DB Port (host → container) | `5433` → `5432` |
 
 ---
 
 ## Architecture
 
-### Directory Structure
-```
-app/src/main/
-├── java/com/sentry/app/
-│   ├── MainActivity.java      # Host Activity with Sidebar Toggle logic
-│   ├── DashboardFragment.java # Multi-column sales entry with Cart
-│   ├── ProductsFragment.java  # Inventory view
-│   └── HistoryFragment.java   # Transaction logs with custom filters
-└── res/
-    ├── layout-sw600dp/        # Tablet-optimized layouts
-    ├── layout/                # Base layouts (phone shells)
-    ├── drawable/              # Custom shape selectors and icons
-    ├── anim/                  # Navigation transitions
-    └── values/                # Strings (Philippine Peso ₱), arrays, and colors
+### Monorepo Directory Structure
+
+```text
+Managing-Sentry/
+├── app/                        # Android POS application (Java, Gradle)
+│   └── app/src/main/
+│       ├── java/com/sentry/app/
+│       │   ├── MainActivity.java         # Host activity, sidebar/navigation
+│       │   ├── DashboardFragment.java    # Sales entry and cart management
+│       │   ├── ProductsFragment.java     # Inventory view and stock management
+│       │   └── HistoryFragment.java      # Transaction logs with filters
+│       └── res/
+│           ├── layout/                   # Base layouts (phone shells)
+│           ├── layout-sw600dp/           # Tablet-optimized layouts
+│           ├── drawable/                 # Custom shapes, selectors, and icons
+│           ├── anim/                     # Navigation transition animations
+│           └── values/                   # Strings (₱ Philippine Peso), arrays, colors
+│
+├── web/                        # Web admin portal (HTML, CSS, JavaScript)
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
+│
+├── backend/                    # PHP backend (PDO + PostgreSQL)
+│   └── app/
+│       ├── api/                          # API endpoint handlers
+│       ├── config/                       # Database configuration
+│       ├── core/                         # Core utilities
+│       └── init.php                      # Application bootstrap
+│
+├── backend-fastapi/            # FastAPI backend (Python + PostgreSQL)
+│   └── app/
+│       ├── api/                          # API route definitions
+│       ├── core/                         # Core config and security
+│       ├── database/                     # Database session and connection
+│       ├── models/                       # SQLAlchemy ORM models
+│       ├── routers/                      # FastAPI routers
+│       └── requirements.txt
+│
+├── db/                         # Database initialization scripts
+├── docker-compose.yml          # Orchestrates PostgreSQL, PHP, and FastAPI services
+├── .gitignore
+├── README.md
+└── CONTRIBUTING.md
 ```
 
-### Key UI Components
-- **`pos_row.xml`**: Reusable data row with 9 configurable columns (Name, SRP, Qty, etc.).
-- **`sort_dropdown.xml`**: Dense Material 3 dropdown for filtering.
-- **`search_field.xml`**: Reusable borderless search bar.
-- **`checkout_cart.xml`**: Bottom dashboard section with quantity controls.
+### Dual Backend Service Map
+
+Both backends run simultaneously via Docker Compose and share the same PostgreSQL instance:
+
+| Service | Stack | Host Port | Container Port |
+|:---|:---|:---|:---|
+| `php` | PHP 8.2 | `8000` | `8000` |
+| `fastapi` | Python 3.11 + FastAPI | `8001` | `8000` |
+| `db` | PostgreSQL 18 | `5433` | `5432` |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+Ensure the following are installed before proceeding:
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose)
+- [Android Studio](https://developer.android.com/studio) (stable release)
+- JDK 17 or later
+- A modern web browser (for the web portal)
+
+---
+
+### Clone the Repository
+
+```bash
+git clone <repo-url>
+cd Managing-Sentry
+```
+
+---
+
+### Running the Backend (Docker)
+
+> [!IMPORTANT]
+> The `docker-compose.yml` contains absolute bind mount paths set to the project owner's machine. **You must update these paths to your own local checkout path before deploying.** Do not commit your edited version back to Git.
+
+**1. Edit `docker-compose.yml`** — update the `volumes` bind mount paths for the `php` and `fastapi` services:
+
+```yaml
+# Before (project owner's path):
+volumes:
+  - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend:/app
+
+# After (your local path):
+volumes:
+  - /home/YOUR_USERNAME/path/to/Managing-Sentry/backend:/app
+```
+
+**2. Create your local `.env` file** in the repo root with the required database credentials (refer to `.env.example` inside `backend/app/` for the required variables).
+
+**3. Start all services:**
+
+```bash
+docker compose up -d
+```
+
+**4. Verify the stack is running:**
+
+```bash
+docker ps -a
+```
+
+You should see three containers running: `db` (PostgreSQL), `php`, and `fastapi`.
+
+**5. Test the backends:**
+
+```
+PHP backend:     http://localhost:8000/test.php
+FastAPI backend: http://localhost:8001/docs
+```
+
+> [!WARNING]
+> Never commit your personal bind mount paths or `.env` credentials to the shared repository. These are local-only configurations.
+
+---
+
+### Running the Android App
+
+**1. Open the `app/` directory** in Android Studio (do **not** open the monorepo root).
+
+**2. Sync Gradle** files when prompted.
+
+**3. Configure the backend URL** in `RetrofitClient.java`:
+
+```java
+// For Android Emulator:
+private static final String BASE_URL = "http://10.0.2.2:8000/";
+
+// For a real device over Wi-Fi (replace with your machine's local IP):
+private static final String BASE_URL = "http://192.168.x.x:8000/";
+```
+
+> Find your local IP on Linux/macOS with `ip addr show`, or on Windows with `ipconfig`. Do not commit a personal IP address back to the repository.
+
+**4. Select a tablet emulator** (e.g., Pixel Tablet) and click **Run**.
+
+---
+
+### Running the Web Portal
+
+The web portal is a static application with no build step required. Open `web/index.html` directly in a browser, or serve it locally:
+
+```bash
+cd web
+npx serve .
+```
+
+---
+
+## Project Background
+
+Alekos' Corner General Merchandise is a family-run store whose daily operations — sales processing, inventory tracking, and restocking — were all managed on physical paper receipts. This introduced recurring operational problems:
+
+| Problem | Impact |
+|:---|:---|
+| **Manual overhead** | Pricing and restocking consumed excessive time |
+| **Peak-hour bottlenecks** | Handwriting receipts slowed checkout during busy hours |
+| **Record insecurity** | Physical receipts were easily lost, damaged, or misplaced |
+| **No analytics** | No access to sales trends, stock levels, or business reports |
+
+**Managing Sentry** was built to address each of these issues through digitization, automation, and resilient offline support.
+
+---
+
+## Scope and Limitations
+
+### In Scope
+
+- Android tablet POS application with offline storage and auto-sync
+- Web-based admin portal for product management and sales monitoring
+- Real-time inventory tracking with low-stock alerts
+- Automated daily and weekly movement reports
+- Role-based access control for Admins, Managers, and Staff
+
+### Out of Scope
+
+| Limitation | Reason |
+|:---|:---|
+| Multi-tenant support | Built exclusively for Alekos' Corner; not a general retail platform |
+| E-commerce / online ordering | No customer-facing storefront |
+| Barcode scanning | Relies on manual product selection |
+| Payment terminal integration | Records cash transactions only; no credit card processing |
+
+---
+
+## Significance
+
+| Stakeholder | Benefit |
+|:---|:---|
+| **Owners / Managers** | Elimination of paper clutter, reduced financial risk, and data-driven decision making |
+| **Staff** | Faster transactions, fewer manual errors, and uninterrupted operations during outages |
+| **Customers** | Shorter wait times and accurate, reliable pricing at checkout |
 
 ---
 
 ## Contributing
 
-We welcome contributions! To maintain a clean workflow, please follow these steps:
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before starting any work. The guide covers:
 
-1. **Create your own branch** before making changes:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-2. Follow the established **Clean Code** principles and naming conventions (e.g., `sidebar_bg`, `cell_white_bg`).
-3. Ensure all new layouts are synchronized between `layout/` and `layout-sw600dp/`.
-4. Commit your changes with descriptive messages:
-   ```bash
-   git commit -m "Add: realistic sample data for pharmaceutical products"
-   ```
-5. Push to your branch and open a **Pull Request**.
+- Monorepo structure and IDE setup rules
+- Git branching strategy (personal branch workflow)
+- Commit and push conventions
+- Docker local setup and configuration rules
+- Android and web development workflows
+- Pull Request guidelines
+- AI coding assistant scope boundaries
+
+**Quick summary:**
+1. Always work from your own personal branch (e.g., `firstname-lastname`).
+2. Never commit directly to `main`.
+3. Keep Android changes inside `app/` and web changes inside `web/`.
+4. Run all Git commands from the monorepo root, not from inside a subdirectory.
+5. Open a Pull Request when your branch is ready for review.
 
 ---
 
 ## License
-Created for Alekos’ Corner General Merchandise under Heir Client Business Innovation. All rights reserved.
+
+Created for **Alekos' Corner General Merchandise** under Heir Client Business Innovation. All rights reserved.
