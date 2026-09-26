@@ -12,7 +12,16 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
     private static volatile Retrofit retrofit;
-    private static final String BASE_URL = "http://192.168.123.52:8001/";
+    //Home Link
+    //private static final String BASE_URL = "http://192.168.123.52:8001/";
+
+    //School Link Tulfone
+    //private static final String BASE_URL = "http://10.94.69.32:8001/";
+
+    //Pasil Wifi
+    private static final String BASE_URL = "http://192.168.1.14:8001/";
+
+
 
     private static Retrofit getRetrofitInstance() {
         if (retrofit == null) {
