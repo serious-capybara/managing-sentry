@@ -160,13 +160,18 @@ Managing-Sentry/
 
 ### Dual Backend Service Map
 
-Both backends run simultaneously via Docker Compose and share the same PostgreSQL instance:
+All services run simultaneously via Docker Compose and share the same PostgreSQL instance:
 
-| Service | Stack | Host Port | Container Port |
+| Service | Stack | Serves | Host Port |
 |:---|:---|:---|:---|
-| `php` | PHP 8.2 | `8000` | `8000` |
-| `fastapi` | Python 3.11 + FastAPI | `8001` | `8000` |
-| `db` | PostgreSQL 18 | `5433` | `5432` |
+| `php-app` | PHP 8.2 | Android-facing API (`backend/app`) | `8000` |
+| `php-web` | PHP 8.2 | Web portal API (`backend/web`) | `8002` |
+| `fastapi` | Python 3.11 + FastAPI | Android-facing API (`backend-fastapi/app`) | `8001` |
+| `fastapi-web` | Python 3.11 + FastAPI | Web portal API (`backend-fastapi/web`) | `8003` *(planned)* |
+| `db` | PostgreSQL 18 | Shared database | `5433` |
+
+> [!NOTE]
+> `fastapi-web` is a **planned service** — `backend-fastapi/web/` has not been implemented yet. When development begins, a dedicated `fastapi-web` container (port `8003`) will be added to `docker-compose.yml` to serve the web portal API separately, following the same pattern as `php-app` / `php-web`.
 
 ---
 
@@ -197,16 +202,26 @@ cd Managing-Sentry
 > [!IMPORTANT]
 > The `docker-compose.yml` contains absolute bind mount paths set to the project owner's machine. **You must update these paths to your own local checkout path before deploying.** Do not commit your edited version back to Git.
 
-**1. Edit `docker-compose.yml`** — update the `volumes` bind mount paths for the `php` and `fastapi` services:
+**1. Edit `docker-compose.yml`** — update the `volumes` bind mount paths for all three PHP and FastAPI services:
 
 ```yaml
-# Before (project owner's path):
-volumes:
-  - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend:/app
+# php-app service — Android-facing API (backend/app)
+# Before:
+  - /home/the-grand-capybara/Desktop/.../backend/app:/app
+# After (your path):
+  - /home/YOUR_USERNAME/path/to/Managing-Sentry/backend/app:/app
 
-# After (your local path):
-volumes:
-  - /home/YOUR_USERNAME/path/to/Managing-Sentry/backend:/app
+# php-web service — Web portal API (backend/web)
+# Before:
+  - /home/the-grand-capybara/Desktop/.../backend/web:/app
+# After (your path):
+  - /home/YOUR_USERNAME/path/to/Managing-Sentry/backend/web:/app
+
+# fastapi service — FastAPI backend (backend-fastapi/app)
+# Before:
+  - /home/the-grand-capybara/Desktop/.../backend-fastapi/app:/app
+# After (your path):
+  - /home/YOUR_USERNAME/path/to/Managing-Sentry/backend-fastapi/app:/app
 ```
 
 **2. Create your local `.env` file** in the repo root with the required database credentials (refer to `.env.example` inside `backend/app/` for the required variables).
@@ -223,17 +238,22 @@ docker compose up -d
 docker ps -a
 ```
 
-You should see three containers running: `db` (PostgreSQL), `php`, and `fastapi`.
+You should see four containers running: `db` (PostgreSQL), `php-app`, `php-web`, and `fastapi`.
 
 **5. Test the backends:**
 
 ```
-PHP backend:     http://localhost:8000/test.php
-FastAPI backend: http://localhost:8001/docs
+PHP Android API:  http://localhost:8000
+PHP Web API:      http://localhost:8002
+FastAPI backend:  http://localhost:8001/docs
 ```
+
+> [!NOTE]
+> A `fastapi-web` service (port `8003`) is planned for the future once `backend-fastapi/web/` is implemented. When ready, it will be added to `docker-compose.yml` as a dedicated container serving the web portal FastAPI backend — mirroring the same `php-app` / `php-web` separation pattern.
 
 > [!WARNING]
 > Never commit your personal bind mount paths or `.env` credentials to the shared repository. These are local-only configurations.
+
 
 ---
 
