@@ -21,8 +21,6 @@ DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NA
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        # Some cloud providers (like Supabase) require SSL.
-        # statement_cache_size=0 is recommended when using connection poolers like PgBouncer.
         app.state.pool = await asyncpg.create_pool(
             DATABASE_URL,
             min_size=1,
