@@ -1,216 +1,225 @@
 # Contributing to Managing Sentry
 
-Thank you for contributing to Managing Sentry. This repository is organized as a monorepo with two separate application codebases:
-
-- `app/` — Android application
-- `web/` — Web application
-
-This structure is intentional. Each project has its own dependencies, toolchain, and IDE workflow. Please follow the rules in this guide to keep the monorepo clean and avoid cross-project issues.
+Thank you for taking the time to contribute. This document is the single source of truth for how work is organized, committed, and reviewed in this repository. Please read it fully before opening any branch or pull request.
 
 ---
 
-## 1. Monorepo Directory Structure Overview
+## Table of Contents
 
-At the root of the repository, you will find the main monorepo files and the two application folders:
+- [Repository Structure](#repository-structure)
+- [Opening the Project in an IDE](#opening-the-project-in-an-ide)
+- [Branching Strategy](#branching-strategy)
+- [Commit and Push Workflow](#commit-and-push-workflow)
+- [AI Coding Assistant Rules](#ai-coding-assistant-rules)
+- [Local Development Workflows](#local-development-workflows)
+- [Local Backend Setup (Docker)](#local-backend-setup-docker)
+- [Local Database Setup (pgAdmin4)](#local-database-setup-pgadmin4)
+- [Android Network Configuration](#android-network-configuration)
+- [Pull Request Guidelines](#pull-request-guidelines)
+- [Common Mistakes](#common-mistakes)
+
+---
+
+## Repository Structure
+
+This is a **monorepo** containing multiple separate project codebases. Each sub-project has its own dependencies, toolchain, and IDE configuration.
 
 ```text
-.
-├── docker-compose.yml
+Managing-Sentry/
+├── app/                  # Android POS application (Java, Gradle)
+├── web/                  # Web admin portal (HTML, CSS, JavaScript)
+├── backend/              # PHP 8.2 backend (PDO + PostgreSQL)
+├── backend-fastapi/      # FastAPI backend (Python 3.11 + PostgreSQL)
+├── db/                   # Database initialization scripts
+├── docker-compose.yml    # Orchestrates all backend services
 ├── .gitignore
 ├── README.md
-├── .env
-├── app/
-│   └── ... Android project files and Gradle configuration
-├── web/
-│   └── ... Web project files and frontend configuration
-└── ...
+└── CONTRIBUTING.md
 ```
 
-Important:
-- `app/` contains the Android project and must be treated as a separate project root for Android development.
-- `web/` contains the web frontend and must be treated as a separate project root for web development.
-- The monorepo root should not be opened as the Android project root.
-- The monorepo root should not be used as the primary workspace when working on the web app.
+**Rules:**
+- `app/` is the Android project root. It must be opened and treated as a standalone Android project.
+- `web/` is the web project root. It must be opened and treated as a standalone web project.
+- The monorepo root should **not** be used as the Android or web project root.
+- Changes to Android code must stay inside `app/`.
+- Changes to web code must stay inside `web/`.
 
 ---
 
-## 2. How to Open the Project in IDEs
+## Opening the Project in an IDE
 
-### For Android Development (Android Studio / IntelliJ)
+### Android Development — Android Studio or IntelliJ IDEA
 
-When working on the Android application:
+Open **only** the `app/` directory as the project root, not the monorepo root.
 
-1. Open only the `app/` directory in Android Studio or IntelliJ IDEA.
-2. Do not open the main monorepo root folder as the project root for Android work.
-3. Select `app/` as the project root so the IDE can correctly resolve:
-   - Gradle files
-   - Android module configuration
-   - `.gradle/`
-   - `.idea/`
-   - local project metadata
-   - generated build artifacts
+```
+File → Open → [select the app/ folder]
+```
 
-Why this matters:
-- It prevents the root monorepo directory from being polluted with Android-specific project metadata.
-- It keeps Gradle configuration and local files inside the Android project folder.
-- It avoids confusion between the web project and Android project tooling.
+This ensures the IDE correctly resolves:
+- Gradle files and Android module configuration
+- `.gradle/` and `.idea/` metadata
+- Generated build artifacts and local project settings
 
-Use this rule strictly:
-- Android tasks belong to `app/`
-- Android files must remain inside `app/`
+> [!WARNING]
+> Opening the monorepo root in Android Studio will pollute the repository root with Android-specific metadata and break Gradle resolution.
 
-### For Web Development (VS Code / WebStorm)
+### Web Development — VS Code or WebStorm
 
-When working on the web interface:
+Open **only** the `web/` directory as the workspace root.
 
-1. Open the `web/` folder directly in VS Code or WebStorm.
-2. Do not open the monorepo root as the primary workspace for web development.
-3. This allows the IDE to properly detect:
-   - Node.js dependencies
-   - package.json scripts
-   - TypeScript or JavaScript config
-   - frontend auto-completion and tooling
-   - project-specific linting and runtime behavior
+```
+File → Open Folder → [select the web/ folder]
+```
 
-Why this matters:
-- Opening the `web/` subdirectory directly allows the IDE to work with the correct project settings.
-- It keeps the project configuration isolated and prevents the IDE from mixing root-level and project-level metadata.
+This ensures the IDE correctly resolves:
+- `package.json` scripts and Node.js configuration
+- TypeScript or JavaScript tooling
+- Linting, formatting, and auto-completion
 
 ---
 
-## 3. Git Branching Strategy (Member-Based Branches)
+## Branching Strategy
 
-Each collaborator added to the GitHub repository must work from a personal branch that identifies them.
+Every contributor works from a **personal branch** that identifies them by name.
 
-### Branch Naming Rule
+### Branch Naming
 
-Use a branch name based on your name or your personal work identity, for example:
+Use your name or work identity as the branch name:
 
-- `firstname-lastname`
-- `firstname-feature`
-- `jane-doe`
-
-Examples:
-
-```bash
-git checkout -b firstname-lastname
+```
+firstname-lastname
+firstname-feature
 ```
 
-### Required Workflow
+Examples: `jane-doe`, `john-feature`, `ana-santos`
 
-1. Pull the latest changes from `main`:
+### Creating Your Branch
+
+**1. Pull the latest changes from `main`:**
 
 ```bash
 git checkout main
 git pull origin main
 ```
 
-2. Create or switch to your personal branch:
+**2. Create your personal branch:**
 
 ```bash
-git checkout -b yourname
+git checkout -b firstname-lastname
 ```
 
-If the branch already exists:
+If your branch already exists:
 
 ```bash
-git checkout yourname
+git checkout firstname-lastname
 ```
 
-3. Make your changes locally.
-4. Commit your work to your personal branch.
-5. Push your branch to the remote repository.
+**3. Make your changes, commit, and push:**
 
 ```bash
-git push -u origin yourname
+git add .
+git commit -m "Short, descriptive summary of the change"
+git push -u origin firstname-lastname
 ```
 
-6. Open a Pull Request to `main` after your branch is ready.
+**4. Open a Pull Request** to `main` when your work is ready for review.
 
 ### Branch Rules
 
-- Never commit directly to `main`.
-- Do not work from someone else’s branch unless explicitly assigned.
-- Keep each contributor’s work isolated to their own branch.
-- Use descriptive commits, but keep them focused and related to the work being done.
+| Rule | Details |
+|:---|:---|
+| No direct commits to `main` | All changes go through a Pull Request |
+| Stay on your own branch | Do not work from another contributor's branch unless explicitly assigned |
+| Isolate your scope | Do not mix Android and web changes in the same branch or commit |
+| Write descriptive commits | Each commit message should clearly explain what changed and why |
 
 ---
 
-## 4. Commit and Push Workflow
+## Commit and Push Workflow
 
-Before committing or pushing code, contributors must confirm they are working on their own branch.
+> [!IMPORTANT]
+> Always run Git commands from the **monorepo root**, not from inside `app/` or `web/`. Each sub-project is not a separate Git repository.
 
-### Check your current branch
+### Step-by-Step Workflow
 
-From the repository root, run:
-
-```bash
-git branch --show-current
-```
-
-Your branch should match your personal branch name, for example:
-
-```bash
-firstname-lastname
-```
-
-If you are not on your own branch, switch to it:
-
-```bash
-git checkout yourname
-```
-
-### Important: run Git commands from the repo root
-
-Because this is a monorepo, Git should be used from the main repository root, not from inside `app/` or `web/`.
-
-If you are currently inside `app/` or `web/`, return to the monorepo root first:
+**1. Return to the monorepo root if you are inside a subdirectory:**
 
 ```bash
 cd ..
 ```
 
-Then run your Git commands from the root:
+**2. Verify you are on your own branch:**
+
+```bash
+git branch --show-current
+```
+
+The output should match your personal branch name. If not, switch:
+
+```bash
+git checkout firstname-lastname
+```
+
+**3. Check the status of your changes:**
 
 ```bash
 git status
-git add .
-git commit -m "Describe your change"
-git push -u origin yourname
 ```
 
-### Commit rules
+**4. Stage only the relevant files:**
 
-- Always verify the branch before committing.
-- Commit only the files relevant to your task.
-- Do not commit unrelated changes from the other project folder.
-- If you are working on Android, keep the changes inside `app/`.
-- If you are working on web, keep the changes inside `web/`.
+```bash
+git add path/to/changed/file
+```
+
+Avoid `git add .` unless you have verified every modified file belongs to your current task.
+
+**5. Commit with a clear message:**
+
+```bash
+git commit -m "Fix low stock alert not triggering on zero quantity"
+```
+
+**6. Push to your remote branch:**
+
+```bash
+git push -u origin firstname-lastname
+```
+
+### Commit Message Guidelines
+
+Write commit messages in the **imperative mood**, as if completing the sentence: *"This commit will…"*
+
+| Good | Bad |
+|:---|:---|
+| `Add product search to inventory screen` | `added stuff` |
+| `Fix crash on empty cart checkout` | `fix bug` |
+| `Update RetrofitClient base URL for emulator` | `changed url` |
 
 ---
 
-## 5. Strict Rules for AI Coding Assistants
+## AI Coding Assistant Rules
 
-> **IMPORTANT: Strict AI Scope Boundaries**
->
-> If you are using an AI coding assistant (e.g., GitHub Copilot, Cursor, ChatGPT, Claude) to write or modify code:
->
-> - **App-only tasks:** The AI must only read and modify files located inside the `app/` directory. It must NEVER edit or modify any files inside the `web/` directory.
-> - **Web-only tasks:** The AI must only read and modify files located inside the `web/` directory. It must NEVER edit or modify any files inside the `app/` directory.
-> - **Isolation Rule:** This boundary prevents cross-contamination, broken dependencies, and unwanted side effects. Any issue caused by AI or manual changes should strictly remain isolated to its respective project folder (`app/` or `web/`).
+> [!IMPORTANT]
+> **Strict scope boundaries apply when using AI coding assistants** (e.g., GitHub Copilot, Cursor, Claude, ChatGPT).
 
-This rule is mandatory for all contributors.
+| Task | AI Must Only Touch |
+|:---|:---|
+| Android development | Files inside `app/` only |
+| Web development | Files inside `web/` only |
+| PHP backend | Files inside `backend/` only |
+| FastAPI backend | Files inside `backend-fastapi/` only |
 
-Examples:
-- If you are fixing an Android bug, the AI must only operate inside `app/`.
-- If you are fixing a frontend bug, the AI must only operate inside `web/`.
-- Never allow one project to make edits in the other project unless explicitly approved and clearly scoped.
+**The AI must never cross project boundaries.** Any issue caused by AI-generated code must remain isolated to its respective folder. Cross-contamination between `app/` and `web/` is strictly prohibited and can break builds, introduce dependency conflicts, and corrupt project-specific tooling.
+
+This rule applies to all contributors without exception.
 
 ---
 
-## 6. Recommended Local Development Workflow
+## Local Development Workflows
 
-### Android workflow
+### Android
 
 ```bash
 cd app
@@ -219,70 +228,30 @@ cd app
 
 Then open the `app/` directory in Android Studio for live development and debugging.
 
-### Web workflow
+### Web Portal
+
+The web portal has no build step. Open `web/index.html` in a browser directly, or serve it:
 
 ```bash
 cd web
-npm install
-npm run dev
+npx serve .
 ```
 
-Then open the `web/` directory directly in VS Code or WebStorm for frontend development.
+### Backend (PHP or FastAPI)
+
+See [Local Backend Setup (Docker)](#local-backend-setup-docker) below.
 
 ---
 
-## 7. Pull Request Guidelines
+## Local Backend Setup (Docker)
 
-Before opening a PR:
+The backend services are run locally using Docker Compose. This section explains how to configure and start the stack on your machine.
 
-- Make sure your branch is up to date with `main`
-- Run the relevant checks for your project
-- Confirm the changes are isolated to the correct folder
-- Ensure no accidental edits were made in the other project
-- Review the diff before committing
+### 1. Install Docker
 
-PR titles should be clear and specific. Example:
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) or Docker Engine with Compose. Confirm Docker is running before proceeding.
 
-- `Fix Android login validation`
-- `Improve web dashboard responsiveness`
-- `Add inventory filter to web UI`
-
----
-
-## 8. Final Notes
-
-This monorepo is intentionally split between `app/` and `web/`.
-
-To keep the project stable:
-- work inside the correct project folder
-- use your own personal branch
-- keep AI and manual changes isolated
-- do not cross-edit between Android and web code
-
-Thank you for helping keep the project organized, stable, and maintainable.
-
----
----
-
-# Managing Sentry Local Setup Guide
-
-This repository is a shared Git monorepo. The backend is run locally with Docker Compose, and the Android app connects to it over HTTP. Because this is a team project, some local configuration values are machine-specific and must stay local.
-
-Use this guide in order.
-
-## 1. Prerequisites
-
-Install Docker before doing anything else.
-
-- Install Docker Desktop if you are on a local workstation, or use Portainer if your team runs stacks through it.
-- Make sure Docker is running and your account can access Docker/Portainer.
-- If using Portainer, confirm you can create a stack and paste YAML content.
-
-Do not start editing project files until Docker is installed and working.
-
-## 2. Clone the repo and locate the compose file
-
-Clone the repository to your machine, then open the project root.
+### 2. Clone and Locate the Compose File
 
 ```bash
 git clone <repo-url>
@@ -290,247 +259,209 @@ cd Managing-Sentry
 ls
 ```
 
-At the repo root, you should see the main Docker file:
+You should see `docker-compose.yml` at the repo root. This file orchestrates three services: `db`, `php`, and `fastapi`.
 
-```text
-./docker-compose.yml
-```
+### 3. Update Bind Mount Paths
 
-This is the file the team uses to start the local backend stack.
+> [!IMPORTANT]
+> The `docker-compose.yml` contains absolute paths from the project owner's machine. These paths **will not work on your machine**. You must update them before deploying.
 
-## 3. IMPORTANT: edit your own local copy of docker-compose.yml before deploying
-
-This is the most important rule for the team.
-
-The project root `docker-compose.yml` is maintained by the project owner as the "master" file. It contains absolute bind mount paths that are correct for the owner's machine. Those paths must not be kept as-is for everyone else.
-
-Because the backend uses Docker bind mounts, the path must be a real absolute filesystem path on your machine. Relative paths are not reliable in Portainer's Web Editor, and the Web Editor resolves paths relative to Portainer's internal storage rather than your local project folder.
-
-Do this on your own machine before creating or deploying the stack:
-
-1. Open the project root `docker-compose.yml` in your editor.
-2. Change the bind mount paths for the `php` service to your own local checkout path.
-3. If your `db` service also mounts `db/init.sql`, update that path too.
-4. Do not commit this edited file back to Git.
-
-Example:
-
-Before (project owner's file):
+Open `docker-compose.yml` and replace the bind mount paths for the `php` and `fastapi` services with your own local checkout path:
 
 ```yaml
+# Before (project owner's path):
 volumes:
   - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend:/app
-```
 
-After (your local copy, example):
-
-```yaml
+# After (your path):
 volumes:
-  - /home/their-username/wherever-they-cloned-it/Managing-Sentry/backend:/app
+  - /home/YOUR_USERNAME/path/to/Managing-Sentry/backend:/app
 ```
 
-If the `db` service also has an init script mount, update it similarly:
+Apply the same change to the `fastapi` service and any `db` volume mounts if present.
 
-```yaml
-volumes:
-  - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/db/init.sql:/docker-entrypoint-initdb.d/init.sql
-```
+> [!CAUTION]
+> Do **not** commit your edited `docker-compose.yml` back to Git. Your personal absolute paths should never exist in the shared repository. To prevent accidental staging, you can add it to your local Git exclude:
+> ```bash
+> echo "docker-compose.yml" >> .git/info/exclude
+> ```
 
-to:
+### 4. Configure Environment Variables
 
-```yaml
-volumes:
-  - /home/their-username/wherever-they-cloned-it/Managing-Sentry/db/init.sql:/docker-entrypoint-initdb.d/init.sql
-```
-
-Important notes:
-
-- The mount path must be a real absolute path on your machine.
-- It cannot stay as the project owner's path.
-- It cannot stay relative like `./backend` when deploying via Portainer's Web Editor.
-- This is a local-only change for your machine.
-
-## 4. Deploy the stack in Portainer
-
-After you have edited your local copy of `docker-compose.yml`, deploy it.
-
-Choose one of these methods in Portainer:
-
-- Paste the edited YAML into the Web Editor and deploy, or
-- Go to `Stacks` > `Add Stack` and paste the edited YAML there
-
-The important part is that you are deploying your edited local version, not the original shared file from the repo.
-
-## 5. Do not push your edited docker-compose.yml back to Git
-
-This file is intentionally local-only.
-
-Do not run:
+Copy the example environment file and fill in your values:
 
 ```bash
-git add docker-compose.yml
-git commit -m "Update docker compose paths"
-git push
+cp backend/app/.env.example backend/app/.env
 ```
 
-Do not commit your personal bind mount path or personal local configuration back to the shared repo.
+Edit the `.env` file with your database credentials. Do not commit `.env` files to Git.
 
-If the project owner updates the official `docker-compose.yml` later, for example with new services, changed ports, or a different backend setup, then:
-
-1. Pull the updated master file from Git.
-2. Re-apply only your own local volume path edits to that new file.
-3. Deploy again from your edited copy.
-4. Do not keep using an old personal version.
-
-Recommended options:
-
-- Add `docker-compose.yml` to your local Git exclude, such as `.git/info/exclude`, so it will not be accidentally staged.
-- Or simply be careful never to `git add` or commit it after editing.
-
-Either approach is fine; pick the one that works best for you.
-
-## 6. Android-side configuration
-
-The Android app needs a backend URL in `RetrofitClient.java`.
-
-### If testing on the Android Emulator
-
-Use:
-
-```java
-private static final String BASE_URL = "http://10.0.2.2:8000/";
-```
-
-This is the standard Android emulator host loopback and works for everyone without edits.
-
-### If testing on a real device over Wi‑Fi / wireless debugging
-
-Use your own computer's local network IP address instead of `10.0.2.2` or `127.0.0.1`:
-
-```java
-private static final String BASE_URL = "http://192.168.x.x:8000/";
-```
-
-Find the correct IPv4 address on your computer:
-
-Linux / Mac:
+### 5. Start the Stack
 
 ```bash
-ip addr show
+docker compose up -d
 ```
 
-Windows:
-
-```cmd
-ipconfig
-```
-
-Look for your local network IPv4 address, such as `192.168.1.25`, and not `127.0.0.1`.
-
-Also:
-
-- Your PC and your Android device must be on the same Wi‑Fi network.
-- `10.0.2.2` only works on the emulator; it will not work on a real device.
-- This BASE_URL edit is also local-only and should not be committed with a personal IP hardcoded into it.
-
-## Setting Up Your Own Local Database (pgAdmin4)
-
-Each teammate runs their own local Docker Postgres container — that means each person has their OWN separate, empty database until they create the schema themselves. We do it this way because we don't have shared team hosting yet (that will come later when the teacher provides real hosting). For now, everyone needs a local copy so they can develop and test independently without being on the same network or waiting for a shared server. This also gives everyone hands-on practice creating the schema themselves (a skill you'll use again when we move to real hosting).
-
-Note: This means your test data will NOT match anyone else's, and that's expected — it's for individual development and testing, not shared team data.
-
-Follow these steps in pgAdmin4 to register your local Docker Postgres server and create the project database and tables.
-
-1. Open pgAdmin4. In the left tree, right-click `Servers` and choose `Register` > `Server`.
-2. In the **General** tab, give the connection a name (anything descriptive, e.g. "Local Docker").
-3. In the **Connection** tab, fill in the values (these are the typical values for this project):
-
-  - Host name/address: `localhost`
-  - Port: `5433`  (match whatever host port is set in `docker-compose.yml`'s `ports` line for the `db` service — the LEFT number in `5433:5432`)
-  - Maintenance database: `postgres` (this is just the initial DB used to connect; application tables go elsewhere)
-  - Username / Password: use the `DB_USER` and `DB_PASSWORD` values from your local `.env` file
-
-  Click **Save**.
-
-4. Once connected, expand your new server, right-click `Databases` > `Create` > `Database`.
-  - Name it to match `DB_NAME` from your `.env` (for example, `sentry`).
-  - This creates your OWN dedicated application database. We do NOT put app tables into the default `postgres` database because `postgres` is intended for admin/maintenance — using a dedicated app database matches common real-world practice.
-
-5. Expand your new database > `Schemas` > `public` > `Tables`. Right-click `Tables` > `Create` > `Table`.
-  - `public` is the standard default schema where tables normally live; there is no need to create a separate schema for this project.
-
-6. Create the `users` table (required for the login feature) with these columns:
-
-  - `user_id`: integer, Primary Key, Identity / auto-increment (in pgAdmin, set this using the `Identity` tab for the column or choose a serial-style type)
-  - `full_name`: character varying
-  - `user_name`: character varying — should be UNIQUE (set this in the **Constraints** tab)
-  - `password_hash`: character varying — this stores a HASHED password, never plain text
-  - `role`: character varying
-
-  Set the Primary Key on `user_id` and add a Unique constraint on `user_name` in the Constraints tab.
-
-7. Save the table. Your database is now ready for the app to connect to using the `DB_NAME`, `DB_USER`, and `DB_PASSWORD` you set in your local `.env`.
-
-### Why Passwords Are Hashed, Not Stored as Plain Text
-
-What password hashing means: converting the actual password into a scrambled, irreversible string using a one-way function. The resulting value cannot be feasibly reversed to get the original password.
-
-Why this matters practically: if the database is ever leaked, exposed, or accessed by someone who shouldn't have access (including accidentally, e.g. a misconfigured connection), plain-text passwords would immediately compromise every user's account. Because many people reuse passwords across sites, exposed plain-text passwords can lead to account takeover on other services as well.
-
-How this project handles it: the backend uses PHP's `password_hash()` when a user is created/registered, and `password_verify()` when a user logs in. The app never needs to reverse the hash — when a login happens the submitted password is hashed and compared using `password_verify()`.
-
-Example of what a `password_hash()` value looks like (this is a realistic-looking example hash, not a real password):
-
-```
-$2y$10$e0NR5k3Z9bW7P6q1h4K9uO8wYz0AbCDeFGHIJKLMNOPQRSTUV
-```
-
-Do NOT manually type a plain-text password directly into the `password_hash` column when testing or seeding data. Instead, insert test users through the app's registration flow (or run the password through PHP's `password_hash()` first) so the hashing logic is exercised and not bypassed.
-
-To hash a password from your shell (useful for creating a single test user), run this PHP one-liner and replace `YOUR_PLAIN_TEXT_PASSWORD` with the password you want to hash:
-
-```bash
-php -r "echo password_hash('YOUR_PLAIN_TEXT_PASSWORD', PASSWORD_BCRYPT, ['cost' => 12]) . PHP_EOL;"
-```
-
-Notes:
-
-- Replace `YOUR_PLAIN_TEXT_PASSWORD` with your test password. The command prints the hashed value which you can paste into the `password_hash` column if you must seed manually.
-- Be cautious: running this in a shell can leave the plain-text password in your shell history. Prefer creating test users through the registration endpoint whenever possible.
-
-## 7. How to verify it's working
-
-Once the stack is running:
+### 6. Verify and Test
 
 ```bash
 docker ps -a
 ```
 
-You should see both containers running and the PHP container should show the published port, for example `0.0.0.0:8000->8000/tcp`.
+You should see three containers running: `db`, `php`, and `fastapi`.
 
-Then test the backend before testing from the Android app:
+Test each backend:
 
-```text
-http://localhost:8000/test.php
+```
+PHP backend:     http://localhost:8000/test.php
+FastAPI backend: http://localhost:8001/docs
 ```
 
-Open that URL in a browser or Postman. If it responds successfully, the PHP + Postgres stack is up and serving files from the mounted `backend/` folder.
+### 7. Updating the Stack After Owner Changes
 
-## 8. Common mistakes
+If the project owner updates `docker-compose.yml` (e.g., new services or changed ports):
 
-- Forgetting to update the bind mount path in `docker-compose.yml` results in an empty `/app` folder inside the PHP container and many 404s.
-- Accidentally committing your personal `docker-compose.yml` path edits or personal Android `BASE_URL` IP changes to Git.
-- Using `10.0.2.2` on a real device by mistake. This only works in the Android emulator.
-- Keeping a stale personal `docker-compose.yml` after the project owner updates the official file.
+1. Pull the updated file from Git.
+2. Re-apply your personal bind mount path edits.
+3. Re-deploy the stack.
+4. Do not keep running an outdated personal copy.
 
-Follow the local-only rule: machine-specific paths and IPs stay local, and the shared Git repo stays clean.
+---
 
-## Final reminder
+## Local Database Setup (pgAdmin4)
 
-This repo is shared, but the machine-specific values below are not meant to be shared:
+Each contributor runs their own isolated local PostgreSQL instance. This is intentional — there is no shared team database during local development. Test data will differ between machines.
 
-- `docker-compose.yml` absolute bind mount paths
-- `db/init.sql` absolute bind mount paths
-- Android `BASE_URL` with a personal IP address
+### Connecting to Your Local Docker Database
 
-Keep those edits local, deploy them locally, and do not push them back to the shared repo.
+1. Open **pgAdmin4**.
+2. Right-click `Servers` → `Register` → `Server`.
+3. In the **General** tab, give the connection a descriptive name (e.g., `Local Docker`).
+4. In the **Connection** tab, fill in the following:
+
+| Field | Value |
+|:---|:---|
+| Host name/address | `localhost` |
+| Port | `5433` (matches the left side of `5433:5432` in `docker-compose.yml`) |
+| Maintenance database | `postgres` |
+| Username | Value of `DB_USER` from your local `.env` |
+| Password | Value of `DB_PASSWORD` from your local `.env` |
+
+5. Click **Save**.
+
+### Creating the Application Database
+
+1. Expand your new server → right-click `Databases` → `Create` → `Database`.
+2. Name it to match `DB_NAME` from your `.env` (e.g., `sentry`).
+3. Click **Save**.
+
+> Use a dedicated application database, not the default `postgres` database. The `postgres` database is reserved for admin and maintenance purposes.
+
+### Creating the `users` Table
+
+Expand your database → `Schemas` → `public` → `Tables` → right-click `Tables` → `Create` → `Table`.
+
+Create the table with the following columns:
+
+| Column | Type | Constraints |
+|:---|:---|:---|
+| `user_id` | `integer` | Primary Key, Identity / Auto-increment |
+| `full_name` | `character varying` | — |
+| `user_name` | `character varying` | Unique |
+| `password_hash` | `character varying` | — |
+| `role` | `character varying` | — |
+
+### Password Hashing
+
+> [!CAUTION]
+> Never store plain-text passwords in the `password_hash` column. Always hash passwords before inserting them.
+
+The backend uses PHP's `password_hash()` for registration and `password_verify()` for login. To manually generate a hashed password for a test user, run:
+
+```bash
+php -r "echo password_hash('YOUR_PLAIN_TEXT_PASSWORD', PASSWORD_BCRYPT, ['cost' => 12]) . PHP_EOL;"
+```
+
+Copy the output and paste it into the `password_hash` column. Prefer creating test users through the app's registration flow whenever possible, as this exercises the full hashing logic.
+
+---
+
+## Android Network Configuration
+
+The Android app communicates with the backend via `RetrofitClient.java`. The base URL must match your local setup.
+
+### Emulator (Standard)
+
+```java
+private static final String BASE_URL = "http://10.0.2.2:8000/";
+```
+
+`10.0.2.2` is the Android emulator's loopback alias for the host machine's `localhost`. This works for all contributors without modification.
+
+### Real Device over Wi-Fi
+
+```java
+private static final String BASE_URL = "http://192.168.x.x:8000/";
+```
+
+Replace `192.168.x.x` with your machine's local network IPv4 address:
+
+```bash
+# Linux / macOS:
+ip addr show
+
+# Windows:
+ipconfig
+```
+
+**Requirements:**
+- Your PC and Android device must be on the same Wi-Fi network.
+- `10.0.2.2` does **not** work on physical devices.
+- Do not commit a personal IP address to the repository.
+
+---
+
+## Pull Request Guidelines
+
+Before opening a Pull Request:
+
+- [ ] Your branch is up to date with `main`
+- [ ] Changes are isolated to the correct project folder (`app/`, `web/`, `backend/`, or `backend-fastapi/`)
+- [ ] No accidental edits exist in an unrelated project folder
+- [ ] All relevant checks pass (Gradle build, linting, etc.)
+- [ ] You have reviewed the diff before submitting
+
+### PR Title Format
+
+Write PR titles that are specific and descriptive:
+
+| Good | Bad |
+|:---|:---|
+| `Fix Android login validation on empty password` | `fix stuff` |
+| `Add low stock alert to inventory screen` | `update` |
+| `Improve web dashboard table responsiveness` | `dashboard changes` |
+
+### PR Description
+
+Include a brief description of:
+- What was changed and why
+- How it was tested
+- Any known limitations or follow-up tasks
+
+---
+
+## Common Mistakes
+
+| Mistake | Consequence | Prevention |
+|:---|:---|:---|
+| Opening the monorepo root in Android Studio | Corrupts root with Android metadata; breaks Gradle | Open only `app/` in Android Studio |
+| Forgetting to update bind mount paths in `docker-compose.yml` | Empty `/app` in container; 404 errors on all endpoints | Edit paths before deploying |
+| Committing personal `docker-compose.yml` edits | Personal paths exposed in the shared repo | Add to `.git/info/exclude` or never `git add` it |
+| Committing `BASE_URL` with a personal IP | Breaks the app for all other contributors | Use `10.0.2.2` for emulator; never commit a real IP |
+| Running `git add .` without checking `git status` | Unrelated files from other project folders get staged | Always review `git status` before staging |
+| Committing directly to `main` | Bypasses review; can introduce unstable code | Always work from your personal branch |
+| Using `10.0.2.2` on a real device | Connection refused; the alias only works on the emulator | Use your machine's local IPv4 for physical devices |
+
+---
+
+*Thank you for contributing. Please keep the repository clean, your branches focused, and your commits descriptive. If you have questions, open an issue and a maintainer will respond.*

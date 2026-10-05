@@ -12,7 +12,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
     private static volatile Retrofit retrofit;
-    private static final String BASE_URL = "http://192.168.123.52:8001/";
+    private static final String BASE_URL = "https://managing-sentry-app.vercel.app/";
+
+
 
     private static Retrofit getRetrofitInstance() {
         if (retrofit == null) {
