@@ -8,7 +8,58 @@ const defaultState = {
   transactions: []
 };
 
-const state = JSON.parse(localStorage.getItem("inventorySuperAdmin") || "null") || structuredClone(defaultState);
+const API_BASE = "../backend/web/api";
+const savedState = JSON.parse(localStorage.getItem("inventorySuperAdmin") || "null");
+const state = { ...structuredClone(defaultState), ...(savedState || {}) };
+
+async function apiRequest(endpoint, options = {}) {
+  const response = await fetch(`${API_BASE}/${endpoint}`, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) }
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "The server request failed.");
+  return result;
+}
+
+async function loadDashboardData() {
+  const [products, transactions, capital] = await Promise.all([
+    apiRequest("products.php"),
+    apiRequest("get_history.php"),
+    apiRequest("capital.php")
+  ]);
+
+  state.products = products.map(product => ({
+    ...product,
+    id: Number(product.id),
+    price: Number(product.price),
+    cost: Number(product.cost),
+    stock: Number(product.stock),
+    stockBaseline: Number(product.stockBaseline),
+    sold: Number(product.sold),
+    expiryBatches: Array.isArray(product.expiryBatches) ? product.expiryBatches : []
+  }));
+  const sales = transactions.filter(transaction => transaction.type === "SALE");
+  const today = new Date().toDateString();
+  state.salesToday = sales.reduce((sum, sale) =>
+    new Date(sale.date).toDateString() === today ? sum + Number(sale.amount) : sum, 0);
+  state.totalSales = sales.reduce((sum, sale) => sum + Number(sale.amount), 0);
+  state.profit = sales.reduce((sum, sale) =>
+    sum + Number(sale.amount) - Number(sale.costPerUnit || 0) * Number(sale.qty), 0);
+  state.transactions = transactions.map(transaction => ({
+    ...transaction,
+    timestamp: new Date(transaction.date).getTime(),
+    date: new Date(transaction.date).toLocaleString(),
+    qty: Number(transaction.qty),
+    amount: Number(transaction.amount),
+    costPerUnit: Number(transaction.costPerUnit || 0)
+  }));
+  state.capital = Number(capital.capital);
+  state.cart = (state.cart || []).filter(item =>
+    state.products.some(product => product.id === Number(item.id))
+  );
+  persist();
+}
 
 /* Currently active dashboard tab (expiring | sell | checkout) */
 let activeDashTab = "expiring";
@@ -30,21 +81,28 @@ const loginScreen = document.getElementById("loginScreen");
 const app = document.getElementById("app");
 const pageContent = document.getElementById("pageContent");
 const pageTitle = document.getElementById("pageTitle");
+let currentPage = "dashboard";
 
 /* LOGIN - KEPT */
-document.getElementById("loginForm").addEventListener("submit", e => {
+document.getElementById("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   const username = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value;
   const message = document.getElementById("loginMessage");
 
-  if (username === "admin" && password === "admin123") {
+  message.textContent = "Signing in…";
+  try {
+    await apiRequest("login.php", {
+      method: "POST",
+      body: JSON.stringify({ username, password })
+    });
+    await loadDashboardData();
     message.textContent = "";
     loginScreen.classList.add("hidden");
     app.classList.remove("hidden");
     renderPage("dashboard");
-  } else {
-    message.textContent = "Invalid username or password.";
+  } catch (error) {
+    message.textContent = error.message;
   }
 });
 
@@ -66,38 +124,62 @@ document.querySelectorAll(".nav-parent").forEach(btn => {
   btn.addEventListener("click", () => btn.closest(".nav-group").classList.toggle("open"));
 });
 
-/* LOGOUT - KEPT */
-document.getElementById("logoutBtn").addEventListener("click", () => {
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  try {
+    await apiRequest("login.php?action=logout", {
+      method: "POST",
+      body: "{}"
+    });
+  } catch (error) {
+    toast(`Could not confirm server sign-out: ${error.message}`);
+  }
   app.classList.add("hidden");
   loginScreen.classList.remove("hidden");
   document.getElementById("loginForm").reset();
 });
 
-document.getElementById("setCapitalBtn").addEventListener("click", () => {
+document.getElementById("setCapitalBtn").addEventListener("click", async () => {
   const value = prompt("Enter your new capital amount:", state.capital);
   if (value !== null && !isNaN(value) && Number(value) >= 0) {
-    state.capital = Number(value);
-    persist();
-    updateStats();
-    toast("Capital updated successfully.");
+    try {
+      const result = await apiRequest("capital.php", {
+        method: "POST",
+        body: JSON.stringify({ capital: Number(value) })
+      });
+      state.capital = Number(result.capital);
+      updateStats();
+      toast("Capital updated successfully.");
+    } catch (error) {
+      toast(`Could not save capital: ${error.message}`);
+    }
   }
 });
 
-document.getElementById("saveDataBtn").addEventListener("click", () => {
-  persist();
-  toast("Data saved to this browser.");
+document.getElementById("saveDataBtn").addEventListener("click", async () => {
+  try {
+    await loadDashboardData();
+    renderPage(currentPage);
+    toast("Data refreshed from PostgreSQL.");
+  } catch (error) {
+    toast(`Could not refresh data: ${error.message}`);
+  }
 });
 
-document.getElementById("resetDataBtn").addEventListener("click", () => {
-  if (!confirm("Reset all saved inventory, sales, and transaction data?")) return;
-  Object.assign(state, structuredClone(defaultState));
-  persist();
-  renderPage("dashboard");
-  toast("All data has been reset.");
+document.getElementById("resetDataBtn").addEventListener("click", async () => {
+  if (!confirm("This permanently clears database sales/history and archives all products. Continue?")) return;
+  try {
+    await apiRequest("reset.php", { method: "POST", body: "{}" });
+    state.cart = [];
+    await loadDashboardData();
+    renderPage("dashboard");
+    toast("Database data has been reset.");
+  } catch (error) {
+    toast(`Could not reset database data: ${error.message}`);
+  }
 });
 
 function persist() {
-  localStorage.setItem("inventorySuperAdmin", JSON.stringify(state));
+  localStorage.setItem("inventorySuperAdmin", JSON.stringify({ cart: state.cart }));
 }
 
 function money(value) {
@@ -157,6 +239,7 @@ function updateLowStockIndicator() {
 }
 
 function renderPage(page) {
+  currentPage = page;
   document.querySelectorAll(".nav-item, .nav-sub").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.page === page);
   });
@@ -170,6 +253,8 @@ function renderPage(page) {
   }
 
   pageTitle.textContent = pages[page] || "Dashboard";
+  pageContent.classList.toggle("dashboard-sell-mode", page === "dashboard" && activeDashTab === "sell");
+  pageContent.closest(".main").classList.toggle("sell-view-mode", page === "dashboard" && activeDashTab === "sell");
   updateStats();
 
   const renderer = {
@@ -215,6 +300,7 @@ function dashboardStats() {
 /* DASHBOARD - follows the wireframe while retaining the existing tabs */
 function renderDashboard() {
   return `
+    <div class="dashboard-overview">
     ${dashboardStats()}
     <div class="dashboard-toolbar">
       <div class="toolbar-left">
@@ -230,20 +316,19 @@ function renderDashboard() {
       </div>
     </div>
 
-    <div class="wire-table-wrap">
-      <table>
+    <div class="wire-table-wrap dashboard-table-wrap">
+      <table class="dashboard-inventory-table">
         <thead><tr>
           <th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Sold</th><th>Est. Profit</th><th>Expiration</th>
         </tr></thead>
         <tbody id="dashboardRows">${dashboardRows()}</tbody>
       </table>
     </div>
+    </div>
 
-    <!-- Existing Expiring Soon / Selling / Checkout tabs are intentionally kept -->
     <div class="dashboard-tabs">
       <button class="tab-btn ${activeDashTab === "expiring" ? "active" : ""}" data-tab="expiring">▣ &nbsp; Expiring Soon</button>
       <button class="tab-btn ${activeDashTab === "sell" ? "active" : ""}" data-tab="sell">□ &nbsp; Pick Items to Sell <span class="cart-pill" id="cartPill">${cartCount()}</span></button>
-      <button class="tab-btn ${activeDashTab === "checkout" ? "active" : ""}" data-tab="checkout">□ &nbsp; Cart & Checkout</button>
     </div>
     <div id="dashboardTab">${dashTabHtml(activeDashTab)}</div>
   `;
@@ -255,7 +340,6 @@ function cartCount() {
 
 function dashTabHtml(tab) {
   if (tab === "sell") return renderSellTab();
-  if (tab === "checkout") return renderCheckoutTab();
   return expiringPanel() + lowStockPanel();
 }
 
@@ -817,29 +901,80 @@ function renderReports() {
 }
 
 function renderSellTab() {
-  return `<div class="panel"><div class="panel-title">□ &nbsp; Pick Items to Sell</div><div class="panel-body"><div class="product-grid">${state.products.filter(p => p.stock > 0).map(productMini).join("") || `<p class="empty">No products are currently in stock.</p>`}</div></div></div>`;
+  return `<div class="sell-workspace">
+    <section class="panel sell-panel">
+      <div class="panel-title">□ &nbsp; Pick Items to Sell</div>
+      <div class="sell-toolbar">
+        <label class="sr-only" for="sellSort">Sort products</label>
+        <select class="compact-select" id="sellSort">
+          <option value="name">Sort by name</option>
+          <option value="price">Sort by price</option>
+          <option value="stock">Sort by quantity</option>
+        </select>
+        <label class="sr-only" for="sellSearch">Search products</label>
+        <input class="compact-input" id="sellSearch" type="search" placeholder="Search products…">
+      </div>
+      <div class="sell-table-scroll">
+        <table class="sell-table">
+          <thead><tr><th>Name</th><th>SRP</th><th>Qty</th><th>Action</th></tr></thead>
+          <tbody id="sellProductRows">${sellProductRows()}</tbody>
+        </table>
+      </div>
+    </section>
+    <section class="panel sell-cart-panel">
+      <div class="panel-title">Cart</div>
+      <div class="sell-cart-scroll">
+        <table class="sell-cart-table">
+          <thead><tr><th>Name</th><th>Qty</th><th>Total</th><th>Action</th></tr></thead>
+          <tbody id="sellCartRows">${sellCartRows()}</tbody>
+        </table>
+      </div>
+      <div class="sell-summary">
+        <div class="sell-total"><span>Total</span><strong>${money(cartTotal())}</strong></div>
+        <div class="sell-summary-actions">
+          <button class="sell-checkout-btn" id="sellCheckoutBtn" ${state.cart.length ? "" : "disabled"}>Checkout</button>
+          <button class="sell-clear-btn" id="clearCartBtn" ${state.cart.length ? "" : "disabled"}>Clean Cart</button>
+        </div>
+      </div>
+    </section>
+  </div>`;
 }
 
-function renderCheckoutTab() {
-  const total = state.cart.reduce((sum,i) => sum + i.price * i.qty, 0);
-  return `<div class="cart-layout"><div class="panel"><div class="panel-title">□ &nbsp; Cart Items</div><div class="panel-body">
-    ${state.cart.length ? state.cart.map(i => `
-      <div class="cart-row cart-item">
-        <div class="cart-item-info">
-          <strong>${escapeHtml(i.name)}</strong>
-          <span class="cart-unit">${money(i.price)} each</span>
-          <div class="cart-qty-controls">
-            <button class="qty-btn" data-cart-remove-step="${i.id}">−</button>
-            <input type="number" class="qty-input small" value="${i.qty}" min="1" data-cart-qty data-cart-id="${i.id}">
-            <button class="qty-btn" data-cart-add-step="${i.id}">+</button>
-          </div>
-        </div>
-        <div class="cart-item-right">
-          <strong>${money(i.price*i.qty)}</strong>
-          <button class="remove-btn" data-cart-remove="${i.id}">Remove</button>
-        </div>
-      </div>`).join("") : `<p class="empty">Your cart is empty.</p>`}
-  </div></div><div class="checkout-box"><h3>Checkout Summary</h3><div class="cart-row"><span>Items</span><strong>${cartCount()}</strong></div><div class="checkout-total"><span>Total</span><span>${money(total)}</span></div><button class="primary-btn" id="checkoutBtn" ${state.cart.length ? "" : "disabled"}>Proceed to Payment</button></div></div>`;
+function cartTotal() {
+  return state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+}
+
+function sellProductRows(products = state.products.filter(product => product.stock > 0)) {
+  if (!products.length) return `<tr><td colspan="4" class="table-empty">No products found.</td></tr>`;
+  return products.map(product => {
+    const inCart = state.cart.find(item => item.id === product.id)?.qty || 0;
+    const available = Math.max(0, product.stock - inCart);
+    return `<tr>
+      <td title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</td>
+      <td>${money(product.price)}</td>
+      <td>${available}</td>
+      <td><div class="sell-add-controls">
+        <input class="sell-qty-input" type="number" min="1" max="${available}" value="1" data-qty="${product.id}" aria-label="Quantity for ${escapeHtml(product.name)}" ${available ? "" : "disabled"}>
+        <button class="sell-add-btn" type="button" data-add="${product.id}" ${available ? "" : "disabled"}>${available ? "Add" : "Out"}</button>
+      </div></td>
+    </tr>`;
+  }).join("");
+}
+
+function sellCartRows() {
+  if (!state.cart.length) {
+    return `<tr><td class="sell-cart-empty" colspan="4">Your cart is empty. Add products to start checkout.</td></tr>`;
+  }
+  return state.cart.map(item => `<tr>
+    <td title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</td>
+    <td><div class="sell-cart-qty">
+      <button class="qty-btn" data-cart-remove-step="${item.id}" aria-label="Decrease ${escapeHtml(item.name)} quantity">−</button>
+      <input class="sell-qty-input" type="number" min="1" value="${item.qty}" data-cart-qty data-cart-id="${item.id}" aria-label="${escapeHtml(item.name)} quantity">
+      <button class="qty-btn" data-cart-add-step="${item.id}" aria-label="Increase ${escapeHtml(item.name)} quantity">+</button>
+    </div></td>
+    <td>${money(item.price * item.qty)}</td>
+    <td><button class="remove-btn" data-cart-remove="${item.id}">Remove</button></td>
+  </tr>`).join("");
 }
 
 function bindPageEvents(page) {
@@ -900,21 +1035,29 @@ function bindPageEvents(page) {
     hasExpiry.addEventListener("change", syncExpiry);
     syncExpiry();
 
-    document.getElementById("addProductForm").addEventListener("submit", e => {
+    document.getElementById("addProductForm").addEventListener("submit", async e => {
       e.preventDefault();
       const f = new FormData(e.target);
-      const initialStock = Math.max(0, Number(f.get("stock")));
-      const newProduct = {
-        id: Date.now(), name: f.get("name"), category: f.get("category"), price: Number(f.get("price")),
-        cost: Number(f.get("cost")), stock: initialStock, stockBaseline: initialStock,
-        expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : "", expiryBatches: f.get("hasExpiry") === "yes" && f.get("expiry") ? [{ expiry: f.get("expiry"), qty: initialStock, addedAt: new Date().toISOString() }] : [], sold: 0
-      };
-      state.products.push(newProduct);
-      state.transactions.push({
-        date: new Date().toLocaleString(), type: "PRODUCT ADD", name: newProduct.name,
-        qty: newProduct.stock, amount: Number(newProduct.cost || 0) * Number(newProduct.stock || 0), notes: "Product added to inventory."
-      });
-      persist(); updateStats(); toast("Product added successfully."); renderPage("products");
+      try {
+        await apiRequest("products.php?action=add", {
+          method: "POST",
+          body: JSON.stringify({
+            name: f.get("name"),
+            category: f.get("category"),
+            price: Number(f.get("price")),
+            cost: Number(f.get("cost")),
+            stock: Number(f.get("stock")),
+            expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : "",
+            description: f.get("description")
+          })
+        });
+        await loadDashboardData();
+        updateStats();
+        toast("Product added successfully.");
+        renderPage("products");
+      } catch (error) {
+        toast(`Could not add product: ${error.message}`);
+      }
     });
   }
 
@@ -933,32 +1076,31 @@ function bindPageEvents(page) {
       syncExpiry();
     }
 
-    document.getElementById("stockForm").addEventListener("submit", e => {
+    document.getElementById("stockForm").addEventListener("submit", async e => {
       e.preventDefault();
       const f = new FormData(e.target);
       const product = state.products.find(p => p.id === Number(f.get("product")));
       const qty = Number(f.get("qty"));
       if (!product) return toast("Please add a product first.");
-      if (page === "stock-in") {
-        product.stock += qty;
-        /* Replenishment creates a new 10% baseline from the resulting stock. */
-        product.stockBaseline = product.stock;
-        ensureExpiryBatches(product);
-        if (f.get("hasExpiry") === "yes" && f.get("expiry")) {
-          const expiry = f.get("expiry");
-          const same = product.expiryBatches.find(b => b.expiry === expiry);
-          if (same) same.qty = Number(same.qty || 0) + qty;
-          else product.expiryBatches.push({ expiry, qty, addedAt: new Date().toISOString() });
-          product.expiry = expiry;
-        }
-      } else {
-        /* Stock Out follows the same expiry-batch rules as a sale. */
-        consumeExpiryBatches(product, qty);
-        product.stock = Math.max(0, product.stock - qty);
+      try {
+        await apiRequest("products.php?action=stock", {
+          method: "POST",
+          body: JSON.stringify({
+            product_id: product.id,
+            quantity: qty,
+            type: page === "stock-in" ? "STOCK IN" : "STOCK OUT",
+            reference: f.get("ref"),
+            notes: f.get("notes"),
+            expiry: page === "stock-in" && f.get("hasExpiry") === "yes" ? f.get("expiry") : ""
+          })
+        });
+        await loadDashboardData();
+        updateStats();
+        toast(`Stock ${page === "stock-in" ? "in" : "out"} recorded.`);
+        renderPage(page);
+      } catch (error) {
+        toast(`Could not update stock: ${error.message}`);
       }
-      const notes = (f.get("notes") || "").trim();
-      state.transactions.push({date:new Date().toLocaleString(), type:page === "stock-in" ? "STOCK IN" : "STOCK OUT", name:product.name, qty, amount: page === "stock-in" ? Number(product.cost || 0) * qty : 0, costPerUnit: Number(product.cost || 0), notes});
-      persist(); updateStats(); toast(`Stock ${page === "stock-in" ? "in" : "out"} recorded.`); renderPage(page);
     });
   }
 
@@ -1050,7 +1192,7 @@ function bindPageEvents(page) {
       const mode = document.getElementById("historySort").value;
       if (mode === "name") list.sort((a,b) => a.name.localeCompare(b.name));
       if (mode === "sales") list.sort((a,b) => Number(b.amount) - Number(a.amount));
-      if (mode === "date") list.reverse();
+      if (mode === "date") list.sort((a,b) => b.timestamp - a.timestamp);
       document.getElementById("transactionRows").innerHTML = transactionRows(list);
       bindNotes();
     };
@@ -1087,6 +1229,8 @@ function bindPageEvents(page) {
 function renderActiveTab() {
   const target = document.getElementById("dashboardTab");
   if (!target) return;
+  pageContent.classList.toggle("dashboard-sell-mode", activeDashTab === "sell");
+  pageContent.closest(".main").classList.toggle("sell-view-mode", activeDashTab === "sell");
   target.innerHTML = dashTabHtml(activeDashTab);
   bindTabActions(target);
   updateCartPill();
@@ -1103,8 +1247,39 @@ function bindTabActions(target) {
   target.querySelectorAll("[data-cart-add-step]").forEach(b => b.addEventListener("click", () => stepCartQty(Number(b.dataset.cartAddStep), 1)));
   target.querySelectorAll("[data-cart-remove-step]").forEach(b => b.addEventListener("click", () => stepCartQty(Number(b.dataset.cartRemoveStep), -1)));
   target.querySelectorAll("[data-cart-remove]").forEach(b => b.addEventListener("click", () => removeFromCart(Number(b.dataset.cartRemove))));
-  const checkout = target.querySelector("#checkoutBtn");
-  if (checkout) checkout.addEventListener("click", openCheckoutModal);
+  const sellCheckout = target.querySelector("#sellCheckoutBtn");
+  if (sellCheckout) sellCheckout.addEventListener("click", openCheckoutModal);
+  const clearCart = target.querySelector("#clearCartBtn");
+  if (clearCart) clearCart.addEventListener("click", clearSellCart);
+
+  const sellSearch = target.querySelector("#sellSearch");
+  const sellSort = target.querySelector("#sellSort");
+  if (sellSearch && sellSort) {
+    const refreshSellProducts = () => {
+      const query = sellSearch.value.trim().toLowerCase();
+      let products = state.products.filter(product =>
+        product.stock > 0 && `${product.name} ${product.category}`.toLowerCase().includes(query)
+      );
+      if (sellSort.value === "price") products.sort((a, b) => a.price - b.price);
+      else if (sellSort.value === "stock") products.sort((a, b) => a.stock - b.stock);
+      else products.sort((a, b) => a.name.localeCompare(b.name));
+      target.querySelector("#sellProductRows").innerHTML = sellProductRows(products);
+      target.querySelectorAll("#sellProductRows [data-add]").forEach(button =>
+        button.addEventListener("click", () => addToCart(Number(button.dataset.add)))
+      );
+    };
+    sellSearch.addEventListener("input", refreshSellProducts);
+    sellSort.addEventListener("change", refreshSellProducts);
+  }
+}
+
+function clearSellCart() {
+  if (!state.cart.length) return;
+  if (!confirm("Remove all items from the cart?")) return;
+  state.cart = [];
+  persist();
+  renderActiveTab();
+  toast("Cart cleared.");
 }
 
 function addToCart(id) {
@@ -1177,58 +1352,49 @@ function openCheckoutModal() {
   overlay.className = "modal-overlay";
   overlay.id = "checkoutModal";
   overlay.innerHTML = `
-    <div class="modal">
+    <div class="modal checkout-modal">
       <div class="modal-head">
         <h3>Payment &amp; Checkout</h3>
         <button class="modal-close" id="closeCheckout" type="button">×</button>
       </div>
       <div class="modal-body">
-        <div class="receipt">
-          <div class="receipt-head">
-            <strong>Managing Sentry</strong>
-            <span>Sales Receipt</span>
+        <section class="checkout-section">
+          <h4>Order Summary</h4>
+          <div class="checkout-table-scroll">
+            <table class="checkout-receipt-table">
+              <thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
+              <tbody>${state.cart.map(i => `
+                <tr>
+                  <td>${escapeHtml(i.name)}</td>
+                  <td>${i.qty}</td>
+                  <td>${money(i.price)}</td>
+                  <td>${money(i.price * i.qty)}</td>
+                </tr>`).join("")}</tbody>
+              <tfoot><tr><th colspan="3">Total Amount</th><th id="receiptTotal">${money(total)}</th></tr></tfoot>
+            </table>
           </div>
-          <div class="receipt-items">
-            ${state.cart.map(i => `
-              <div class="receipt-item">
-                <span>${escapeHtml(i.name)} × ${i.qty}</span>
-                <span>${money(i.price * i.qty)}</span>
-              </div>`).join("")}
-          </div>
-          <div class="receipt-grand">
-            <span>Total Amount</span><strong id="receiptTotal">${money(total)}</strong>
-          </div>
-        </div>
+        </section>
 
-        <div class="field-label">Payment Method</div>
-        <div class="payment-options">
-          ${PAYMENT_METHODS.map((m, idx) => `
-            <label class="pay-opt">
-              <input type="radio" name="payMethod" value="${m.value}" data-online="${m.online}" ${idx === 0 ? "checked" : ""}>
-              <span>${m.value}</span>
-            </label>`).join("")}
-        </div>
-
-        <div class="pay-grid">
-          <div class="form-group">
-            <label>Amount Received</label>
-            <input id="amountReceived" type="number" min="0" step="0.01" value="${total.toFixed(2)}">
+        <section class="checkout-section">
+          <h4>Payment Details</h4>
+          <div class="checkout-table-scroll">
+            <table class="checkout-payment-table">
+              <tbody>
+                <tr><th scope="row">Payment Method</th><td><div class="payment-options">
+                  ${PAYMENT_METHODS.map((m, idx) => `
+                    <label class="pay-opt">
+                      <input type="radio" name="payMethod" value="${m.value}" data-online="${m.online}" ${idx === 0 ? "checked" : ""}>
+                      <span>${m.value}</span>
+                    </label>`).join("")}
+                </div></td></tr>
+                <tr><th scope="row"><label for="amountReceived">Amount Received</label></th><td><input id="amountReceived" type="number" min="0" step="0.01" value="${total.toFixed(2)}"></td></tr>
+                <tr><th scope="row">Change</th><td><output class="change-box" id="changeAmount">${money(0)}</output></td></tr>
+                <tr id="refWrap" style="display:none"><th scope="row"><label for="refNumber">Reference Number</label></th><td><input id="refNumber" type="text" placeholder="Enter payment reference number"></td></tr>
+                <tr><th scope="row"><label for="saleNotes">Notes (optional)</label></th><td><textarea id="saleNotes" placeholder="Add a note for this sale"></textarea></td></tr>
+              </tbody>
+            </table>
           </div>
-          <div class="form-group">
-            <label>Change</label>
-            <div class="change-box" id="changeAmount">${money(0)}</div>
-          </div>
-        </div>
-
-        <div class="form-group" id="refWrap" style="display:none">
-          <label>Reference Number</label>
-          <input id="refNumber" type="text" placeholder="Enter payment reference number">
-        </div>
-
-        <div class="form-group">
-          <label>Notes (optional)</label>
-          <textarea id="saleNotes" placeholder="Add a note for this sale"></textarea>
-        </div>
+        </section>
       </div>
       <div class="modal-foot">
         <button class="ghost-btn" id="cancelCheckout" type="button">Cancel</button>
@@ -1265,7 +1431,7 @@ function openCheckoutModal() {
   document.getElementById("closeCheckout").addEventListener("click", closeCheckoutModal);
   document.getElementById("cancelCheckout").addEventListener("click", closeCheckoutModal);
   overlay.addEventListener("click", e => { if (e.target === overlay) closeCheckoutModal(); });
-  document.getElementById("confirmCheckout").addEventListener("click", () => {
+  document.getElementById("confirmCheckout").addEventListener("click", async () => {
     const m = selectedMethod();
     const method = m ? m.value : "Cash";
     const online = m && m.dataset.online === "true";
@@ -1276,7 +1442,7 @@ function openCheckoutModal() {
     if (online && !ref) return toast("Please enter the payment reference number.");
     if (!online && received < total) return toast("Amount received is less than the total.");
 
-    finalizeSale({ method, online, received, ref, notes, total });
+    await finalizeSale({ method, online, received, ref, notes, total });
   });
 }
 
@@ -1285,30 +1451,33 @@ function closeCheckoutModal() {
   if (existing) existing.remove();
 }
 
-function finalizeSale({ method, online, received, ref, notes, total }) {
-  const profit = state.cart.reduce((s, i) => s + (i.price - i.cost) * i.qty, 0);
-  const change = Math.max(0, received - total);
+async function finalizeSale({ method, online, received, ref, notes }) {
   const date = new Date().toLocaleString();
   const saleItems = state.cart.map(i => ({ ...i }));
-
-  state.cart.forEach(i => {
-    const p = state.products.find(x => x.id === i.id);
-    if (!p) return;
-    /* A completed sale removes units from the earliest expiry batch first.
-       When a batch reaches zero, it is removed and the next expiry becomes
-       the active one in the Stocks expiration button/modal. */
-    consumeExpiryBatches(p, i.qty);
-    p.stock = Math.max(0, p.stock - i.qty);
-    p.sold = Number(p.sold || 0) + i.qty;
-    state.transactions.push({ date, type: "SALE", name: i.name, qty: i.qty, amount: i.price * i.qty, costPerUnit: i.cost, method, ref: online ? ref : "", notes });
-  });
-
-  state.salesToday += total;
-  state.totalSales += total;
-  state.profit += profit;
-  state.cart = [];
-  persist();
-  updateStats();
+  const confirmButton = document.getElementById("confirmCheckout");
+  confirmButton.disabled = true;
+  let total;
+  try {
+    const result = await apiRequest("make_sale.php", {
+      method: "POST",
+      body: JSON.stringify({
+        items: saleItems.map(item => ({ product_id: item.id, quantity: item.qty })),
+        method,
+        reference: online ? ref : "",
+        notes,
+        amount_received: received
+      })
+    });
+    total = Number(result.total_amount);
+    state.cart = [];
+    await loadDashboardData();
+    updateStats();
+  } catch (error) {
+    toast(`Could not complete sale: ${error.message}`);
+    if (confirmButton.isConnected) confirmButton.disabled = false;
+    return;
+  }
+  const change = Math.max(0, received - total);
 
   closeCheckoutModal();
   activeDashTab = "sell";
@@ -1388,25 +1557,27 @@ function openRemoveProductModal() {
   document.getElementById("cancelRemoveProduct").addEventListener("click", () => overlay.remove());
   confirmBtn.addEventListener("click", async () => {
     if (selectedId === null) return;
-    const index = state.products.findIndex(p => p.id === selectedId);
-    if (index === -1) return;
-    const product = state.products[index];
+    const product = state.products.find(p => p.id === selectedId);
+    if (!product) return;
     const confirmed = await askYesNo(`Remove "${product.name}" from your inventory?`, {
       title: "Confirm Removal",
       yesText: "Remove",
       noText: "Cancel"
     });
     if (!confirmed) return;
-    state.products.splice(index, 1);
-    state.transactions.push({
-      date: new Date().toLocaleString(), type: "PRODUCT DELETE", name: product.name,
-      qty: product.stock, amount: Number(product.cost || 0) * Number(product.stock || 0), notes: "Product removed from inventory."
-    });
-    persist();
-    overlay.remove();
-    updateStats();
-    renderPage("products");
-    toast(`${product.name} removed.`);
+    try {
+      await apiRequest("products.php?action=delete", {
+        method: "POST",
+        body: JSON.stringify({ product_id: product.id })
+      });
+      await loadDashboardData();
+      overlay.remove();
+      updateStats();
+      renderPage("products");
+      toast(`${product.name} removed.`);
+    } catch (error) {
+      toast(`Could not remove product: ${error.message}`);
+    }
   });
 
   overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });

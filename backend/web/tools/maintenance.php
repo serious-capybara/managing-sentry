@@ -3,6 +3,9 @@
 require_once __DIR__ . '/../init.php';
 
 use config\Database;
+use core\Auth;
+
+Auth::requireWebAccess();
 
 $action = $_GET['action'] ?? 'status';
 $database = new Database();

@@ -281,12 +281,15 @@ private static final String BASE_URL = "http://192.168.x.x:8000/";
 
 ### Running the Web Portal
 
-The web portal is a static application with no build step required. Open `web/index.html` directly in a browser, or serve it locally:
+The portal reads and writes PostgreSQL through the PHP API, so do not open `web/index.html` directly or use a static-only server. From the repository root, run the PHP built-in server:
 
-```bash
-cd web
-npx serve .
+```powershell
+C:\xampp\php\php.exe -S 127.0.0.1:8000 -t .
 ```
+
+Then open `http://127.0.0.1:8000/web/` and sign in with an existing Admin or Manager account from the database. Staff/Cashier accounts are denied access. The PHP API uses `backend/web/.env`.
+
+For an existing database backup, run `backend/web/schema.sql` once in pgAdmin's Query Tool against that database before starting the portal.
 
 ---
 
