@@ -17,14 +17,22 @@ $conn = $database->getConnection();
 $conn->beginTransaction();
 
 try {
-    $conn->exec('DELETE FROM sales');
-    $conn->exec('DELETE FROM stock_movements');
-    $conn->exec('DELETE FROM product_expiry_batches');
-    $conn->exec("UPDATE products SET status = 'INACTIVE', stock_quantity = 0, stock_baseline = 0");
-    $stmt = $conn->prepare(
-        "UPDATE dashboard_settings SET setting_value = 20000 WHERE setting_key = 'capital'"
-    );
-    $stmt->execute();
+    $conn->exec('DELETE FROM histories');
+    $conn->exec('DELETE FROM order_items');
+    $conn->exec('DELETE FROM orders');
+    $conn->exec('DELETE FROM stock_adjustments');
+    $conn->exec('UPDATE products SET stock_quantity = 0');
+
+    $stmt = $conn->query('SELECT config_id, starting_capital FROM capital_configs ORDER BY config_id DESC LIMIT 1');
+    $config = $stmt->fetch();
+    if ($config) {
+        $update = $conn->prepare('UPDATE capital_configs SET current_balance = starting_capital, last_updated_at = NOW() WHERE config_id = ?');
+        $update->execute([$config['config_id']]);
+    } else {
+        $insert = $conn->prepare('INSERT INTO capital_configs (starting_capital, current_balance, last_updated_at) VALUES (20000, 20000, NOW())');
+        $insert->execute();
+    }
+
     $conn->commit();
     Response::success('Dashboard data reset');
 } catch (Exception $e) {

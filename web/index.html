@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Managing Sentry - Super Admin</title>
-  <link rel="icon" type="image/webp" href="../app/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp">
+  <link rel="icon" type="image/png" href="src/managing-sentry.png">
   <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
@@ -27,7 +27,7 @@
 
     <div class="login-panel">
       <div class="login-box">
-        <img class="brand-mark" src="../app/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" alt="Managing Sentry logo">
+        <img class="brand-mark" src="src/managing-sentry.png" alt="Managing Sentry logo">
         <div class="login-heading">
           <p class="small-label">SUPER ADMIN</p>
           <h2>Welcome back</h2>
@@ -61,7 +61,7 @@
   <div id="app" class="app hidden">
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <img class="sidebar-brand-mark" src="../app/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" alt="">
+        <img class="sidebar-brand-mark" src="src/managing-sentry.png" alt="Managing Sentry logo">
         <div>
           <h1>Managing Sentry</h1>
           <p>Super Admin Panel</p>
@@ -69,32 +69,30 @@
       </div>
 
       <nav class="side-nav">
-        <button class="nav-item active" data-page="dashboard"><span>▣</span> Dashboard</button>
+        <button class="nav-item active" data-page="dashboard"><img class="nav-icon" src="src/icon/dashboard.svg" alt=""> Dashboard</button>
 
         <!-- EXPANDABLE PRODUCTS SUBMENU - KEPT -->
         <div class="nav-group">
-          <button class="nav-item nav-parent"><span>□</span> Products <span class="chevron">▾</span></button>
+          <button class="nav-item nav-parent"><img class="nav-icon" src="src/icon/products.svg" alt=""> Products <img class="chevron-icon" src="src/icon/dropdown-close-expand.svg" alt=""></button>
           <div class="nav-submenu">
-            <button class="nav-sub" data-page="products"><span>□</span> Products</button>
-            <button class="nav-sub" data-page="add-product"><span>＋</span> Add Product</button>
-            <button class="nav-sub" data-page="stock-in"><span>↓</span> Stock In</button>
-            <button class="nav-sub" data-page="stock-out"><span>↑</span> Stock Out</button>
+            <button class="nav-sub" data-page="products"><img class="nav-icon" src="src/icon/products.svg" alt=""> Products</button>
+            <button class="nav-sub" data-page="stock-in"><img class="nav-icon" src="src/icon/add-stock-product.svg" alt=""> Stock In</button>
+            <button class="nav-sub" data-page="stock-out"><img class="nav-icon" src="src/icon/remove-stock-product.svg" alt=""> Stock Out</button>
           </div>
         </div>
 
-        <button class="nav-item" data-page="stocks"><span>▤</span> Stocks <i class="alert-dot hidden" id="sidebarLowStockDot" aria-label="Low stock alert"></i></button>
-        <button class="nav-item" data-page="low-stock"><span>△</span> Low Stock Alert <i class="alert-dot hidden" id="sidebarLowStockAlertDot" aria-label="Low stock alert"></i></button>
-        <button class="nav-item" data-page="price-checker"><span>⌕</span> Price Checker</button>
-        <button class="nav-item" data-page="transactions"><span>↔</span> History</button>
-        <button class="nav-item" data-page="reports"><span>▥</span> Reports</button>
+        <button class="nav-item" data-page="stocks"><img class="nav-icon" src="src/icon/stock.svg" alt=""> Stocks <i class="alert-dot hidden" id="sidebarLowStockDot" aria-label="Low stock alert"></i></button>
+        <button class="nav-item" data-page="low-stock"><img class="nav-icon" src="src/icon/low-stock-alert.svg" alt=""> Low Stock Alert <i class="alert-dot hidden" id="sidebarLowStockAlertDot" aria-label="Low stock alert"></i></button>
+        <button class="nav-item" data-page="price-checker"><img class="nav-icon" src="src/icon/price-checker.svg" alt=""> Price Checker</button>
+        <button class="nav-item" data-page="transactions"><img class="nav-icon" src="src/icon/histories.svg" alt=""> History</button>
+        <button class="nav-item" data-page="reports"><img class="nav-icon" src="src/icon/reports.svg" alt=""> Reports</button>
       </nav>
 
       <div class="sidebar-bottom">
-        <button class="side-action capital" id="setCapitalBtn">▣ &nbsp; Set Capital</button>
-        <button class="side-action save" id="saveDataBtn">↓ &nbsp; Save Data</button>
-        <button class="side-action reset" id="resetDataBtn">↺ &nbsp; Reset All</button>
+        <button class="side-action capital" id="setCapitalBtn"><img class="action-icon" src="src/icon/set-capital.svg" alt=""> Set Capital</button>
+        <button class="side-action reset" id="resetDataBtn"><img class="action-icon" src="src/icon/reset.svg" alt=""> Reset All</button>
         <!-- LOGOUT - KEPT -->
-        <button class="logout-btn" id="logoutBtn">↪ &nbsp; Log Out</button>
+        <button class="logout-btn" id="logoutBtn"><img class="action-icon" src="src/icon/logout.svg" alt=""> Log Out</button>
       </div>
     </aside>
 
@@ -118,6 +116,6 @@
 
   <div id="toast" class="toast"></div>
   <div id="printArea" class="print-area"></div>
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

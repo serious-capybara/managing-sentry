@@ -25,15 +25,15 @@ $database = new Database();
 $conn = $database->getConnection();
 
 try {
-    $stmt = $conn->prepare("SELECT user_id, full_name, user_name AS username, password_hash, role FROM users WHERE user_name = :username");
+    $stmt = $conn->prepare("SELECT user_id, full_name, username, password_hash, role FROM users WHERE username = :username");
     $stmt->execute(['username' => $username]);
     $user = $stmt->fetch();
 
     if (!$user || !password_verify($password, $user['password_hash'])) {
         Response::error("Invalid username or password", 401);
     }
-    if (!in_array(strtolower(trim((string)$user['role'])), ['admin', 'manager'], true)) {
-        Response::error("The web portal is only available to Admin and Manager accounts", 403);
+    if (!in_array(strtolower(trim((string)$user['role'])), ['admin', 'manager', 'developer'], true)) {
+        Response::error("The web portal is only available to Admin, Manager, and Developer accounts", 403);
     }
 
     unset($user['password_hash']);
