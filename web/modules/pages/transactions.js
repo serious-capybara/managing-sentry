@@ -7,22 +7,35 @@ import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";
 
 export function renderTransactions() {
-  return `<div class="page-toolbar">
-      <div class="toolbar-left"><div><h3>History</h3><p>Sales and inventory movements.</p></div></div>
+  return `<div class="transactions-overview">
+    <div class="page-toolbar">
+      <div class="toolbar-left">
+        <div class="toolbar-sort-wrap">
+          <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> View / Sort:</span>
+          <select class="compact-select" id="historySort">
+            <option value="date" selected>Newest First</option>
+            <option value="name">By Product Name</option>
+            <option value="SALE">Sales Only</option>
+            <option value="STOCK_IN">Stock In Only (Restock)</option>
+            <option value="STOCK_OUT">Stock Out Only</option>
+            <option value="sales">Highest Sales Amount</option>
+          </select>
+        </div>
+      </div>
       <div class="toolbar-right">
-        <span class="toolbar-label">Sort:</span>
-        <select class="compact-select" id="historySort">
-          <option value="sales">Sales / Profit</option>
-          <option value="date">Newest First</option>
-          <option value="name">By Product</option>
-        </select>
-        <input id="transactionSearch" class="compact-input" placeholder="Search">
-        <button class="wire-btn" id="selectRangeBtn">Select Range</button>
-        <button class="wire-btn" id="printHistoryBtn">Print</button>
+        <input id="transactionSearch" class="compact-input" placeholder="Search transactions...">
+        <button class="wire-btn" id="printHistoryBtn"><img class="btn-icon" src="src/icon/dark/reports.svg" alt=""> Print History</button>
       </div>
     </div>
-    <div class="wire-table-wrap"><table><thead><tr><th>ID</th><th>Time Stamp</th><th>Order</th><th>Quantity</th><th>Sales</th><th>Status</th><th>Notes</th></tr></thead>
-    <tbody id="transactionRows">${transactionRows()}</tbody></table></div>`;
+    <div class="wire-table-wrap transactions-table-card">
+      <div class="transactions-table-scroll">
+        <table class="transactions-inventory-table">
+          <thead><tr><th>ID</th><th>Time Stamp</th><th>Order</th><th>Quantity</th><th>Sales</th><th>Status</th><th>Notes</th></tr></thead>
+          <tbody id="transactionRows">${transactionRows()}</tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
 }
 
 export function transactionRows(list = state.transactions.slice().reverse()) {

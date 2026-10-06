@@ -1,20 +1,10 @@
 /* ============================================================
  * script.js — Main application orchestrator for Managing Sentry.
- * Imports and coordinates all modularized features:
- * - modules/api.js: Centralised backend communication
- * - modules/state.js: Application state & persistence
- * - modules/utils.js: Pure helpers (money, escapeHtml, toast)
- * - modules/stock-logic.js: Stock tracking & expiration rules
- * - modules/data-loader.js: Data fetching from API
- * - modules/cart.js: Cart state & sell interface
- * - modules/router.js: SPA routing and page renderers
- * - modules/print.js: Receipt printing
- * - modules/pages/: Page view renderers
- * - modules/modals/: Floating dialogs & modals
- * - modules/events/: DOM event listeners
+ * Coordinates 7-day session auto-restoration on page reloads/refreshes.
  * ============================================================ */
 
-import { state, persist } from "./modules/state.js";
+import { state, persist, isSessionValid, getActivePage, clearSession } from "./modules/state.js";
+import { loadDashboardData } from "./modules/data-loader.js";
 import {
   ensureStockBaseline,
   ensureExpiryBatches,
@@ -27,19 +17,45 @@ import { renderPage } from "./modules/router.js";
 // Initialize application event listeners (login, nav, actions)
 bindSidebarEvents();
 
-// Initial baseline and batch integrity check for existing state
-if (Array.isArray(state.products)) {
-  state.products.forEach(p => {
-    ensureStockBaseline(p);
-    ensureExpiryBatches(p);
-    const earliest = earliestExpiry(p);
-    p.expiry = earliest ? earliest.expiry : (p.expiry || "");
-  });
-  persist();
-  updateStats();
+/**
+ * Initialize application session state on startup / page refresh.
+ * Automatically restores active session if within 7-day window.
+ */
+async function initSession() {
+  const loginScreen = document.getElementById("loginScreen");
+  const app = document.getElementById("app");
+
+  if (isSessionValid()) {
+    // Show main app and hide login screen immediately for smooth refresh
+    if (loginScreen) loginScreen.classList.add("hidden");
+    if (app) app.classList.remove("hidden");
+
+    try {
+      await loadDashboardData();
+    } catch (err) {
+      console.warn("Could not sync backend data on reload:", err);
+    }
+
+    // Restore the user's active page view (or default to dashboard)
+    renderPage(getActivePage());
+  } else {
+    // Session expired (>= 7 days) or not logged in
+    clearSession();
+    if (app) app.classList.add("hidden");
+    if (loginScreen) loginScreen.classList.remove("hidden");
+  }
+
+  // Stock baseline & batch integrity check
+  if (Array.isArray(state.products)) {
+    state.products.forEach(p => {
+      ensureStockBaseline(p);
+      ensureExpiryBatches(p);
+      const earliest = earliestExpiry(p);
+      p.expiry = earliest ? earliest.expiry : (p.expiry || "");
+    });
+    persist();
+    updateStats();
+  }
 }
 
-// Render default landing view if app is already active/authenticated
-if (!document.getElementById("app")?.classList.contains("hidden")) {
-  renderPage("dashboard");
-}
+initSession();

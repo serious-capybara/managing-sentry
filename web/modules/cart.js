@@ -6,6 +6,7 @@
 
 import { state, persist } from "./state.js";
 import { money, escapeHtml, toast } from "./utils.js";
+import { askYesNo } from "./modals/dialogs.js";
 
 // ---------------------------------------------------------------------------
 // Cart helpers
@@ -26,19 +27,12 @@ export function addToCart(id) {
   const available = p.stock - inCart;
   if (available <= 0) return toast("This product is out of stock.");
 
-  const input = document.querySelector(`[data-qty="${id}"]`);
-  let qty = input ? Math.max(1, Math.floor(Number(input.value) || 1)) : 1;
-  if (qty > available) {
-    qty = available;
-    toast(`Only ${available} in stock — added ${available}.`);
-  }
-
   const existing = state.cart.find(x => x.id === id);
-  if (existing) existing.qty += qty;
-  else state.cart.push({ id: p.id, name: p.name, price: Number(p.price), cost: Number(p.cost), qty });
+  if (existing) existing.qty += 1;
+  else state.cart.push({ id: p.id, name: p.name, price: Number(p.price), cost: Number(p.cost), qty: 1 });
 
   persist();
-  if (qty <= available) toast(`${qty} × ${p.name} added to cart.`);
+  toast(`Added ${p.name} to cart.`);
   renderActiveTab();
 }
 
@@ -71,9 +65,14 @@ export function removeFromCart(id) {
   renderActiveTab();
 }
 
-export function clearSellCart() {
+export async function clearSellCart() {
   if (!state.cart.length) return;
-  if (!confirm("Remove all items from the cart?")) return;
+  const confirmed = await askYesNo("Are you sure you want to remove all items from the cart?", {
+    title: "Clean Cart",
+    yesText: "Clean Cart",
+    noText: "Cancel"
+  });
+  if (!confirmed) return;
   state.cart = [];
   persist();
   renderActiveTab();
@@ -87,37 +86,45 @@ export function clearSellCart() {
 export function renderSellTab() {
   return `<div class="sell-workspace">
     <section class="panel sell-panel">
-      <div class="panel-title"><img class="panel-icon" src="src/icon/cart.svg" alt=""> Pick Items to Sell</div>
+      <div class="panel-title"><img class="panel-icon" src="src/icon/dark/cart.svg" alt=""> Pick Items to Sell</div>
       <div class="sell-toolbar">
-        <label class="sr-only" for="sellSort">Sort products</label>
-        <select class="compact-select" id="sellSort">
-          <option value="name">Sort by name</option>
-          <option value="price">Sort by price</option>
-          <option value="stock">Sort by quantity</option>
-        </select>
-        <label class="sr-only" for="sellSearch">Search products</label>
-        <input class="compact-input" id="sellSearch" type="search" placeholder="Search products…">
+        <div class="toolbar-left">
+          <div class="toolbar-sort-wrap">
+            <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Sort:</span>
+            <select class="compact-select" id="sellSort">
+              <option value="name">Sort by name</option>
+              <option value="price">Sort by price</option>
+              <option value="stock">Sort by quantity</option>
+            </select>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <input class="compact-input" id="sellSearch" type="search" placeholder="Search products…">
+        </div>
       </div>
       <div class="sell-table-scroll">
         <table class="sell-table">
-          <thead><tr><th>Name</th><th>SRP</th><th>Qty</th><th>Action</th></tr></thead>
+          <thead><tr><th>Name</th><th>SRP</th><th>Qty</th><th style="text-align:right">Action</th></tr></thead>
           <tbody id="sellProductRows">${sellProductRows()}</tbody>
         </table>
       </div>
     </section>
     <section class="panel sell-cart-panel">
-      <div class="panel-title"><img class="panel-icon" src="src/icon/cart.svg" alt=""> Cart</div>
+      <div class="panel-title">
+        <img class="panel-icon" src="src/icon/dark/cart.svg" alt=""> Cart
+        <span class="cart-pill" id="cartPill">${cartCount()}</span>
+      </div>
       <div class="sell-cart-scroll">
         <table class="sell-cart-table">
-          <thead><tr><th>Name</th><th>Qty</th><th>Total</th><th>Action</th></tr></thead>
+          <thead><tr><th>Name</th><th style="text-align:center">Qty</th><th style="text-align:center">Total</th><th style="text-align:center">Action</th></tr></thead>
           <tbody id="sellCartRows">${sellCartRows()}</tbody>
         </table>
       </div>
       <div class="sell-summary">
         <div class="sell-total"><span>Total</span><strong>${money(cartTotal())}</strong></div>
         <div class="sell-summary-actions">
-          <button class="sell-checkout-btn" id="sellCheckoutBtn" ${state.cart.length ? "" : "disabled"}><img class="btn-icon" src="src/icon/cart.svg" alt=""> Checkout</button>
-          <button class="sell-clear-btn" id="clearCartBtn" ${state.cart.length ? "" : "disabled"}><img class="btn-icon" src="src/icon/reset.svg" alt=""> Clean Cart</button>
+          <button class="sell-checkout-btn" id="sellCheckoutBtn" ${state.cart.length ? "" : "disabled"}><img class="btn-icon" src="src/icon/white/cart.svg" alt=""> Checkout</button>
+          <button class="sell-clear-btn" id="clearCartBtn" ${state.cart.length ? "" : "disabled"}><img class="btn-icon" src="src/icon/white/reset.svg" alt=""> Clean Cart</button>
         </div>
       </div>
     </section>
@@ -135,10 +142,7 @@ export function sellProductRows(products = state.products.filter(p => p.stock > 
       <td title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</td>
       <td>${money(p.price)}</td>
       <td>${available}</td>
-      <td><div class="sell-add-controls">
-        <input class="sell-qty-input" type="number" min="1" max="${available}" value="1" data-qty="${p.id}" aria-label="Quantity for ${escapeHtml(p.name)}" ${available ? "" : "disabled"}>
-        <button class="sell-add-btn" type="button" data-add="${p.id}" ${available ? "" : "disabled"}>${available ? "Add" : "Out"}</button>
-      </div></td>
+      <td style="text-align:right"><button class="sell-add-btn" type="button" data-add="${p.id}" ${available ? "" : "disabled"}>${available ? "Add" : "Out"}</button></td>
     </tr>`;
   }).join("");
 }
@@ -149,13 +153,13 @@ export function sellCartRows() {
   }
   return state.cart.map(item => `<tr>
     <td title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</td>
-    <td><div class="sell-cart-qty">
-      <button class="qty-btn" data-cart-remove-step="${item.id}" aria-label="Decrease ${escapeHtml(item.name)} quantity"><img class="btn-sm-icon" src="src/icon/minus.svg" alt="−"></button>
+    <td style="text-align:center"><div class="sell-cart-qty">
+      <button class="qty-btn" data-cart-remove-step="${item.id}" aria-label="Decrease ${escapeHtml(item.name)} quantity"><img class="btn-sm-icon" src="src/icon/dark/minus.svg" alt="−"></button>
       <input class="sell-qty-input" type="number" min="1" value="${item.qty}" data-cart-qty data-cart-id="${item.id}" aria-label="${escapeHtml(item.name)} quantity">
-      <button class="qty-btn" data-cart-add-step="${item.id}" aria-label="Increase ${escapeHtml(item.name)} quantity"><img class="btn-sm-icon" src="src/icon/add.svg" alt="+"></button>
+      <button class="qty-btn" data-cart-add-step="${item.id}" aria-label="Increase ${escapeHtml(item.name)} quantity"><img class="btn-sm-icon" src="src/icon/dark/add.svg" alt="+"></button>
     </div></td>
-    <td>${money(item.price * item.qty)}</td>
-    <td><button class="remove-btn" data-cart-remove="${item.id}">Remove</button></td>
+    <td style="text-align:center">${money(item.price * item.qty)}</td>
+    <td style="text-align:center"><button class="remove-btn" data-cart-remove="${item.id}">Remove</button></td>
   </tr>`).join("");
 }
 

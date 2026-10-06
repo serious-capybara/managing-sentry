@@ -6,11 +6,57 @@
 import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";
 
+export let activeReportTab = "inventory";
+export let activeReportRange = "30";
+
+export function setActiveReportTab(tab) { activeReportTab = tab; }
+export function setActiveReportRange(range) { activeReportRange = range; }
+
 // ---------------------------------------------------------------------------
-// Shared helpers
+// Shared helpers & date range filter
 // ---------------------------------------------------------------------------
 
 export function reportMoney(value) { return money(value); }
+
+export function getRangeLabel(range = activeReportRange) {
+  switch (range) {
+    case "60": return "Last 60 Days";
+    case "90": return "Last 90 Days";
+    case "this_year": return "This Year";
+    case "last_year": return "Last Year";
+    case "30":
+    default:
+      return "Last 30 Days";
+  }
+}
+
+export function getFilteredTransactions(range = activeReportRange) {
+  const now = Date.now();
+  const currentDate = new Date();
+
+  return state.transactions.filter(t => {
+    const ts = Number(t.timestamp) || Date.now();
+
+    if (range === "60") {
+      return ts >= now - (60 * 86400 * 1000);
+    }
+    if (range === "90") {
+      return ts >= now - (90 * 86400 * 1000);
+    }
+    if (range === "this_year") {
+      const startThisYear = new Date(currentDate.getFullYear(), 0, 1).getTime();
+      return ts >= startThisYear;
+    }
+    if (range === "last_year") {
+      const startLastYear = new Date(currentDate.getFullYear() - 1, 0, 1).getTime();
+      const endLastYear = new Date(currentDate.getFullYear() - 1, 11, 31, 23, 59, 59, 999).getTime();
+      return ts >= startLastYear && ts <= endLastYear;
+    }
+
+    // Default "30": Last 30 Days
+    return ts >= now - (30 * 86400 * 1000);
+  });
+}
 
 function getExpiryStats() {
   const now  = new Date();
@@ -38,9 +84,11 @@ function inventoryReportData() {
   return { tieUp, retail, potentialProfit: retail - tieUp, units, expiry, products };
 }
 
-function salesReportRows() {
-  const sales = state.transactions.filter(t => t.type === "SALE");
-  if (!sales.length) return `<tr><td colspan="9" class="table-empty">No sales recorded yet.</td></tr>`;
+function salesReportRows(transactions = getFilteredTransactions()) {
+  const sales = transactions.filter(t => t.type === "SALE");
+  if (!sales.length) {
+    return `<tr><td colspan="9" class="table-empty">No sales recorded for ${getRangeLabel()}.</td></tr>`;
+  }
   return sales.map((t, i) => {
     const qty      = Number(t.qty || 0);
     const product  = state.products.find(p => p.name === t.name);
@@ -61,39 +109,58 @@ function salesReportRows() {
 // Inventory & Capital report
 // ---------------------------------------------------------------------------
 
-export function renderInventoryCapitalReport() {
+export function renderInventoryCapitalReport(range = activeReportRange) {
   const d = inventoryReportData();
+  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const rangeTitle = getRangeLabel(range);
+
   return `<div class="report-section report-print-section" id="inventoryCapitalReport">
-    <div class="report-section-head">
-      <div><h3>Inventory &amp; Capital Report</h3><p>Current inventory value and capital position.</p></div>
-      <button class="wire-btn report-print-btn" data-report-print="inventory">Print</button>
-    </div>
     <div class="report-paper">
-      <div class="report-print-title">INVENTORY &amp; CAPITAL REPORT</div>
-      <div class="report-rule">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
-      <div class="report-summary-lines">
-        <div><span>💰 STARTING CAPITAL:</span><strong>${reportMoney(state.capital)}</strong></div>
-        <div><span>📦 TIE-UP CAPITAL (Base):</span><strong>${reportMoney(d.tieUp)}</strong></div>
-        <div><span>🛒 RETAIL VALUE (SRP):</span><strong>${reportMoney(d.retail)}</strong></div>
-        <div><span>✨ POTENTIAL PROFIT:</span><strong>${reportMoney(d.potentialProfit)}</strong></div>
+      <div class="report-header-banner">
+        <div class="report-header-left">
+          <div class="report-title-main">INVENTORY &amp; CAPITAL REPORT</div>
+          <div class="report-subtitle-date">Range: <strong>${rangeTitle}</strong> • Generated on ${dateStr}</div>
+        </div>
+        <div class="report-header-badge">MANAGEMENT SUMMARY</div>
       </div>
-      <div class="report-inline-stats">
-        <span>🧮 TOTAL PRODUCTS: <strong>${state.products.length}</strong></span>
-        <span>TOTAL UNITS IN STOCK: <strong>${d.units}</strong></span>
+
+      <div class="report-kpi-grid">
+        <div class="report-kpi-card">
+          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/set-capital.svg" alt=""> Starting Capital</div>
+          <div class="kpi-value">${reportMoney(state.capital)}</div>
+        </div>
+        <div class="report-kpi-card">
+          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/stock.svg" alt=""> Tie-Up Capital (Base)</div>
+          <div class="kpi-value">${reportMoney(d.tieUp)}</div>
+        </div>
+        <div class="report-kpi-card">
+          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/products.svg" alt=""> Retail Value (SRP)</div>
+          <div class="kpi-value primary">${reportMoney(d.retail)}</div>
+        </div>
+        <div class="report-kpi-card highlight">
+          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/dashboard-left.svg" alt=""> Potential Profit</div>
+          <div class="kpi-value success">${reportMoney(d.potentialProfit)}</div>
+        </div>
       </div>
-      <div class="report-inline-stats">
-        <span>🚨 EXPIRED ITEMS: <strong>${d.expiry.expired}</strong></span>
-        <span>EXPIRING SOON (7d): <strong>${d.expiry.expiringSoon}</strong></span>
+
+      <div class="report-pills-row">
+        <div class="report-pill"><span>Total Products</span><strong>${state.products.length}</strong></div>
+        <div class="report-pill"><span>Units In Stock</span><strong>${d.units}</strong></div>
+        <div class="report-pill ${d.expiry.expired ? "alert-red" : ""}"><span>Expired Items</span><strong>${d.expiry.expired}</strong></div>
+        <div class="report-pill ${d.expiry.expiringSoon ? "alert-amber" : ""}"><span>Expiring Soon (7d)</span><strong>${d.expiry.expiringSoon}</strong></div>
       </div>
-      <div class="report-rule">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
-      <div class="report-print-subtitle">PER-PRODUCT BREAKDOWN (sorted by SRP value of stock on hand)</div>
-      <div class="report-rule thin">────────────────────────────────────────────────────────────────────────────────</div>
+
+      <div class="report-divider-title">
+        <span>PER-PRODUCT BREAKDOWN</span>
+        <small>(Sorted by SRP stock value on hand)</small>
+      </div>
+
       <div class="report-table-wrap">
         <table class="report-table inventory-report-table">
           <thead><tr><th>ID</th><th>NAME</th><th>STOCK</th><th>BASE VAL</th><th>SRP VAL</th></tr></thead>
           <tbody>${d.products.length
             ? d.products.map((p, i) => `<tr>
-                <td>${i + 1}</td><td>${escapeHtml(p.name)}</td><td>${Number(p.stock || 0)}</td>
+                <td>${i + 1}</td><td><strong>${escapeHtml(p.name)}</strong></td><td>${Number(p.stock || 0)}</td>
                 <td>${reportMoney(Number(p.cost || 0) * Number(p.stock || 0))}</td>
                 <td>${reportMoney(Number(p.price || 0) * Number(p.stock || 0))}</td>
               </tr>`).join("")
@@ -101,7 +168,6 @@ export function renderInventoryCapitalReport() {
           }</tbody>
         </table>
       </div>
-      <div class="report-rule thin">────────────────────────────────────────────────────────────────────────────────</div>
     </div>
   </div>`;
 }
@@ -110,12 +176,13 @@ export function renderInventoryCapitalReport() {
 // Sales & Profit report
 // ---------------------------------------------------------------------------
 
-export function renderSalesProfitReport() {
-  const sales      = state.transactions.filter(t => t.type === "SALE");
-  const stockIn    = state.transactions.filter(t => t.type === "STOCK IN");
-  const stockOut   = state.transactions.filter(t => t.type === "STOCK OUT");
-  const productDeletes  = state.transactions.filter(t => t.type === "PRODUCT DELETE").length;
-  const priceChanges    = state.transactions.filter(t => t.type === "PRICE CHANGE").length;
+export function renderSalesProfitReport(range = activeReportRange) {
+  const filtered = getFilteredTransactions(range);
+  const sales      = filtered.filter(t => t.type === "SALE");
+  const stockIn    = filtered.filter(t => t.type === "STOCK IN");
+  const stockOut   = filtered.filter(t => t.type === "STOCK OUT");
+  const productDeletes  = filtered.filter(t => t.type === "PRODUCT DELETE").length;
+  const priceChanges    = filtered.filter(t => t.type === "PRICE CHANGE").length;
   const stockInCost     = stockIn.reduce((s, t) => s + Number(t.amount || 0), 0);
   const totalSales      = sales.reduce((s, t) => s + Number(t.amount || 0), 0);
   const cogs = sales.reduce((s, t) => {
@@ -124,43 +191,59 @@ export function renderSalesProfitReport() {
     return s + (t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0)) * qty;
   }, 0);
   const grossProfit = totalSales - cogs;
+  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const rangeTitle = getRangeLabel(range);
 
   return `<div class="report-section report-print-section" id="salesProfitReport">
-    <div class="report-section-head">
-      <div><h3>Sales, Profit &amp; Transaction Summary</h3><p>Sales history, costs and gross profit.</p></div>
-      <button class="wire-btn report-print-btn" data-report-print="sales">Print</button>
-    </div>
     <div class="report-paper">
-      <div class="report-print-title">SALES, PROFIT &amp; TRANSACTION SUMMARY</div>
-      <div class="report-rule">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
-      <div class="report-summary-lines">
-        <div><span>💰 STARTING CAPITAL:</span><strong>${reportMoney(state.capital)}</strong></div>
-        <div><span>📦 TOTAL STOCK-IN COSTS:</span><strong>${reportMoney(stockInCost)}</strong><em>(${stockIn.length} purchase transactions)</em></div>
-        <div><span>🛒 TOTAL SALES (REVENUE):</span><strong>${reportMoney(totalSales)}</strong><em>(${sales.length} sale transactions)</em></div>
-        <div><span>COST OF GOODS SOLD:</span><strong>${reportMoney(cogs)}</strong></div>
-        <div><span>GROSS PROFIT FROM SALES:</span><strong>${reportMoney(grossProfit)}</strong></div>
+      <div class="report-header-banner">
+        <div class="report-header-left">
+          <div class="report-title-main">SALES, PROFIT &amp; TRANSACTION SUMMARY</div>
+          <div class="report-subtitle-date">Range: <strong>${rangeTitle}</strong> • Generated on ${dateStr}</div>
+        </div>
+        <div class="report-header-badge">FINANCIAL LOG</div>
       </div>
-      <div class="report-print-subtitle">── ALL TRANSACTIONS ──</div>
-      <div class="transaction-count-grid">
-        <span>Stock-IN: <strong>${stockIn.length}</strong></span>
-        <span>Stock-OUT: <strong>${stockOut.length}</strong></span>
-        <span>SOLD: <strong>${sales.length}</strong></span>
-        <span>Products Add: <strong>${state.products.length}</strong></span>
-        <span>Products Del: <strong>${productDeletes}</strong></span>
-        <span>Price Changes: <strong>${priceChanges}</strong></span>
-        <span>TOTAL LOGS: <strong>${state.transactions.length}</strong> entries</span>
+
+      <div class="report-kpi-grid">
+        <div class="report-kpi-card">
+          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/set-capital.svg" alt=""> Starting Capital</div>
+          <div class="kpi-value">${reportMoney(state.capital)}</div>
+        </div>
+        <div class="report-kpi-card">
+          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/cart.svg" alt=""> Total Revenue</div>
+          <div class="kpi-value primary">${reportMoney(totalSales)}</div>
+          <div class="kpi-sub">${sales.length} sales (${rangeTitle})</div>
+        </div>
+        <div class="report-kpi-card">
+          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/stock.svg" alt=""> Cost of Goods Sold</div>
+          <div class="kpi-value">${reportMoney(cogs)}</div>
+        </div>
+        <div class="report-kpi-card highlight">
+          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/dashboard-left.svg" alt=""> Gross Profit</div>
+          <div class="kpi-value success">${reportMoney(grossProfit)}</div>
+        </div>
       </div>
-      <div class="report-rule">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
-      <div class="report-print-subtitle">DETAILED SALES BREAKDOWN (prices at time of sale — not current)</div>
-      <div class="report-rule thin">────────────────────────────────────────────────────────────────────────────────</div>
+
+      <div class="report-pills-row">
+        <div class="report-pill"><span>Stock-IN Purchases</span><strong>${reportMoney(stockInCost)} (${stockIn.length})</strong></div>
+        <div class="report-pill"><span>Stock-OUT Entries</span><strong>${stockOut.length}</strong></div>
+        <div class="report-pill"><span>Products Added</span><strong>${state.products.length}</strong></div>
+        <div class="report-pill"><span>Price Changes</span><strong>${priceChanges}</strong></div>
+        <div class="report-pill"><span>Filtered Logs</span><strong>${filtered.length}</strong></div>
+      </div>
+
+      <div class="report-divider-title">
+        <span>DETAILED SALES BREAKDOWN</span>
+        <small>(${rangeTitle} — Prices at time of transaction)</small>
+      </div>
+
       <div class="report-table-wrap">
         <table class="report-table sales-report-table">
           <thead><tr><th>DATE/TIME</th><th>ID</th><th>ITEM</th><th>QTY</th><th>SRP/UNT</th><th>BASE/UNT</th><th>SRP TOT</th><th>BASE TOT</th><th>PROFIT</th></tr></thead>
-          <tbody>${salesReportRows()}</tbody>
+          <tbody>${salesReportRows(filtered)}</tbody>
           <tfoot><tr><td colspan="6">RUNNING TOTALS:</td><td>${reportMoney(totalSales)}</td><td>${reportMoney(cogs)}</td><td>${reportMoney(grossProfit)}</td></tr></tfoot>
         </table>
       </div>
-      <div class="report-rule">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
     </div>
   </div>`;
 }
@@ -170,10 +253,33 @@ export function renderSalesProfitReport() {
 // ---------------------------------------------------------------------------
 
 export function renderReports() {
-  return `<div class="page-head"><div><h3>Reports</h3><p>Inventory, capital, sales and profit reports.</p></div></div>
-    <div class="report-tabs">
-      <button class="report-tab active" data-report-tab="inventory">Inventory &amp; Capital</button>
-      <button class="report-tab" data-report-tab="sales">Sales &amp; Profit</button>
-    </div>
-    <div id="reportTabContent">${renderInventoryCapitalReport()}</div>`;
+  return `
+    <div class="reports-overview">
+      <div class="page-toolbar reports-toolbar">
+        <div class="toolbar-left">
+          <div class="report-tabs">
+            <button class="report-tab ${activeReportTab === "inventory" ? "active" : ""}" data-report-tab="inventory">Inventory &amp; Capital</button>
+            <button class="report-tab ${activeReportTab === "sales" ? "active" : ""}" data-report-tab="sales">Sales &amp; Profit</button>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <div class="toolbar-sort-wrap">
+            <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Range:</span>
+            <select class="compact-select" id="reportDateRange">
+              <option value="30" ${activeReportRange === "30" ? "selected" : ""}>Last 30 Days</option>
+              <option value="60" ${activeReportRange === "60" ? "selected" : ""}>Last 60 Days</option>
+              <option value="90" ${activeReportRange === "90" ? "selected" : ""}>Last 90 Days</option>
+              <option value="this_year" ${activeReportRange === "this_year" ? "selected" : ""}>This Year</option>
+              <option value="last_year" ${activeReportRange === "last_year" ? "selected" : ""}>Last Year</option>
+            </select>
+          </div>
+          <button class="wire-btn report-print-btn" id="topReportPrintBtn" data-report-print="${activeReportTab}">
+            <img class="btn-icon" src="src/icon/dark/reports.svg" alt=""> Print Report
+          </button>
+        </div>
+      </div>
+      <div id="reportTabContent" class="report-tab-content">
+        ${activeReportTab === "sales" ? renderSalesProfitReport(activeReportRange) : renderInventoryCapitalReport(activeReportRange)}
+      </div>
+    </div>`;
 }

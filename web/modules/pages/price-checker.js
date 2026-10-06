@@ -8,10 +8,7 @@ import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";
 
 export function renderPriceChecker() {
-  return `<div class="page-head">
-      <div><h3>Price Checker</h3><p>Browse products or search to check a price.</p></div>
-    </div>
-
+  return `
     <div class="price-checker-new">
       <div class="price-checker-toolbar">
         <select class="price-sort-select" id="priceSort" aria-label="Sort products">
@@ -19,7 +16,7 @@ export function renderPriceChecker() {
           <option value="category">Category</option>
         </select>
         <div class="price-search-wrap">
-          <span><img class="inline-icon" src="src/icon/price-checker.svg" alt=""></span>
+          <span><img class="inline-icon" src="src/icon/dark/price-checker.svg" alt=""></span>
           <input id="priceSearch" placeholder="Search product..." autocomplete="off">
         </div>
       </div>
@@ -29,16 +26,16 @@ export function renderPriceChecker() {
       </div>
 
       <div id="priceSearchResult" class="price-search-result hidden">
-        <div class="price-checker"><div class="card form-card" style="max-width:none">
-          <div class="form-group"><label>Search Product</label><input id="priceSearchEcho" placeholder="Type a product name..." autocomplete="off"></div>
-        </div>
         <div class="price-result">
           <span>SELECTED PRODUCT</span>
           <h2 id="checkedName">Choose a product</h2>
           <div class="price" id="checkedPrice">₱0.00</div>
           <p id="checkedStock">Stock: —</p>
-        </div></div>
-        <div id="priceMatchList" class="price-match-list"></div>
+        </div>
+        <div class="price-match-container">
+          <div class="price-match-header">MATCHING SEARCH RESULTS</div>
+          <div id="priceMatchList" class="price-match-list"></div>
+        </div>
       </div>
     </div>`;
 }

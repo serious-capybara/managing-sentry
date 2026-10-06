@@ -68,7 +68,7 @@ export function openAddProductModal() {
         <div class="modal-foot">
           <button class="ghost-btn" id="cancelAddProduct" type="button">Cancel</button>
           <button class="primary-btn" id="confirmAddProduct" type="submit">
-            <img class="btn-icon" src="src/icon/add.svg" alt=""> Save Product
+            <img class="btn-icon" src="src/icon/white/add.svg" alt=""> Save Product
           </button>
         </div>
       </form>

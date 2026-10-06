@@ -22,14 +22,15 @@ import {
 import { openCheckoutModal } from "../modals/checkout-modal.js";
 import { openAddProductModal } from "../modals/add-product-modal.js";
 import { openRemoveProductModal } from "../modals/remove-product-modal.js";
+import { openStockInModal, openStockOutModal } from "../modals/stock-modal.js";
 import { openExpirationModal } from "../modals/expiration-modal.js";
 import { showInfoModal } from "../modals/dialogs.js";
-import { dashboardRows, sortProducts, dashTabHtml } from "../pages/dashboard.js";
+import { dashboardRows, sortProducts, dashTabHtml, setActiveProfitType } from "../pages/dashboard.js";
 import { productRows } from "../pages/products.js";
 import { stockRows } from "../pages/stocks.js";
 import { priceMatchRows, priceDirectoryRows } from "../pages/price-checker.js";
 import { transactionRows } from "../pages/transactions.js";
-import { renderSalesProfitReport, renderInventoryCapitalReport } from "../pages/reports.js";
+import { renderSalesProfitReport, renderInventoryCapitalReport, activeReportTab, activeReportRange, setActiveReportTab, setActiveReportRange } from "../pages/reports.js";
 
 // Hook renderActiveTab into cart.js operations
 registerRenderActiveTab(renderActiveTab);
@@ -50,6 +51,20 @@ export function renderActiveTab() {
   pageContent.classList.toggle("dashboard-sell-mode", activeDashTab === "sell");
   const main = pageContent.closest(".main");
   if (main) main.classList.toggle("sell-view-mode", activeDashTab === "sell");
+
+  // Dynamically update dashboard tab button active state and icon sources
+  pageContent.querySelectorAll(".tab-btn[data-tab]").forEach(btn => {
+    const isActive = btn.dataset.tab === activeDashTab;
+    btn.classList.toggle("active", isActive);
+    const icon = btn.querySelector(".tab-icon");
+    if (icon) {
+      if (btn.dataset.tab === "expiring") {
+        icon.src = isActive ? "src/icon/white/low-stock-alert.svg" : "src/icon/dark/low-stock-alert.svg";
+      } else if (btn.dataset.tab === "sell") {
+        icon.src = isActive ? "src/icon/white/cart.svg" : "src/icon/dark/cart.svg";
+      }
+    }
+  });
 
   target.innerHTML = dashTabHtml(activeDashTab);
   bindTabActions(target);
@@ -117,7 +132,16 @@ export function bindPageEvents(page) {
   if (!pageContent) return;
 
   pageContent.querySelectorAll("[data-go]").forEach(btn =>
-    btn.addEventListener("click", () => renderPage(btn.dataset.go))
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.go;
+      if (target === "stock-in") {
+        openStockInModal();
+      } else if (target === "stock-out") {
+        openStockOutModal();
+      } else {
+        renderPage(target);
+      }
+    })
   );
   pageContent.querySelectorAll("[data-add]").forEach(btn =>
     btn.addEventListener("click", () => addToCart(Number(btn.dataset.add)))
@@ -134,15 +158,47 @@ export function bindPageEvents(page) {
 
     document.getElementById("dashboardSearch")?.addEventListener("input", updateDashboard);
     document.getElementById("dashboardSort")?.addEventListener("change", updateDashboard);
+    document.getElementById("profitTypeSelect")?.addEventListener("change", e => {
+      setActiveProfitType(e.target.value);
+      updateStats();
+    });
 
     pageContent.querySelectorAll(".tab-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        pageContent.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
         setActiveDashTab(btn.dataset.tab);
+
+        // Auto-expand bottom section if currently collapsed when a tab is clicked
+        const bottomSection = document.getElementById("dashboardBottomSection");
+        const toggleIcon = document.getElementById("dashboardToggleIcon");
+        if (bottomSection && bottomSection.classList.contains("collapsed-section")) {
+          bottomSection.classList.remove("collapsed-section");
+          if (toggleIcon) toggleIcon.src = "src/icon/dark/dropdown-close-expand.svg";
+          localStorage.setItem("sentryDashSectionCollapsed", "false");
+        }
+
         renderActiveTab();
       });
     });
+
+    const toggleBtn = document.getElementById("dashboardSectionToggle");
+    const bottomSection = document.getElementById("dashboardBottomSection");
+    const toggleIcon = document.getElementById("dashboardToggleIcon");
+
+    if (toggleBtn && bottomSection && toggleIcon) {
+      const isCollapsed = localStorage.getItem("sentryDashSectionCollapsed") === "true";
+      if (isCollapsed) {
+        bottomSection.classList.add("collapsed-section");
+        toggleIcon.src = "src/icon/dark/dropdown-open-expand.svg";
+      }
+
+      toggleBtn.addEventListener("click", () => {
+        const collapsed = bottomSection.classList.toggle("collapsed-section");
+        toggleIcon.src = collapsed
+          ? "src/icon/dark/dropdown-open-expand.svg"
+          : "src/icon/dark/dropdown-close-expand.svg";
+        localStorage.setItem("sentryDashSectionCollapsed", collapsed ? "true" : "false");
+      });
+    }
 
     renderActiveTab();
   }
@@ -159,103 +215,35 @@ export function bindPageEvents(page) {
   }
 
   if (page === "stocks") {
+    const toggleBtn = document.getElementById("stocksSectionToggle");
+    const lowPanel = document.getElementById("stocksLowPanel");
+    const toggleIcon = document.getElementById("stocksToggleIcon");
+
+    if (toggleBtn && lowPanel && toggleIcon) {
+      const isCollapsed = localStorage.getItem("sentryStockSectionCollapsed") === "true";
+      if (isCollapsed) {
+        lowPanel.classList.add("collapsed-section");
+        toggleIcon.src = "src/icon/dark/dropdown-open-expand.svg";
+      }
+
+      toggleBtn.addEventListener("click", () => {
+        const collapsed = lowPanel.classList.toggle("collapsed-section");
+        toggleIcon.src = collapsed
+          ? "src/icon/dark/dropdown-open-expand.svg"
+          : "src/icon/dark/dropdown-close-expand.svg";
+        localStorage.setItem("sentryStockSectionCollapsed", collapsed ? "true" : "false");
+      });
+    }
+
     document.getElementById("stockSort")?.addEventListener("change", e => {
       const rowsEl = document.getElementById("stockRows");
       if (rowsEl) rowsEl.innerHTML = stockRows(sortProducts(state.products, e.target.value));
+      const lowRowsEl = document.getElementById("stockLowRows");
+      if (lowRowsEl) lowRowsEl.innerHTML = stockRows(sortProducts(state.products.filter(isLowStock), e.target.value));
     });
     pageContent.addEventListener("click", e => {
       const btn = e.target.closest("[data-expiry-product]");
       if (btn) openExpirationModal(btn.dataset.expiryProduct);
-    });
-  }
-
-  if (page === "add-product") {
-    const hasExpiry = document.getElementById("hasExpiry");
-    const expiryWrap = document.getElementById("expiryWrap");
-    if (hasExpiry && expiryWrap) {
-      const expiryInput = expiryWrap.querySelector("input[name='expiry']");
-      const syncExpiry = () => {
-        const on = hasExpiry.value === "yes";
-        expiryWrap.style.display = on ? "" : "none";
-        if (expiryInput) {
-          expiryInput.required = on;
-          if (!on) expiryInput.value = "";
-        }
-      };
-      hasExpiry.addEventListener("change", syncExpiry);
-      syncExpiry();
-    }
-
-    document.getElementById("addProductForm")?.addEventListener("submit", async e => {
-      e.preventDefault();
-      const f = new FormData(e.target);
-      try {
-        await apiRequest("products.php?action=add", {
-          method: "POST",
-          body: JSON.stringify({
-            name: f.get("name"),
-            category: f.get("category"),
-            price: Number(f.get("price")),
-            cost: Number(f.get("cost")),
-            stock: Number(f.get("stock")),
-            expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : "",
-            description: f.get("description")
-          })
-        });
-        await loadDashboardData();
-        updateStats();
-        toast("Product added successfully.");
-        renderPage("products");
-      } catch (error) {
-        toast(`Could not add product: ${error.message}`);
-      }
-    });
-  }
-
-  if (page === "stock-in" || page === "stock-out") {
-    if (page === "stock-in") {
-      const hasExpiry = document.getElementById("hasExpiry");
-      const expiryWrap = document.getElementById("expiryWrap");
-      if (hasExpiry && expiryWrap) {
-        const expiryInput = expiryWrap.querySelector("input[name='expiry']");
-        const syncExpiry = () => {
-          const on = hasExpiry.value === "yes";
-          expiryWrap.style.display = on ? "" : "none";
-          if (expiryInput) {
-            expiryInput.required = on;
-            if (!on) expiryInput.value = "";
-          }
-        };
-        hasExpiry.addEventListener("change", syncExpiry);
-        syncExpiry();
-      }
-    }
-
-    document.getElementById("stockForm")?.addEventListener("submit", async e => {
-      e.preventDefault();
-      const f = new FormData(e.target);
-      const product = state.products.find(p => p.id === Number(f.get("product")));
-      const qty = Number(f.get("qty"));
-      if (!product) return toast("Please add a product first.");
-      try {
-        await apiRequest("products.php?action=stock", {
-          method: "POST",
-          body: JSON.stringify({
-            product_id: product.id,
-            quantity: qty,
-            type: page === "stock-in" ? "STOCK IN" : "STOCK OUT",
-            reference: f.get("ref"),
-            notes: f.get("notes"),
-            expiry: page === "stock-in" && f.get("hasExpiry") === "yes" ? f.get("expiry") : ""
-          })
-        });
-        await loadDashboardData();
-        updateStats();
-        toast(`Stock ${page === "stock-in" ? "in" : "out"} recorded.`);
-        renderPage(page);
-      } catch (error) {
-        toast(`Could not update stock: ${error.message}`);
-      }
     });
   }
 
@@ -264,7 +252,6 @@ export function bindPageEvents(page) {
     const sort = document.getElementById("priceSort");
     const directory = document.getElementById("priceDirectory");
     const result = document.getElementById("priceSearchResult");
-    const echo = document.getElementById("priceSearchEcho");
     const name = document.getElementById("checkedName");
     const price = document.getElementById("checkedPrice");
     const stock = document.getElementById("checkedStock");
@@ -290,7 +277,6 @@ export function bindPageEvents(page) {
 
       directory.classList.add("hidden");
       result.classList.remove("hidden");
-      if (echo) echo.value = input.value;
 
       const matches = state.products
         .filter(p => `${p.name} ${p.category}`.toLowerCase().includes(q))
@@ -347,11 +333,32 @@ export function bindPageEvents(page) {
     };
     const updateHistory = () => {
       const q = (document.getElementById("transactionSearch")?.value || "").toLowerCase();
-      let list = state.transactions.filter(t => `${t.name} ${t.type} ${t.date}`.toLowerCase().includes(q));
-      const mode = document.getElementById("historySort")?.value || "sales";
-      if (mode === "name") list.sort((a, b) => a.name.localeCompare(b.name));
-      if (mode === "sales") list.sort((a, b) => Number(b.amount) - Number(a.amount));
-      if (mode === "date") list.sort((a, b) => b.timestamp - a.timestamp);
+      const mode = document.getElementById("historySort")?.value || "date";
+
+      let list = [...state.transactions];
+
+      if (q) {
+        list = list.filter(t => `${t.name} ${t.type} ${t.date} ${t.notes || ""}`.toLowerCase().includes(q));
+      }
+
+      if (mode === "SALE") {
+        list = list.filter(t => t.type === "SALE" || t.type === "sale");
+        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      } else if (mode === "STOCK_IN" || mode === "STOCK IN") {
+        list = list.filter(t => t.type === "STOCK IN" || t.type === "STOCK_IN" || t.type === "stock_in");
+        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      } else if (mode === "STOCK_OUT" || mode === "STOCK OUT") {
+        list = list.filter(t => t.type === "STOCK OUT" || t.type === "STOCK_OUT" || t.type === "stock_out");
+        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      } else if (mode === "name") {
+        list.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (mode === "sales") {
+        list.sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0));
+      } else {
+        // Default "date": Newest First
+        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      }
+
       const rowsEl = document.getElementById("transactionRows");
       if (rowsEl) rowsEl.innerHTML = transactionRows(list);
       bindNotes();
@@ -359,33 +366,44 @@ export function bindPageEvents(page) {
 
     document.getElementById("transactionSearch")?.addEventListener("input", updateHistory);
     document.getElementById("historySort")?.addEventListener("change", updateHistory);
-    document.getElementById("selectRangeBtn")?.addEventListener("click", () => toast("Date range selector can be connected here."));
-    document.getElementById("printHistoryBtn")?.addEventListener("click", () => window.print());
+    document.getElementById("printHistoryBtn")?.addEventListener("click", () => {
+      document.body.dataset.printHistory = "true";
+      window.print();
+      setTimeout(() => delete document.body.dataset.printHistory, 0);
+    });
     bindNotes();
   }
 
   if (page === "reports") {
     const content = document.getElementById("reportTabContent");
-    const bindReportPrint = () => {
-      document.querySelectorAll("[data-report-print]").forEach(btn => {
-        btn.addEventListener("click", () => {
-          document.body.dataset.printReport = btn.dataset.reportPrint;
-          window.print();
-          setTimeout(() => delete document.body.dataset.printReport, 0);
-        });
-      });
+    const printBtn = document.getElementById("topReportPrintBtn");
+    const rangeSelect = document.getElementById("reportDateRange");
+
+    const updateReportView = () => {
+      if (!content) return;
+      if (rangeSelect) setActiveReportRange(rangeSelect.value);
+
+      content.innerHTML = activeReportTab === "sales"
+        ? renderSalesProfitReport(activeReportRange)
+        : renderInventoryCapitalReport(activeReportRange);
+
+      if (printBtn) printBtn.dataset.reportPrint = activeReportTab;
     };
 
     document.querySelectorAll("[data-report-tab]").forEach(btn => {
       btn.addEventListener("click", () => {
         document.querySelectorAll("[data-report-tab]").forEach(b => b.classList.toggle("active", b === btn));
-        if (content) {
-          content.innerHTML = btn.dataset.reportTab === "sales" ? renderSalesProfitReport() : renderInventoryCapitalReport();
-          bindReportPrint();
-        }
+        setActiveReportTab(btn.dataset.reportTab);
+        updateReportView();
       });
     });
 
-    bindReportPrint();
+    rangeSelect?.addEventListener("change", updateReportView);
+
+    printBtn?.addEventListener("click", () => {
+      document.body.dataset.printReport = activeReportTab;
+      window.print();
+      setTimeout(() => delete document.body.dataset.printReport, 0);
+    });
   }
 }

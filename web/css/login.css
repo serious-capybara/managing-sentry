@@ -1,0 +1,226 @@
+/* ============================================================
+ * css/login.css — Authentication / Login Screen Styling
+ * ============================================================ */
+
+.login-screen {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 55% 45%;
+  background: #FFFFFF;
+}
+
+.login-visual {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-image: url("https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1500&q=85");
+  animation: slideBg 15s infinite;
+}
+
+@keyframes slideBg {
+  0%, 28% { background-image: url("https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1500&q=85"); }
+  33%, 61% { background-image: url("https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1500&q=85"); }
+  66%, 94% { background-image: url("https://images.unsplash.com/photo-1556742111-a301076d9d18?auto=format&fit=crop&w=1500&q=85"); }
+  100% { background-image: url("https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1500&q=85"); }
+}
+
+.visual-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(17,24,68,0.92), rgba(10,15,43,0.85));
+}
+
+.visual-content {
+  position: relative;
+  z-index: 2;
+  max-width: 640px;
+  padding: clamp(40px, 6vw, 90px);
+  color: #FFFFFF;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  color: #94A3B8;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.visual-content h1 {
+  font-size: clamp(36px, 4.5vw, 64px);
+  line-height: 1.08;
+  letter-spacing: -2px;
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.visual-content h1 span {
+  color: #818CF8;
+}
+
+.visual-content p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #CBD5E1;
+  max-width: 480px;
+}
+
+.slider-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 32px;
+}
+
+.dot {
+  width: 28px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+
+.dot.active {
+  background: #FFFFFF;
+}
+
+.login-panel {
+  display: grid;
+  place-items: center;
+  padding: 40px;
+  background: #FFFFFF;
+}
+
+.login-box {
+  width: min(420px, 100%);
+}
+
+.brand-mark {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  margin-bottom: 28px;
+}
+
+.login-heading .small-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--navy);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.login-heading h2 {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.login-heading p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+
+.login-box label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  margin: 16px 0 6px;
+}
+
+.input-wrap {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-input);
+  padding: 0 16px;
+  background: #FFFFFF;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-wrap:focus-within {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(17, 24, 68, 0.12);
+}
+
+.input-wrap > span {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrap input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  height: 100%;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: transparent;
+}
+
+.show-password {
+  background: transparent;
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.show-password:hover {
+  background: #F1F5F9;
+}
+
+.login-btn {
+  margin-top: 24px;
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-button);
+  background: var(--navy);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 15px;
+  transition: background 0.2s, transform 0.1s;
+  box-shadow: 0 4px 12px rgba(17, 24, 68, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-btn:hover {
+  background: var(--navy-hover);
+  transform: translateY(-1px);
+}
+
+.login-message {
+  min-height: 20px;
+  margin-top: 12px;
+  color: var(--danger-red);
+  font-size: 13px;
+  text-align: center;
+}
+
+.demo-hint {
+  margin-top: 24px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.5;
+}

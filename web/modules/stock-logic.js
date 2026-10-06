@@ -5,6 +5,7 @@
 
 import { state } from "./state.js";
 import { money } from "./utils.js";
+import { getProfitValue, activeProfitType } from "./pages/dashboard.js";
 
 // ---------------------------------------------------------------------------
 // Stock baseline & low-stock threshold
@@ -124,11 +125,13 @@ export function updateStats() {
   const salesToday = document.getElementById("salesToday");
   const totalSales = document.getElementById("totalSales");
   const profit     = document.getElementById("profitEarned");
+  const label      = document.getElementById("profitLabel");
 
   if (capital)    capital.textContent    = money(state.capital);
   if (salesToday) salesToday.textContent = money(state.salesToday);
   if (totalSales) totalSales.textContent = money(state.totalSales);
-  if (profit)     profit.textContent     = money(state.profit);
+  if (label)      label.textContent      = activeProfitType === "net" ? "Net Profit" : "Gross Profit";
+  if (profit)     profit.textContent     = money(getProfitValue());
 
   updateLowStockIndicator();
 }

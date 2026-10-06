@@ -1,0 +1,310 @@
+/* ============================================================
+ * css/modals.css — Floating Modal Dialogs System
+ * ============================================================ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  width: min(620px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow-modal);
+  padding: 4px;
+  animation: modalSlideUp 0.25s ease;
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.modal-head h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #F1F5F9;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-secondary);
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: var(--danger-red-bg);
+  color: var(--danger-red);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-foot {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-light);
+  justify-content: flex-end;
+}
+
+.modal-foot .primary-btn, .modal-foot .ghost-btn {
+  margin-top: 0;
+  flex: 1;
+}
+
+.modal-sm {
+  width: min(420px, 100%);
+}
+
+.modal-caption {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.yn-msg {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.info-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.info-msg {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 16px;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border-light);
+  background: #F8FAFC;
+}
+
+.info-msg.pos {
+  background: var(--success-green-bg);
+  border-color: #A3C9A8;
+  color: var(--success-green-hover);
+}
+
+.info-msg.neg {
+  background: var(--danger-red-bg);
+  border-color: #FCA5A5;
+  color: var(--danger-red-dark);
+}
+
+/* Checkout Modal */
+.checkout-modal {
+  width: min(850px, 100%);
+}
+
+.checkout-modal .modal-body {
+  display: grid;
+  gap: 20px;
+}
+
+.checkout-section h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 12px;
+}
+
+.checkout-table-scroll {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-input);
+}
+
+.checkout-receipt-table, .checkout-payment-table {
+  width: 100%;
+}
+
+.checkout-payment-table th {
+  width: 180px;
+  background: #F1F5F9;
+  font-size: 14px;
+  color: var(--text-primary);
+  padding: 12px 16px;
+}
+
+.payment-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pay-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.pay-opt input[type="radio"] {
+  accent-color: var(--navy);
+  width: 16px;
+  height: 16px;
+}
+
+.pay-opt span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.change-box {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: var(--radius-button);
+  background: var(--success-green-bg);
+  color: var(--success-green);
+}
+
+.change-box.due {
+  background: var(--danger-red-bg);
+  color: var(--danger-red);
+}
+
+/* Expiration Modal & Buttons */
+.expiry-btn {
+  border: 0;
+  border-radius: var(--radius-button);
+  padding: 6px 10px;
+  min-width: 110px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.expiry-btn:hover {
+  transform: translateY(-1px);
+}
+
+.expiry-none { background: #E2E8F0; color: var(--text-secondary); }
+.expiry-safe { background: var(--success-green-bg); color: var(--success-green); }
+.expiry-soon { background: var(--warning-amber-bg); color: var(--warning-amber); }
+.expiry-expired { background: var(--danger-red-bg); color: var(--danger-red-dark); }
+
+.expiration-modal {
+  width: min(520px, 100%);
+}
+
+.expiration-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.expiration-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-input);
+  background: #F8FAFC;
+}
+
+/* Remove Product Modal */
+.remove-product-modal {
+  width: min(540px, 100%);
+}
+
+.remove-search-wrap {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-input);
+  padding: 0 16px;
+  margin-bottom: 12px;
+  background: #FFFFFF;
+}
+
+.remove-search-wrap input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  font-size: 14px;
+}
+
+.remove-product-list {
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.remove-product-option {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-button);
+  background: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  transition: border-color 0.15s ease;
+}
+
+.remove-product-option:hover {
+  border-color: var(--navy);
+  background: #F8FAFC;
+}
+
+.remove-product-option.selected {
+  border-color: var(--navy);
+  background: #EEF2FF;
+}
+
+/* Stock In / Stock Out Modals */
+.stock-modal {
+  width: min(580px, 100%);
+}

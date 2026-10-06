@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Managing Sentry - Super Admin</title>
+  <title>Managing Sentry - POS & Inventory Management</title>
   <link rel="icon" type="image/png" href="src/managing-sentry.png">
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 
-  <!-- LOGIN - KEPT FROM ORIGINAL PROJECT -->
+  <!-- LOGIN SCREEN -->
   <div id="loginScreen" class="login-screen">
     <div class="login-visual">
       <div class="visual-overlay"></div>
@@ -59,52 +62,60 @@
 
   <!-- APP -->
   <div id="app" class="app hidden">
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <img class="sidebar-brand-mark" src="src/managing-sentry.png" alt="Managing Sentry logo">
-        <div>
+    <!-- Backdrop overlay for mobile sidebar drawer -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+    <aside id="sidebar" class="sidebar">
+      <div id="sidebarBrandToggle" class="sidebar-brand" title="Click to collapse / expand menu">
+        <div class="sidebar-logo-container">
+          <img class="sidebar-brand-mark logo-img" src="src/managing-sentry.png" alt="Managing Sentry logo">
+          <img class="sidebar-brand-mark toggle-img" src="src/icon/white/dashboard-left.svg" alt="Expand Menu">
+        </div>
+        <div class="brand-text">
           <h1>Managing Sentry</h1>
           <p>Super Admin Panel</p>
         </div>
+        <button id="sidebarCollapseBtn" class="sidebar-collapse-btn" title="Collapse Menu" aria-label="Collapse Menu">
+          <img class="collapse-icon" src="src/icon/white/dashboard-left.svg" alt="Collapse Menu">
+        </button>
       </div>
 
       <nav class="side-nav">
-        <button class="nav-item active" data-page="dashboard"><img class="nav-icon" src="src/icon/dashboard.svg" alt=""> Dashboard</button>
-
-        <!-- EXPANDABLE PRODUCTS SUBMENU - KEPT -->
-        <div class="nav-group">
-          <button class="nav-item nav-parent"><img class="nav-icon" src="src/icon/products.svg" alt=""> Products <img class="chevron-icon" src="src/icon/dropdown-close-expand.svg" alt=""></button>
-          <div class="nav-submenu">
-            <button class="nav-sub" data-page="products"><img class="nav-icon" src="src/icon/products.svg" alt=""> Products</button>
-            <button class="nav-sub" data-page="stock-in"><img class="nav-icon" src="src/icon/add-stock-product.svg" alt=""> Stock In</button>
-            <button class="nav-sub" data-page="stock-out"><img class="nav-icon" src="src/icon/remove-stock-product.svg" alt=""> Stock Out</button>
-          </div>
-        </div>
-
-        <button class="nav-item" data-page="stocks"><img class="nav-icon" src="src/icon/stock.svg" alt=""> Stocks <i class="alert-dot hidden" id="sidebarLowStockDot" aria-label="Low stock alert"></i></button>
-        <button class="nav-item" data-page="low-stock"><img class="nav-icon" src="src/icon/low-stock-alert.svg" alt=""> Low Stock Alert <i class="alert-dot hidden" id="sidebarLowStockAlertDot" aria-label="Low stock alert"></i></button>
-        <button class="nav-item" data-page="price-checker"><img class="nav-icon" src="src/icon/price-checker.svg" alt=""> Price Checker</button>
-        <button class="nav-item" data-page="transactions"><img class="nav-icon" src="src/icon/histories.svg" alt=""> History</button>
-        <button class="nav-item" data-page="reports"><img class="nav-icon" src="src/icon/reports.svg" alt=""> Reports</button>
+        <button class="nav-item active" data-page="dashboard" title="Dashboard"><img class="nav-icon" src="src/icon/white/dashboard.svg" alt=""> <span>Dashboard</span></button>
+        <button class="nav-item" data-page="products" title="Products"><img class="nav-icon" src="src/icon/white/products.svg" alt=""> <span>Products</span></button>
+        <button class="nav-item" data-page="stocks" title="Stocks"><img class="nav-icon" src="src/icon/white/stock.svg" alt=""> <span>Stocks</span> <i class="alert-dot hidden" id="sidebarLowStockDot" aria-label="Low stock alert"></i></button>
+        <button class="nav-item" data-page="low-stock" title="Low Stock Alert"><img class="nav-icon" src="src/icon/white/low-stock-alert.svg" alt=""> <span>Low Stock Alert</span> <i class="alert-dot hidden" id="sidebarLowStockAlertDot" aria-label="Low stock alert"></i></button>
+        <button class="nav-item" data-page="price-checker" title="Price Checker"><img class="nav-icon" src="src/icon/white/price-checker.svg" alt=""> <span>Price Checker</span></button>
+        <button class="nav-item" data-page="transactions" title="History"><img class="nav-icon" src="src/icon/white/histories.svg" alt=""> <span>History</span></button>
+        <button class="nav-item" data-page="reports" title="Reports"><img class="nav-icon" src="src/icon/white/reports.svg" alt=""> <span>Reports</span></button>
       </nav>
 
       <div class="sidebar-bottom">
-        <button class="side-action capital" id="setCapitalBtn"><img class="action-icon" src="src/icon/set-capital.svg" alt=""> Set Capital</button>
-        <button class="side-action reset" id="resetDataBtn"><img class="action-icon" src="src/icon/reset.svg" alt=""> Reset All</button>
-        <!-- LOGOUT - KEPT -->
-        <button class="logout-btn" id="logoutBtn"><img class="action-icon" src="src/icon/logout.svg" alt=""> Log Out</button>
+        <button class="side-action capital" id="setCapitalBtn" title="Set Capital"><img class="action-icon" src="src/icon/white/set-capital.svg" alt=""> <span>Set Capital</span></button>
+        <button class="logout-btn" id="logoutBtn" title="Log Out"><img class="action-icon" src="src/icon/white/logout.svg" alt=""> <span>Log Out</span></button>
       </div>
     </aside>
 
-    <main class="main">
+    <main id="mainContent" class="main">
       <header class="topbar">
-        <div>
-          <p class="topbar-label">SENTRY • SUPER ADMIN</p>
-          <h2 id="pageTitle">Dashboard</h2>
+        <div class="topbar-left-wrap">
+          <button id="mobileMenuToggle" class="mobile-menu-toggle" aria-label="Toggle navigation">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="info-tooltip-wrap">
+            <h2 id="pageTitle">Dashboard</h2>
+            <span id="pageTooltip" class="info-tooltip" data-tooltip="Everything you need to monitor products, stock, sales and transactions in one place.">!</span>
+          </div>
         </div>
         <div class="topbar-right">
-          <span class="status-dot"></span>
-          <span>System Online</span>
+          <span class="status-badge">
+            <span class="status-dot"></span>
+            <span>System Online</span>
+          </span>
         </div>
       </header>
 
