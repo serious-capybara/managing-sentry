@@ -24,7 +24,13 @@ try {
             "SELECT p.product_id, p.name, p.category, p.base_cost, p.markup_amount,
                     p.retail_price, p.stock_quantity, p.expiration_date,
                     p.low_stock_alert_level,
+<<<<<<< HEAD
                     COALESCE(SUM(oi.quantity), 0) AS sold
+=======
+                    COALESCE(SUM(oi.quantity), 0) AS sold,
+                    COALESCE(SUM(oi.quantity * oi.price_snapshot), 0) AS sold_revenue,
+                    COALESCE(SUM(oi.quantity * oi.cost_snapshot), 0) AS sold_cogs
+>>>>>>> Clary
              FROM products p
              LEFT JOIN order_items oi ON oi.product_id = p.product_id
              GROUP BY p.product_id, p.name, p.category, p.base_cost, p.markup_amount,
@@ -55,6 +61,8 @@ try {
             $product['low_stock_alert_level'] = (int)($product['low_stock_alert_level'] ?? 20);
             $product['lowStockAlertLevel'] = (int)($product['low_stock_alert_level'] ?? 20);
             $product['sold'] = (int)$product['sold'];
+            $product['sold_revenue'] = (float)$product['sold_revenue'];
+            $product['sold_cogs'] = (float)$product['sold_cogs'];
         }
         unset($product);
         Response::json($products);

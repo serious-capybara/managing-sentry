@@ -8,66 +8,55 @@ import { state }     from "../state.js";
 import { money, escapeHtml } from "../utils.js";
 import { isLowStock, lowStockLabel } from "../stock-logic.js";
 import { renderSellTab } from "../cart.js";
+import { getProfitBreakdown, getSalesRevenue } from "../finance.js";
 
 export let activeDashTab = "expiring";
 export function setActiveDashTab(tab) { activeDashTab = tab; }
 
 export let activeProfitType = (function() {
-  try { return localStorage.getItem("sentryActiveProfitType") || "gross"; }
-  catch (e) { return "gross"; }
+  try {
+    const savedType = localStorage.getItem("sentryDashboardProfitDisplay");
+    return ["gross", "net"].includes(savedType) ? savedType : "net";
+  } catch (e) {
+    return "net";
+  }
 })();
 
 export function setActiveProfitType(type) {
+  if (!["gross", "net"].includes(type)) return;
   activeProfitType = type;
-  try { localStorage.setItem("sentryActiveProfitType", type); } catch (e) {}
-}
-
-export function getProfitValue(type = activeProfitType) {
-  const sales = state.transactions.filter(t => t.type === "SALE");
-  const gross = sales.reduce(
-    (sum, sale) => sum + Number(sale.amount) - (Number(sale.costPerUnit || 0) * Number(sale.qty || 1)),
-    0
-  );
-
-  if (type === "net") {
-    const stockInCost = state.transactions
-      .filter(t => t.type === "STOCK IN")
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
-    return gross - stockInCost;
-  }
-
-  return gross;
+  try { localStorage.setItem("sentryDashboardProfitDisplay", type); } catch (e) {}
 }
 
 /* ── stat cards (shown only on the dashboard) ─────────────── */
 export function dashboardStats() {
-  const currentProfit = getProfitValue(activeProfitType);
-  const currentLabel = activeProfitType === "net" ? "Net Profit" : "Gross Profit";
+  const profit = getProfitBreakdown();
+  const isNetProfit = activeProfitType === "net";
+  const displayedProfit = isNetProfit ? profit.netProfit : profit.grossProfit;
   return `
     <div class="stats-grid dashboard-only-stats">
       <div class="stat-card">
         <div class="stat-icon purple"><img class="stat-svg" src="src/icon/dark/set-capital.svg" alt=""></div>
-        <div><span>Capital</span><strong id="capitalValue">${money(state.capital)}</strong></div>
+        <div><span>Capital Balance</span><strong id="capitalValue">${money(state.capital)}</strong></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon green"><img class="stat-svg" src="src/icon/dark/cart.svg" alt=""></div>
-        <div><span>Sales</span><strong id="salesToday">${money(state.salesToday)}</strong></div>
+        <div><span>Sales Today</span><strong id="salesToday">${money(getSalesRevenue("today"))}</strong></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon orange"><img class="stat-svg" src="src/icon/dark/reports.svg" alt=""></div>
-        <div><span>Total Sales</span><strong id="totalSales">${money(state.totalSales)}</strong></div>
+        <div><span>Total Sales · All Time</span><strong id="totalSales">${money(getSalesRevenue("all"))}</strong></div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card profit-stat-card">
         <div class="stat-icon teal"><img class="stat-svg" src="src/icon/dark/dashboard-left.svg" alt=""></div>
         <div class="stat-card-main">
-          <span id="profitLabel">${currentLabel}</span>
-          <strong id="profitEarned">${money(currentProfit)}</strong>
-        </div>
-        <div class="stat-dropdown-right">
-          <select class="stat-arrow-dropdown" id="profitTypeSelect" aria-label="Select Profit Metric" title="Switch between Gross and Net profit">
-            <option value="gross" ${activeProfitType === "gross" ? "selected" : ""}>Gross Profit</option>
-            <option value="net" ${activeProfitType === "net" ? "selected" : ""}>Net Profit</option>
-          </select>
+          <div class="profit-type-control">
+            <select class="compact-select styled-select-native profit-type-select" id="profitMetricSelect" aria-label="Select profit type">
+              <option value="net" ${activeProfitType === "net" ? "selected" : ""}>Net Profit</option>
+              <option value="gross" ${activeProfitType === "gross" ? "selected" : ""}>Gross Profit</option>
+            </select>
+          </div>
+          <strong id="profitEarned">${money(displayedProfit)}</strong>
         </div>
       </div>
     </div>`;
@@ -80,7 +69,9 @@ export function dashboardRows(products = state.products) {
   }
   return products.map((p, i) => {
     const sold = Number(p.sold || 0);
-    const estProfit = (Number(p.price) - Number(p.cost)) * sold;
+    const estProfit = p.soldRevenue != null && p.soldCogs != null
+      ? Number(p.soldRevenue) - Number(p.soldCogs)
+      : (Number(p.price) - Number(p.cost)) * sold;
     return `<tr>
       <td>${i + 1}</td><td><strong>${escapeHtml(p.name)}</strong></td><td>${escapeHtml(p.category)}</td>
       <td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${p.stock}</td><td>${sold}</td>
@@ -192,13 +183,17 @@ export function renderDashboard() {
         <div class="dashboard-toolbar">
           <div class="toolbar-left">
             <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Sort:</span>
-            <select class="compact-select" id="dashboardSort">
+            <select class="compact-select styled-select-native" id="dashboardSort" aria-label="Sort dashboard products">
               <option value="selling">High Selling</option>
-              <option value="name">By Name</option>
+              <option value="name">Name</option>
               <option value="stock">Low Stock</option>
+              <option value="stock-desc">High Stock</option>
             </select>
           </div>
           <div class="toolbar-right">
+            <div class="dashboard-profit-controls">
+              <button class="wire-btn" id="setExpenseTotalsBtn" type="button">Set Expense Totals</button>
+            </div>
             <input class="compact-input" id="dashboardSearch" placeholder="Search Products">
           </div>
         </div>
@@ -210,7 +205,7 @@ export function renderDashboard() {
             <thead><tr>
               <th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Sold</th><th>Est. Profit</th><th>Expiration</th>
             </tr></thead>
-            <tbody id="dashboardRows">${dashboardRows()}</tbody>
+            <tbody id="dashboardRows">${dashboardRows(sortProducts(state.products, "selling"))}</tbody>
           </table>
         </div>
       </div>
@@ -238,7 +233,14 @@ export function renderDashboard() {
 /** Sort a product list by the chosen mode. */
 export function sortProducts(list, mode) {
   const copy = [...list];
-  if (mode === "name")  return copy.sort((a, b) => a.name.localeCompare(b.name));
-  if (mode === "stock") return copy.sort((a, b) => a.stock - b.stock);
-  return copy.sort((a, b) => Number(b.sold || 0) - Number(a.sold || 0));
+  if (mode === "name") {
+    return copy.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  }
+  if (mode === "stock") {
+    return copy.sort((a, b) => Number(a.stock || 0) - Number(b.stock || 0) || String(a.name).localeCompare(String(b.name)));
+  }
+  if (mode === "stock-desc") {
+    return copy.sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0) || String(a.name).localeCompare(String(b.name)));
+  }
+  return copy.sort((a, b) => Number(b.sold || 0) - Number(a.sold || 0) || String(a.name).localeCompare(String(b.name)));
 }

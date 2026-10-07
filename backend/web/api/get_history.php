@@ -29,6 +29,7 @@ try {
                 SUM(oi.cost_snapshot * oi.quantity) / NULLIF(SUM(oi.quantity), 0),
                 0
             ) AS cost_per_unit,
+            COALESCE(SUM(oi.cost_snapshot * oi.quantity), 0) AS cogs,
             o.notes,
             COALESCE(h.order_status, 'COMPLETED') AS order_status
         FROM orders o
@@ -49,6 +50,10 @@ try {
             sa.quantity_changed AS qty,
             (sa.unit_cost * ABS(sa.quantity_changed)) AS amount,
             sa.unit_cost AS cost_per_unit,
+<<<<<<< HEAD
+=======
+            (sa.unit_cost * ABS(sa.quantity_changed)) AS cogs,
+>>>>>>> Clary
             sa.audit_notes AS notes,
             'COMPLETED' AS order_status
         FROM stock_adjustments sa
@@ -63,6 +68,7 @@ try {
         $entry['qty'] = (int)$entry['qty'];
         $entry['amount'] = (float)$entry['amount'];
         $entry['costPerUnit'] = (float)$entry['cost_per_unit'];
+        $entry['cogs'] = (float)$entry['cogs'];
         $entry['date'] = $entry['created_at'];
         $entry['total_quantity'] = (int)$entry['qty'];
         $entry['total_amount'] = (float)$entry['amount'];

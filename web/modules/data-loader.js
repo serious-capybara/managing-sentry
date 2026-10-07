@@ -7,6 +7,7 @@
 import { state, persist } from "./state.js";
 import { apiRequest }     from "./api.js";
 import { ensureStockBaseline, ensureExpiryBatches, earliestExpiry } from "./stock-logic.js";
+import { getProfitBreakdown, getSalesRevenue } from "./finance.js";
 
 const DEFAULT_PRODUCTS = [
   { id: 1, name: "Alaxan FR 200mg", category: "Medicine", cost: 7.50, price: 10.00, stock: 90, sold: 15, expiry: "2026-10-10", expiryBatches: [{ batchId: "B1", expiry: "2026-10-10", qty: 90 }] },
@@ -16,12 +17,6 @@ const DEFAULT_PRODUCTS = [
   { id: 5, name: "Biogesic 500mg", category: "Medicine", cost: 4.00, price: 5.50, stock: 133, sold: 88, expiry: "2026-10-09", expiryBatches: [{ batchId: "B5", expiry: "2026-10-09", qty: 133 }] },
   { id: 6, name: "C2 Green Tea Apple 500ml", category: "Beverages", cost: 20.00, price: 28.00, stock: 90, sold: 30, expiry: "2026-12-05", expiryBatches: [{ batchId: "B6", expiry: "2026-12-05", qty: 90 }] },
   { id: 7, name: "Century Tuna Oil 155g", category: "Canned Goods", cost: 29.00, price: 38.00, stock: 59, sold: 18, expiry: "2027-03-10", expiryBatches: [{ batchId: "B7", expiry: "2027-03-10", qty: 59 }] }
-];
-
-const DEFAULT_TRANSACTIONS = [
-  { id: 101, name: "Argentina Corned Beef 150g", type: "SALE", amount: 84.00, qty: 2, costPerUnit: 32.00, date: new Date().toLocaleString(), timestamp: Date.now(), notes: "Customer cash purchase" },
-  { id: 102, name: "Alaxan FR 200mg", type: "SALE", amount: 50.00, qty: 5, costPerUnit: 7.50, date: new Date().toLocaleString(), timestamp: Date.now() - 3600000, notes: "OTC Sale" },
-  { id: 103, name: "Bear Brand Milk 320g", type: "STOCK IN", amount: 2850.00, qty: 30, costPerUnit: 95.00, date: new Date(Date.now() - 86400000).toLocaleString(), timestamp: Date.now() - 86400000, notes: "Supplier delivery" }
 ];
 
 /**
@@ -48,7 +43,11 @@ export async function loadDashboardData() {
   }
 
   /* 1. Normalize Products */
-  const rawProducts = (productsRes && productsRes.length) ? productsRes : (state.products.length ? state.products : DEFAULT_PRODUCTS);
+  const rawProducts = productsRes !== null
+    ? productsRes
+    : (state.products.length
+      ? state.products
+      : DEFAULT_PRODUCTS.map(product => ({ ...product, sold: 0, soldRevenue: 0, soldCogs: 0 })));
   state.products = rawProducts.map(p => {
     const id = Number(p.id ?? p.product_id ?? 0);
     const name = p.name || "Unnamed Product";
@@ -68,6 +67,12 @@ export async function loadDashboardData() {
       cost,
       stock,
       sold,
+      soldRevenue: p.sold_revenue == null
+        ? (p.soldRevenue == null ? undefined : Number(p.soldRevenue))
+        : Number(p.sold_revenue),
+      soldCogs: p.sold_cogs == null
+        ? (p.soldCogs == null ? undefined : Number(p.soldCogs))
+        : Number(p.sold_cogs),
       expiry,
       stockBaseline: Number(p.stockBaseline ?? stock),
       expiryBatches: Array.isArray(p.expiryBatches) ? p.expiryBatches : []
@@ -75,7 +80,9 @@ export async function loadDashboardData() {
   });
 
   /* 2. Normalize Transactions */
-  const rawTransactions = (transactionsRes && transactionsRes.length) ? transactionsRes : (state.transactions.length ? state.transactions : DEFAULT_TRANSACTIONS);
+  const rawTransactions = transactionsRes !== null
+    ? transactionsRes
+    : state.transactions;
   state.transactions = rawTransactions.map((t, idx) => {
     const id = Number(t.id ?? t.order_id ?? (idx + 1));
     const type = t.type || "SALE";
@@ -83,6 +90,7 @@ export async function loadDashboardData() {
     const amount = Number(t.amount ?? t.total_amount ?? 0);
     const qty = Number(t.qty ?? t.total_quantity ?? 1);
     const costPerUnit = Number(t.costPerUnit ?? t.cost_per_unit ?? 0);
+    const cogs = t.cogs == null ? undefined : Number(t.cogs);
     const rawDate = t.date || t.transaction_timestamp || new Date().toISOString();
     const dateObj = new Date(rawDate);
     const timestamp = isNaN(dateObj.getTime()) ? Date.now() : dateObj.getTime();
@@ -96,6 +104,7 @@ export async function loadDashboardData() {
       amount,
       qty,
       costPerUnit,
+      cogs,
       timestamp,
       date: dateStr,
       notes: t.notes || ""
@@ -105,22 +114,16 @@ export async function loadDashboardData() {
   /* 3. Normalize Capital & Sales Totals */
   if (capitalRes && (capitalRes.capital !== undefined || capitalRes.amount !== undefined)) {
     state.capital = Number(capitalRes.capital ?? capitalRes.amount ?? 20000);
+    state.operatingExpenses = Number(capitalRes.operating_expenses || 0);
+    state.interest = Number(capitalRes.interest || 0);
+    state.taxes = Number(capitalRes.taxes || 0);
   } else if (!state.capital) {
     state.capital = 20000;
   }
 
-  const sales = state.transactions.filter(t => t.type === "SALE");
-  const todayStr = new Date().toDateString();
-
-  state.salesToday = sales.reduce(
-    (sum, sale) => new Date(sale.timestamp).toDateString() === todayStr ? sum + Number(sale.amount) : sum,
-    0
-  );
-  state.totalSales = sales.reduce((sum, sale) => sum + Number(sale.amount), 0);
-  state.profit = sales.reduce(
-    (sum, sale) => sum + Number(sale.amount) - (Number(sale.costPerUnit || 0) * Number(sale.qty || 1)),
-    0
-  );
+  state.salesToday = getSalesRevenue("today");
+  state.totalSales = getSalesRevenue("all");
+  state.profit = getProfitBreakdown().grossProfit;
 
   /* Clean cart items whose products no longer exist */
   state.cart = (state.cart || []).filter(item =>

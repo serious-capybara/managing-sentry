@@ -19,10 +19,10 @@ export function renderStocks() {
         <div class="toolbar-left">
           <div class="toolbar-sort-wrap">
             <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Sort:</span>
-            <select class="compact-select" id="stockSort">
-              <option value="name">By Name</option>
+            <select class="compact-select styled-select-native" id="stockSort" aria-label="Sort stock">
+              <option value="name">Name</option>
               <option value="stock">Low Stock</option>
-              <option value="selling">High Selling</option>
+              <option value="stock-desc">High Stock</option>
             </select>
           </div>
         </div>
@@ -36,7 +36,7 @@ export function renderStocks() {
         <div class="stocks-table-scroll">
           <table class="stocks-inventory-table">
             <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th></tr></thead>
-            <tbody id="stockRows">${stockRows()}</tbody>
+            <tbody id="stockRows">${stockRows([...state.products].sort((a, b) => String(a.name).localeCompare(String(b.name))))}</tbody>
           </table>
         </div>
       </div>
@@ -52,7 +52,7 @@ export function renderStocks() {
           <div class="wire-table-wrap stocks-low-table-wrap">
             <table class="stocks-low-table">
               <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th></tr></thead>
-              <tbody id="stockLowRows">${stockRows(low)}</tbody>
+              <tbody id="stockLowRows">${stockRows([...low].sort((a, b) => String(a.name).localeCompare(String(b.name))))}</tbody>
             </table>
           </div>
         </div>

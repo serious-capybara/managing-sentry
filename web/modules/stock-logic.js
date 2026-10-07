@@ -5,7 +5,8 @@
 
 import { state } from "./state.js";
 import { money } from "./utils.js";
-import { getProfitValue, activeProfitType } from "./pages/dashboard.js";
+import { getProfitBreakdown, getSalesRevenue } from "./finance.js";
+import { activeProfitType } from "./pages/dashboard.js";
 
 // ---------------------------------------------------------------------------
 // Stock baseline & low-stock threshold
@@ -124,14 +125,15 @@ export function updateStats() {
   const capital    = document.getElementById("capitalValue");
   const salesToday = document.getElementById("salesToday");
   const totalSales = document.getElementById("totalSales");
-  const profit     = document.getElementById("profitEarned");
-  const label      = document.getElementById("profitLabel");
+  const netProfit = document.getElementById("profitEarned");
+  const profitMetric = document.getElementById("profitMetricSelect");
 
   if (capital)    capital.textContent    = money(state.capital);
-  if (salesToday) salesToday.textContent = money(state.salesToday);
-  if (totalSales) totalSales.textContent = money(state.totalSales);
-  if (label)      label.textContent      = activeProfitType === "net" ? "Net Profit" : "Gross Profit";
-  if (profit)     profit.textContent     = money(getProfitValue());
+  if (salesToday) salesToday.textContent = money(getSalesRevenue("today"));
+  if (totalSales) totalSales.textContent = money(getSalesRevenue("all"));
+  const profit = getProfitBreakdown();
+  const selectedProfitType = profitMetric?.value || activeProfitType;
+  if (netProfit) netProfit.textContent = money(selectedProfitType === "net" ? profit.netProfit : profit.grossProfit);
 
   updateLowStockIndicator();
 }

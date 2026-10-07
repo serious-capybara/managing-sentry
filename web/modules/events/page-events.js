@@ -7,7 +7,7 @@ import { state } from "../state.js";
 import { toast, money } from "../utils.js";
 import { apiRequest } from "../api.js";
 import { loadDashboardData } from "../data-loader.js";
-import { updateStats } from "../stock-logic.js";
+import { isLowStock, updateStats } from "../stock-logic.js";
 import { renderPage, activeDashTab, setActiveDashTab } from "../router.js";
 import {
   addToCart,
@@ -31,6 +31,8 @@ import { stockRows } from "../pages/stocks.js";
 import { priceMatchRows, priceDirectoryRows } from "../pages/price-checker.js";
 import { transactionRows } from "../pages/transactions.js";
 import { renderSalesProfitReport, renderInventoryCapitalReport, activeReportTab, activeReportRange, setActiveReportTab, setActiveReportRange } from "../pages/reports.js";
+import { bindStyledSelects } from "../styled-select.js";
+import { openExpenseTotalsModal } from "../modals/expense-totals-modal.js";
 
 // Hook renderActiveTab into cart.js operations
 registerRenderActiveTab(renderActiveTab);
@@ -130,6 +132,7 @@ export function bindTabActions(target) {
 export function bindPageEvents(page) {
   const pageContent = document.getElementById("pageContent");
   if (!pageContent) return;
+  bindStyledSelects(pageContent);
 
   pageContent.querySelectorAll("[data-go]").forEach(btn =>
     btn.addEventListener("click", () => {
@@ -148,6 +151,8 @@ export function bindPageEvents(page) {
   );
 
   if (page === "dashboard") {
+    updateStats();
+
     const updateDashboard = () => {
       const q = (document.getElementById("dashboardSearch")?.value || "").toLowerCase();
       const mode = document.getElementById("dashboardSort")?.value || "selling";
@@ -158,11 +163,7 @@ export function bindPageEvents(page) {
 
     document.getElementById("dashboardSearch")?.addEventListener("input", updateDashboard);
     document.getElementById("dashboardSort")?.addEventListener("change", updateDashboard);
-    document.getElementById("profitTypeSelect")?.addEventListener("change", e => {
-      setActiveProfitType(e.target.value);
-      updateStats();
-    });
-
+    document.getElementById("setExpenseTotalsBtn")?.addEventListener("click", () => openExpenseTotalsModal());
     pageContent.querySelectorAll(".tab-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         setActiveDashTab(btn.dataset.tab);
@@ -205,11 +206,12 @@ export function bindPageEvents(page) {
 
   if (page === "products") {
     const updateProducts = () => {
-      const sortVal = document.getElementById("productSort")?.value || "selling";
+      const sortVal = document.getElementById("productSort")?.value || "name";
       const rowsEl = document.getElementById("productRows");
       if (rowsEl) rowsEl.innerHTML = productRows(sortProducts(state.products, sortVal));
     };
     document.getElementById("productSort")?.addEventListener("change", updateProducts);
+    updateProducts();
     document.getElementById("addProductBtn")?.addEventListener("click", openAddProductModal);
     document.getElementById("removeProductBtn")?.addEventListener("click", openRemoveProductModal);
   }
@@ -241,6 +243,14 @@ export function bindPageEvents(page) {
       const lowRowsEl = document.getElementById("stockLowRows");
       if (lowRowsEl) lowRowsEl.innerHTML = stockRows(sortProducts(state.products.filter(isLowStock), e.target.value));
     });
+    const stockSort = document.getElementById("stockSort");
+    if (stockSort) {
+      const sortedProducts = sortProducts(state.products, stockSort.value || "name");
+      const rowsEl = document.getElementById("stockRows");
+      if (rowsEl) rowsEl.innerHTML = stockRows(sortedProducts);
+      const lowRowsEl = document.getElementById("stockLowRows");
+      if (lowRowsEl) lowRowsEl.innerHTML = stockRows(sortedProducts.filter(isLowStock));
+    }
     pageContent.addEventListener("click", e => {
       const btn = e.target.closest("[data-expiry-product]");
       if (btn) openExpirationModal(btn.dataset.expiryProduct);
@@ -407,3 +417,9 @@ export function bindPageEvents(page) {
     });
   }
 }
+
+document.addEventListener("change", event => {
+  if (!(event.target instanceof HTMLSelectElement) || event.target.id !== "profitMetricSelect") return;
+  setActiveProfitType(event.target.value);
+  updateStats();
+});

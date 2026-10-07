@@ -8,6 +8,9 @@ export const defaultState = {
   salesToday: 0,
   totalSales: 0,
   profit: 0,
+  operatingExpenses: 0,
+  interest: 0,
+  taxes: 0,
   cart: [],
   products: [],
   transactions: []
@@ -33,10 +36,12 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 /**
  * Save logged-in user session for 7 days.
  * @param {string} username
+ * @param {string} fullName
  */
-export function saveSession(username = "admin") {
+export function saveSession(username = "admin", fullName = username) {
   const session = {
     username,
+    fullName,
     loginTime: Date.now(),
     expiryTime: Date.now() + SEVEN_DAYS_MS
   };

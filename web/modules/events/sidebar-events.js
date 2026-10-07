@@ -89,11 +89,11 @@ export function bindSidebarEvents() {
 
       if (message) message.textContent = "Signing in…";
       try {
-        await apiRequest("login.php", {
+        const user = await apiRequest("login.php", {
           method: "POST",
           body: JSON.stringify({ username, password })
         });
-        saveSession(username || "admin");
+        saveSession(username || "admin", user.full_name || username || "admin");
         await loadDashboardData();
         if (message) message.textContent = "";
         if (loginScreen) loginScreen.classList.add("hidden");

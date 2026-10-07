@@ -14,10 +14,10 @@ export function renderProducts() {
         <div class="toolbar-left">
           <div class="toolbar-sort-wrap">
             <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Sort:</span>
-            <select class="compact-select" id="productSort">
-              <option value="selling">High Selling</option>
-              <option value="name">By Name</option>
+            <select class="compact-select styled-select-native" id="productSort" aria-label="Sort products">
+              <option value="name">Name</option>
               <option value="stock">Low Stock</option>
+              <option value="stock-desc">High Stock</option>
             </select>
           </div>
         </div>
@@ -30,7 +30,7 @@ export function renderProducts() {
         <div class="products-table-scroll">
           <table class="products-inventory-table">
             <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th></tr></thead>
-            <tbody id="productRows">${productRows()}</tbody>
+            <tbody id="productRows">${productRows([...state.products].sort((a, b) => String(a.name).localeCompare(String(b.name))))}</tbody>
           </table>
         </div>
       </div>

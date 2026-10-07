@@ -92,9 +92,11 @@ function salesReportRows(transactions = getFilteredTransactions()) {
   return sales.map((t, i) => {
     const qty      = Number(t.qty || 0);
     const product  = state.products.find(p => p.name === t.name);
-    const baseUnit = t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0);
+    const baseTotal = t.cogs != null
+      ? Number(t.cogs)
+      : (t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0)) * qty;
+    const baseUnit = qty ? baseTotal / qty : 0;
     const srpTotal = Number(t.amount || 0);
-    const baseTotal = baseUnit * qty;
     const profit   = srpTotal - baseTotal;
     const srpUnit  = qty ? srpTotal / qty : 0;
     return `<tr>
@@ -188,7 +190,9 @@ export function renderSalesProfitReport(range = activeReportRange) {
   const cogs = sales.reduce((s, t) => {
     const qty = Number(t.qty || 0);
     const product = state.products.find(p => p.name === t.name);
-    return s + (t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0)) * qty;
+    return s + (t.cogs != null
+      ? Number(t.cogs)
+      : (t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0)) * qty);
   }, 0);
   const grossProfit = totalSales - cogs;
   const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
