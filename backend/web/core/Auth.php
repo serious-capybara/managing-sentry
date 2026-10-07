@@ -4,7 +4,7 @@ namespace core;
 
 class Auth
 {
-    private const ALLOWED_ROLES = ['admin', 'manager'];
+    private const ALLOWED_ROLES = ['admin', 'manager', 'developer'];
 
     public static function start(): void
     {

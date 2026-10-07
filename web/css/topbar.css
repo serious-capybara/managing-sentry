@@ -1,0 +1,100 @@
+/* ============================================================
+ * css/topbar.css — Topbar Header & Main Area Layout
+ * ============================================================ */
+
+.main {
+  width: calc(100% - var(--sidebar-width));
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  height: 72px;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.topbar-left-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mobile-menu-toggle {
+  display: none;
+  background: #F1F5F9;
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-button);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-light);
+}
+
+.mobile-menu-toggle:hover {
+  background: #E2E8F0;
+}
+
+/* Clean Page Title - Bold 24px Slate 900 */
+.topbar h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F1F5F9;
+  border: 1px solid var(--border-light);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--success-green);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(97, 135, 100, 0.2);
+}
+
+.content {
+  padding: 28px 32px 40px;
+  flex: 1;
+}
+
+/* Hide duplicate header text inside page content */
+.content .page-head > div > h3,
+.content .page-toolbar .toolbar-left h3 {
+  display: none;
+}
+
+.content .page-head > div > p,
+.content .page-toolbar .toolbar-left p {
+  color: var(--text-secondary);
+  font-size: 13px;
+}

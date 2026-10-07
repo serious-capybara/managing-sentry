@@ -52,6 +52,7 @@ The name reflects the system's philosophy: **Managing** for organizing business 
 - **Offline Functionality** — Local SQLite database ensures uninterrupted operations during downtime
 - **Auto-Sync** — Synchronizes offline transactions with the central database on reconnection
 - **Web Admin Portal** — Browser-based dashboard for product management, sales monitoring, and reporting
+- **Profit Adjustments** — Save operating expense, interest, and tax totals for net profit reporting
 - **Transaction History** — Filterable logs of all past sales and inventory movements
 - **Sales Analytics** — Daily and weekly trend reports for informed restocking decisions
 - **Role-Based Access** — Separate access levels for Admins, Managers, and Staff
@@ -289,7 +290,7 @@ C:\xampp\php\php.exe -S 127.0.0.1:8000 -t .
 
 Then open `http://127.0.0.1:8000/web/` and sign in with an existing Admin or Manager account from the database. Staff/Cashier accounts are denied access. The PHP API uses `backend/web/.env`.
 
-For an existing database backup, run `backend/web/schema.sql` once in pgAdmin's Query Tool against that database before starting the portal.
+To enable saved profit adjustments on an existing database, run `backend/web/migrations/001_add_expense_totals_to_capital_configs.sql` once in pgAdmin's Query Tool against the same database. This adds three columns to the existing `capital_configs` table; it does not create an expenses table or modify existing capital values.
 
 ---
 
