@@ -48,8 +48,10 @@
 }
 
 .sell-cart-panel {
-  flex: 0 0 32%;
-  min-width: min(360px, 100%);
+  flex: 0 0 40%;
+  min-width: 0;
+  align-self: flex-start;
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-card);
@@ -99,10 +101,12 @@
 }
 
 .sell-cart-scroll {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
+  max-height: min(48vh, 420px);
+  width: 100%;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .sell-table, .sell-cart-table {
@@ -161,31 +165,50 @@
 }
 
 .sell-cart-table th:nth-child(1), .sell-cart-table td:nth-child(1) {
-  width: 32%;
+  width: auto;
   font-weight: 600;
   color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .sell-cart-table th:nth-child(2), .sell-cart-table td:nth-child(2) {
-  width: 36%;
+  width: 94px;
   text-align: center;
 }
 
 .sell-cart-table th:nth-child(3), .sell-cart-table td:nth-child(3) {
-  width: 18%;
+  width: 76px;
   font-weight: 700;
   color: var(--text-primary);
   text-align: right;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .sell-cart-table th:nth-child(4), .sell-cart-table td:nth-child(4) {
-  width: 14%;
+  width: 40px;
   text-align: right;
+}
+
+.sell-cart-table td {
+  padding-right: 4px;
+  padding-left: 4px;
+}
+
+.sell-cart-table th {
+  padding-right: 4px;
+  padding-left: 4px;
+}
+
+.sell-cart-table th:first-child,
+.sell-cart-table td:first-child {
+  padding-left: 10px;
+}
+
+.sell-cart-table th:last-child,
+.sell-cart-table td:last-child {
+  padding-right: 8px;
 }
 
 .sell-table thead th, .sell-cart-table thead th {
@@ -201,7 +224,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
 }
 
 .qty-btn {
@@ -231,8 +254,8 @@
 }
 
 .sell-cart-table .sell-qty-input {
-  width: 34px;
-  height: 26px;
+  width: 30px;
+  height: 28px;
   border: 1px solid var(--border-light);
   border-radius: 6px;
   text-align: center;
@@ -263,13 +286,15 @@
 
 /* Solid Red Remove Button */
 .remove-btn {
-  height: 30px;
-  padding: 0 10px;
-  border-radius: 6px;
-  background: var(--danger-red);
-  color: #FFFFFF;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--danger-red);
   font-weight: 700;
-  font-size: 11px;
+  font-size: 22px;
   border: 0;
   cursor: pointer;
   white-space: nowrap;
@@ -277,13 +302,12 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 4px rgba(229, 57, 53, 0.2);
+  box-shadow: none;
 }
 
 .remove-btn:hover {
-  background: var(--danger-red-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(229, 57, 53, 0.3);
+  background: var(--danger-red-bg);
+  color: var(--danger-red-dark);
 }
 
 .sell-summary {
@@ -356,4 +380,86 @@
 .sell-checkout-btn:disabled, .sell-clear-btn:disabled {
   background: #CBD5E1;
   cursor: not-allowed;
+}
+
+@container (max-width: 380px) {
+  .sell-cart-scroll {
+    width: 100%;
+    max-height: 320px;
+    overflow-x: clip;
+  }
+
+  .sell-cart-table,
+  .sell-cart-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .sell-cart-table thead {
+    display: none;
+  }
+
+  .sell-cart-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    width: 100%;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .sell-cart-table td {
+    min-width: 0;
+    padding: 7px 6px;
+    border: 0;
+    font-size: 12px;
+  }
+
+  .sell-cart-table .sell-cart-name {
+    grid-column: 1 / -1;
+    padding: 9px 12px 4px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+  }
+
+  .sell-cart-table .sell-cart-quantity {
+    grid-column: 1;
+    justify-self: start;
+    width: auto;
+  }
+
+  .sell-cart-quantity::before,
+  .sell-cart-total::before {
+    margin-right: 6px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .sell-cart-quantity::before { content: "Qty"; }
+
+  .sell-cart-table .sell-cart-total {
+    grid-column: 2;
+    width: auto;
+    min-width: 90px;
+    padding-right: 4px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .sell-cart-total::before { content: "Total"; }
+
+  .sell-cart-table .sell-cart-action {
+    grid-column: 3;
+    width: 42px;
+    box-sizing: border-box;
+    padding: 3px;
+    text-align: right;
+  }
+
+  .sell-cart-table .sell-cart-empty {
+    display: block;
+    padding: 20px 12px;
+    text-align: center;
+  }
 }

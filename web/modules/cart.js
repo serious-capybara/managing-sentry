@@ -116,7 +116,7 @@ export function renderSellTab() {
       </div>
       <div class="sell-cart-scroll">
         <table class="sell-cart-table">
-          <thead><tr><th>Name</th><th style="text-align:center">Qty</th><th style="text-align:center">Total</th><th style="text-align:center">Action</th></tr></thead>
+          <thead><tr><th>Name</th><th style="text-align:center">Qty</th><th style="text-align:right">Total</th><th aria-label="Actions"></th></tr></thead>
           <tbody id="sellCartRows">${sellCartRows()}</tbody>
         </table>
       </div>
@@ -149,17 +149,17 @@ export function sellProductRows(products = state.products.filter(p => p.stock > 
 
 export function sellCartRows() {
   if (!state.cart.length) {
-    return `<tr><td class="sell-cart-empty" colspan="4">Your cart is empty. Add products to start checkout.</td></tr>`;
+    return `<tr><td class="sell-cart-empty" colspan="4">Add items to your cart to get started.</td></tr>`;
   }
   return state.cart.map(item => `<tr>
-    <td title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</td>
-    <td style="text-align:center"><div class="sell-cart-qty">
+    <td class="sell-cart-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</td>
+    <td class="sell-cart-quantity" data-label="Qty"><div class="sell-cart-qty">
       <button class="qty-btn" data-cart-remove-step="${item.id}" aria-label="Decrease ${escapeHtml(item.name)} quantity"><img class="btn-sm-icon" src="src/icon/dark/minus.svg" alt="−"></button>
       <input class="sell-qty-input" type="number" min="1" value="${item.qty}" data-cart-qty data-cart-id="${item.id}" aria-label="${escapeHtml(item.name)} quantity">
       <button class="qty-btn" data-cart-add-step="${item.id}" aria-label="Increase ${escapeHtml(item.name)} quantity"><img class="btn-sm-icon" src="src/icon/dark/add.svg" alt="+"></button>
     </div></td>
-    <td style="text-align:center">${money(item.price * item.qty)}</td>
-    <td style="text-align:center"><button class="remove-btn" data-cart-remove="${item.id}">Remove</button></td>
+    <td class="sell-cart-total" data-label="Total">${money(item.price * item.qty)}</td>
+    <td class="sell-cart-action"><button class="remove-btn" type="button" data-cart-remove="${item.id}" aria-label="Remove item: ${escapeHtml(item.name)}" title="Remove item">×</button></td>
   </tr>`).join("");
 }
 

@@ -303,7 +303,7 @@
 
   .sell-workspace { flex-direction: row; overflow: visible; }
   .sell-panel { flex: 1; min-width: 0; }
-  .sell-cart-panel { flex: 0 0 38%; min-width: 280px; min-height: auto; }
+  .sell-cart-panel { flex: 0 0 38%; min-width: 0; min-height: auto; }
   .sell-table-scroll,
   .sell-cart-scroll { max-height: calc(100vh - 280px); }
 }
@@ -320,6 +320,98 @@
   }
   .login-box { width: min(480px, 100%); }
   .login-heading h2 { font-size: 26px; }
+
+  .sell-cart-panel {
+    flex: 0 0 auto;
+    align-self: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sell-cart-scroll {
+    flex: 0 1 auto;
+    width: 100%;
+    max-height: 320px;
+    overflow-x: hidden;
+  }
+
+  .sell-cart-table,
+  .sell-cart-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .sell-cart-table thead {
+    display: none;
+  }
+
+  .sell-cart-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    width: 100%;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .sell-cart-table td {
+    min-width: 0;
+    padding: 7px 6px;
+    border: 0;
+    font-size: 12px;
+  }
+
+  .sell-cart-table .sell-cart-name {
+    grid-column: 1 / -1;
+    padding: 9px 12px 4px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+  }
+
+  .sell-cart-table .sell-cart-quantity {
+    grid-column: 1;
+    justify-self: start;
+    width: auto;
+  }
+
+  .sell-cart-quantity::before,
+  .sell-cart-total::before {
+    margin-right: 6px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .sell-cart-quantity::before {
+    content: "Qty";
+  }
+
+  .sell-cart-table .sell-cart-total {
+    grid-column: 2;
+    width: auto;
+    min-width: 90px;
+    padding-right: 4px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .sell-cart-total::before {
+    content: "Total";
+  }
+
+  .sell-cart-table .sell-cart-action {
+    grid-column: 3;
+    width: 42px;
+    box-sizing: border-box;
+    padding: 3px;
+    text-align: right;
+  }
+
+  .sell-cart-table .sell-cart-empty {
+    display: block;
+    padding: 20px 12px;
+    text-align: center;
+  }
 
   input, select, textarea { font-size: 16px; }
 
