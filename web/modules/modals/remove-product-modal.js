@@ -25,6 +25,29 @@ export function removeProductOptions(products = state.products, selectedId = nul
       </button>`).join("");
 }
 
+export async function deleteProductById(productId) {
+  const product = state.products.find(p => Number(p.id) === Number(productId));
+  if (!product) return;
+  const confirmed = await askYesNo(`Remove "${product.name}" from your inventory?`, {
+    title: "Confirm Removal",
+    yesText: "Remove",
+    noText: "Cancel"
+  });
+  if (!confirmed) return;
+  try {
+    await apiRequest("products.php?action=delete", {
+      method: "POST",
+      body: JSON.stringify({ product_id: product.id })
+    });
+    await loadDashboardData();
+    updateStats();
+    renderPage("products");
+    toast(`${product.name} removed.`);
+  } catch (error) {
+    toast(`Could not remove product: ${error.message}`);
+  }
+}
+
 export function openRemoveProductModal() {
   const existing = document.getElementById("removeProductModal");
   if (existing) existing.remove();
@@ -48,7 +71,6 @@ export function openRemoveProductModal() {
       </div>
       <div class="modal-body">
         <div class="remove-search-wrap">
-          <span>⌕</span>
           <input id="removeProductSearch" type="search" placeholder="Search products..." autocomplete="off">
         </div>
         <div class="remove-product-list" id="removeProductList">
@@ -93,27 +115,8 @@ export function openRemoveProductModal() {
 
   confirmBtn.addEventListener("click", async () => {
     if (selectedId === null) return;
-    const product = state.products.find(p => p.id === selectedId);
-    if (!product) return;
-    const confirmed = await askYesNo(`Remove "${product.name}" from your inventory?`, {
-      title: "Confirm Removal",
-      yesText: "Remove",
-      noText: "Cancel"
-    });
-    if (!confirmed) return;
-    try {
-      await apiRequest("products.php?action=delete", {
-        method: "POST",
-        body: JSON.stringify({ product_id: product.id })
-      });
-      await loadDashboardData();
-      overlay.remove();
-      updateStats();
-      renderPage("products");
-      toast(`${product.name} removed.`);
-    } catch (error) {
-      toast(`Could not remove product: ${error.message}`);
-    }
+    await deleteProductById(selectedId);
+    overlay.remove();
   });
 
   overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });

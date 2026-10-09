@@ -55,50 +55,72 @@
   }
   .modal-overlay, .toast { display: none !important; }
 
-  body[data-print-report="inventory"] * { visibility: hidden !important; }
-  body[data-print-report="inventory"] #pageContent,
-  body[data-print-report="inventory"] #pageContent * { visibility: visible !important; }
-  body[data-print-report="inventory"] .report-section#inventoryCapitalReport {
-    display: block !important; position: absolute; left: 0; top: 0; width: 100%;
+  body.printing-history *,
+  body[data-print-history="true"] *,
+  body.printing-report *,
+  body[data-print-report] * {
+    visibility: hidden !important;
   }
-
-  body[data-print-report="sales"] * { visibility: hidden !important; }
-  body[data-print-report="sales"] #pageContent,
-  body[data-print-report="sales"] #pageContent * { visibility: visible !important; }
-  body[data-print-report="sales"] .report-section#salesProfitReport {
-    display: block !important; position: absolute; left: 0; top: 0; width: 100%;
+  body.printing-history #printArea,
+  body.printing-history #printArea *,
+  body[data-print-history="true"] #printArea,
+  body[data-print-history="true"] #printArea *,
+  body.printing-report #printArea,
+  body.printing-report #printArea *,
+  body[data-print-report] #printArea,
+  body[data-print-report] #printArea * {
+    visibility: visible !important;
   }
-
-  body[data-print-report] .report-paper,
-  body[data-print-report] .report-table-wrap {
-    overflow: visible !important;
-    height: auto !important;
-    max-height: none !important;
-  }
-
-  body[data-print-history="true"] * { visibility: hidden !important; }
-  body[data-print-history="true"] #pageContent,
-  body[data-print-history="true"] #pageContent * { visibility: visible !important; }
-  body[data-print-history="true"] .transactions-overview {
+  body.printing-history #printArea,
+  body[data-print-history="true"] #printArea,
+  body.printing-report #printArea,
+  body[data-print-report] #printArea {
     display: block !important;
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    margin: 0;
+    padding: 0;
+    background: #FFFFFF;
   }
-  body[data-print-history="true"] .page-toolbar,
-  body[data-print-history="true"] .notes-btn,
-  body[data-print-history="true"] .transactions-inventory-table th:nth-child(7),
-  body[data-print-history="true"] .transactions-inventory-table td:nth-child(7) {
-    display: none !important;
-  }
-  body[data-print-history="true"] .transactions-table-card,
-  body[data-print-history="true"] .transactions-table-scroll {
+  body.printing-history .report-paper,
+  body[data-print-history="true"] .report-paper,
+  body.printing-report .report-paper,
+  body[data-print-report] .report-paper,
+  body.printing-history .report-table-wrap,
+  body[data-print-history="true"] .report-table-wrap,
+  body.printing-report .report-table-wrap,
+  body[data-print-report] .report-table-wrap {
     overflow: visible !important;
     height: auto !important;
     max-height: none !important;
     border: none !important;
     box-shadow: none !important;
+  }
+  body.printing-history .history-report-table,
+  body[data-print-history="true"] .history-report-table,
+  body.printing-report .history-report-table,
+  body[data-print-report] .history-report-table {
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    width: 100% !important;
+  }
+  body.printing-history .history-report-table tbody tr,
+  body[data-print-history="true"] .history-report-table tbody tr,
+  body.printing-report .history-report-table tbody tr,
+  body[data-print-report] .history-report-table tbody tr {
+    border: none !important;
+    page-break-inside: avoid !important;
+  }
+  body.printing-history .history-report-table tbody td,
+  body[data-print-history="true"] .history-report-table tbody td,
+  body.printing-report .history-report-table tbody td,
+  body[data-print-report] .history-report-table tbody td {
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid #CBD5E1 !important;
   }
 }
 
@@ -171,9 +193,6 @@
 
   .mobile-menu-toggle { display: flex; }
 
-  .main.dashboard-view-mode,
-  .main.dashboard-view-mode .content,
-  .main.dashboard-view-mode #pageContent,
   .main.products-view-mode,
   .main.products-view-mode .content,
   .main.products-view-mode #pageContent,
@@ -192,7 +211,6 @@
   .main.reports-view-mode,
   .main.reports-view-mode .content,
   .main.reports-view-mode #pageContent,
-  .dashboard-overview,
   .products-overview,
   .stocks-overview,
   .low-stock-overview,
@@ -220,8 +238,8 @@
 
   .dashboard-bottom-section .dashboard-tab-body {
     height: auto;
-    min-height: 0;
     max-height: none;
+    overflow: visible;
   }
 
   .stocks-low-panel {
@@ -236,6 +254,14 @@
   .low-stock-table-scroll,
   .transactions-table-scroll,
   .stocks-low-table-wrap { max-height: 340px; }
+
+  .order-hover-cell,
+  .transactions-inventory-table td:nth-child(3) {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 

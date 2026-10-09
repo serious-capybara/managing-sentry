@@ -2,11 +2,12 @@
  * css/pos.css — Point of Sale (POS) Workspace & Cart Styling
  * ============================================================ */
 
-.dashboard-sell-mode .dashboard-overview {
+/* In Sell mode: hide dashboard overview ONLY when POS workspace is EXPANDED (not collapsed) */
+.dashboard-sell-mode:not(:has(.collapsed-section)) .dashboard-overview {
   display: none !important;
 }
 
-.dashboard-sell-mode .dashboard-bottom-section {
+.dashboard-sell-mode:not(:has(.collapsed-section)) .dashboard-bottom-section {
   flex: 1 !important;
   height: 100% !important;
   min-height: 0 !important;
@@ -17,8 +18,8 @@
   border-top: 0 !important;
 }
 
-.dashboard-sell-mode .dashboard-tab-body,
-.dashboard-sell-mode #dashboardTab {
+.dashboard-sell-mode:not(:has(.collapsed-section)) .dashboard-tab-body,
+.dashboard-sell-mode:not(:has(.collapsed-section)) #dashboardTab {
   flex: 1 !important;
   height: auto !important;
   max-height: none !important;
@@ -114,9 +115,19 @@
 /* Unified Symmetrical Cell Padding & Edge Margins */
 .sell-table th, .sell-table td,
 .sell-cart-table th, .sell-cart-table td {
-  padding: 12px 10px;
+  padding: 10px;
   vertical-align: middle;
   font-size: 14px;
+}
+
+.sell-table th, .sell-cart-table th {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .sell-table th:first-child, .sell-table td:first-child,

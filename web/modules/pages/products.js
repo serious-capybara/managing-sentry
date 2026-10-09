@@ -22,8 +22,8 @@ export function renderProducts() {
           </div>
         </div>
         <div class="toolbar-right">
-          <button class="wire-btn" id="addProductBtn"><img class="btn-icon" src="src/icon/dark/add.svg" alt=""> Add New Product</button>
-          <button class="wire-btn" id="removeProductBtn"><img class="btn-icon" src="src/icon/dark/remove-stock-product.svg" alt=""> Remove Product</button>
+          <button class="wire-btn" id="addProductBtn">Add New Product</button>
+          <button class="wire-btn" id="removeProductBtn">Remove Product</button>
         </div>
       </div>
       <div class="wire-table-wrap products-table-card">

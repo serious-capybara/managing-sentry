@@ -522,16 +522,17 @@ table {
 th {
   background: #F1F5F9;
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   text-align: left;
-  padding: 14px 20px;
+  padding: 8px 12px;
+  line-height: 1;
   border-bottom: 1px solid var(--border-light);
   white-space: nowrap;
 }
 
 td {
-  padding: 14px 20px;
+  padding: 10px 12px;
   font-size: 14px;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-light);

@@ -11,12 +11,14 @@ export function renderPriceChecker() {
   return `
     <div class="price-checker-new">
       <div class="price-checker-toolbar">
-        <select class="price-sort-select" id="priceSort" aria-label="Sort products">
-          <option value="alphabetical">Alphabetical Order</option>
-          <option value="category">Category</option>
-        </select>
+        <div class="toolbar-sort-wrap">
+          <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Sort:</span>
+          <select class="compact-select styled-select-native" id="priceSort" aria-label="Sort products">
+            <option value="alphabetical">Alphabetical Order</option>
+            <option value="category">Category</option>
+          </select>
+        </div>
         <div class="price-search-wrap">
-          <span><img class="inline-icon" src="src/icon/dark/price-checker.svg" alt=""></span>
           <input id="priceSearch" placeholder="Search product..." autocomplete="off">
         </div>
       </div>

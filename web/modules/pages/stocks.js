@@ -5,7 +5,7 @@
 
 import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";
-import { isLowStock, lowStockLabel, expiryButton } from "../stock-logic.js";
+import { isLowStock, lowStockLabel, expiryDateCell, expiryStatusCell } from "../stock-logic.js";
 
 // ---------------------------------------------------------------------------
 // Stocks overview page
@@ -27,21 +27,24 @@ export function renderStocks() {
           </div>
         </div>
         <div class="toolbar-right">
-          <button class="wire-btn" data-go="stock-in"><img class="btn-icon" src="src/icon/dark/add.svg" alt=""> Add Stock</button>
-          <button class="wire-btn" data-go="stock-out"><img class="btn-icon" src="src/icon/dark/minus.svg" alt=""> Remove Stock</button>
+          <button class="wire-btn" data-go="stock-in">Add Stock</button>
+          <button class="wire-btn" data-go="stock-out">Remove Stock</button>
         </div>
       </div>
 
       <div class="wire-table-wrap stocks-table-card">
         <div class="stocks-table-scroll">
           <table class="stocks-inventory-table">
-            <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th></tr></thead>
+            <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th><th>Status</th></tr></thead>
             <tbody id="stockRows">${stockRows([...state.products].sort((a, b) => String(a.name).localeCompare(String(b.name))))}</tbody>
           </table>
         </div>
       </div>
 
       <div class="panel stocks-low-panel" id="stocksLowPanel">
+        <div class="stocks-resizer-bar" id="stocksResizerBar" title="Drag up or down to adjust table height">
+          <span class="stocks-resizer-grip"></span>
+        </div>
         <div class="panel-title stocks-low-title">
           <div class="panel-title-text"><img class="panel-icon" src="src/icon/white/low-stock-alert.svg" alt=""> Low On Stock ${low.length ? `<span class="alert-dot"></span>` : ""}</div>
           <button class="dashboard-toggle-btn" id="stocksSectionToggle" title="Toggle Low Stock Section Visibility">
@@ -51,7 +54,7 @@ export function renderStocks() {
         <div class="panel-body stocks-low-body" id="stocksLowBody">
           <div class="wire-table-wrap stocks-low-table-wrap">
             <table class="stocks-low-table">
-              <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th></tr></thead>
+              <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th><th>Status</th></tr></thead>
               <tbody id="stockLowRows">${stockRows([...low].sort((a, b) => String(a.name).localeCompare(String(b.name))))}</tbody>
             </table>
           </div>
@@ -62,11 +65,13 @@ export function renderStocks() {
 
 export function stockRows(products = state.products) {
   if (!products.length) {
-    return `<tr><td colspan="7" class="table-empty">No products available.</td></tr>`;
+    return `<tr><td colspan="8" class="table-empty">No products available.</td></tr>`;
   }
   return products.map((p, i) => `<tr>
     <td>${i + 1}</td><td><strong>${escapeHtml(p.name)}</strong></td><td>${escapeHtml(p.category)}</td>
-    <td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${p.stock}</td><td>${expiryButton(p)}</td>
+    <td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${p.stock}</td>
+    <td>${expiryDateCell(p)}</td>
+    <td>${expiryStatusCell(p)}</td>
   </tr>`).join("");
 }
 

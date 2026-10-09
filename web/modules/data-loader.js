@@ -9,16 +9,6 @@ import { apiRequest }     from "./api.js";
 import { ensureStockBaseline, ensureExpiryBatches, earliestExpiry } from "./stock-logic.js";
 import { getProfitBreakdown, getSalesRevenue } from "./finance.js";
 
-const DEFAULT_PRODUCTS = [
-  { id: 1, name: "Alaxan FR 200mg", category: "Medicine", cost: 7.50, price: 10.00, stock: 90, sold: 15, expiry: "2026-10-10", expiryBatches: [{ batchId: "B1", expiry: "2026-10-10", qty: 90 }] },
-  { id: 2, name: "Argentina Corned Beef 150g", category: "Canned Goods", cost: 32.00, price: 42.00, stock: 64, sold: 22, expiry: "2026-10-12", expiryBatches: [{ batchId: "B2", expiry: "2026-10-12", qty: 64 }] },
-  { id: 3, name: "Bear Brand Milk 320g", category: "Beverages", cost: 95.00, price: 115.00, stock: 3, sold: 40, expiry: "2027-01-15", expiryBatches: [{ batchId: "B3", expiry: "2027-01-15", qty: 3 }] },
-  { id: 4, name: "Bioflu Tablet", category: "Medicine", cost: 6.50, price: 9.00, stock: 108, sold: 52, expiry: "2026-11-20", expiryBatches: [{ batchId: "B4", expiry: "2026-11-20", qty: 108 }] },
-  { id: 5, name: "Biogesic 500mg", category: "Medicine", cost: 4.00, price: 5.50, stock: 133, sold: 88, expiry: "2026-10-09", expiryBatches: [{ batchId: "B5", expiry: "2026-10-09", qty: 133 }] },
-  { id: 6, name: "C2 Green Tea Apple 500ml", category: "Beverages", cost: 20.00, price: 28.00, stock: 90, sold: 30, expiry: "2026-12-05", expiryBatches: [{ batchId: "B6", expiry: "2026-12-05", qty: 90 }] },
-  { id: 7, name: "Century Tuna Oil 155g", category: "Canned Goods", cost: 29.00, price: 38.00, stock: 59, sold: 18, expiry: "2027-03-10", expiryBatches: [{ batchId: "B7", expiry: "2027-03-10", qty: 59 }] }
-];
-
 /**
  * Fetch products, transaction history, and capital from the backend
  * and normalize SQL database fields to frontend state properties.
@@ -47,7 +37,8 @@ export async function loadDashboardData() {
     ? productsRes
     : (state.products.length
       ? state.products
-      : DEFAULT_PRODUCTS.map(product => ({ ...product, sold: 0, soldRevenue: 0, soldCogs: 0 })));
+      : []);
+
   state.products = rawProducts.map(p => {
     const id = Number(p.id ?? p.product_id ?? 0);
     const name = p.name || "Unnamed Product";
@@ -57,6 +48,7 @@ export async function loadDashboardData() {
     const stock = Number(p.stock ?? p.stock_quantity ?? p.quantity ?? 0);
     const sold = Number(p.sold ?? p.total_sold ?? p.units_sold ?? 0);
     const expiry = p.expiry || p.expiration_date || p.expiry_date || "";
+    const lowStockAlertLevel = Number(p.low_stock_alert_level ?? p.lowStockAlertLevel ?? 20);
 
     return {
       ...p,
@@ -67,6 +59,8 @@ export async function loadDashboardData() {
       cost,
       stock,
       sold,
+      low_stock_alert_level: lowStockAlertLevel,
+      lowStockAlertLevel: lowStockAlertLevel,
       soldRevenue: p.sold_revenue == null
         ? (p.soldRevenue == null ? undefined : Number(p.soldRevenue))
         : Number(p.sold_revenue),
@@ -94,7 +88,16 @@ export async function loadDashboardData() {
     const rawDate = t.date || t.transaction_timestamp || new Date().toISOString();
     const dateObj = new Date(rawDate);
     const timestamp = isNaN(dateObj.getTime()) ? Date.now() : dateObj.getTime();
-    const dateStr = isNaN(dateObj.getTime()) ? String(rawDate) : dateObj.toLocaleString();
+    let dateStr = String(rawDate);
+    if (!isNaN(dateObj.getTime())) {
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getDate()).padStart(2, "0");
+      const hours = String(dateObj.getHours()).padStart(2, "0");
+      const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+      const seconds = String(dateObj.getSeconds()).padStart(2, "0");
+      dateStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
 
     return {
       ...t,

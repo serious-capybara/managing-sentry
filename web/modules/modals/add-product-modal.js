@@ -1,13 +1,14 @@
 /* ============================================================
  * modals/add-product-modal.js — Add New Product modal.
- * Floating modal dialog replacing the separate add-product page.
+ * Floating modal dialog with fixed height notes (max 50 words).
  * ============================================================ */
 
 import { apiRequest } from "../api.js";
 import { loadDashboardData } from "../data-loader.js";
 import { updateStats } from "../stock-logic.js";
-import { toast } from "../utils.js";
+import { toast, escapeHtml } from "../utils.js";
 import { renderPage } from "../router.js";
+import { state } from "../state.js";
 
 export function openAddProductModal() {
   const existing = document.getElementById("addProductModal");
@@ -37,16 +38,20 @@ export function openAddProductModal() {
               <input id="modalProdCategory" name="category" required placeholder="e.g. Beverages" autocomplete="off">
             </div>
             <div class="form-group">
+              <label for="modalProdCost">Cost Price (Base Cost)</label>
+              <input id="modalProdCost" name="cost" type="number" min="0" step=".01" required placeholder="0.00">
+            </div>
+            <div class="form-group">
               <label for="modalProdPrice">Selling Price (SRP)</label>
               <input id="modalProdPrice" name="price" type="number" min="0" step=".01" required placeholder="0.00">
             </div>
             <div class="form-group">
-              <label for="modalProdCost">Cost Price (Base)</label>
-              <input id="modalProdCost" name="cost" type="number" min="0" step=".01" required placeholder="0.00">
+              <label for="modalProdStock">Initial Stock Quantity</label>
+              <input id="modalProdStock" name="stock" type="number" min="0" required placeholder="0">
             </div>
             <div class="form-group">
-              <label for="modalProdStock">Initial Stock</label>
-              <input id="modalProdStock" name="stock" type="number" min="0" required placeholder="0">
+              <label for="modalAlertLevel">Low Stock Alert Threshold</label>
+              <input id="modalAlertLevel" name="low_stock_alert_level" type="number" min="1" value="20" required placeholder="20">
             </div>
             <div class="form-group">
               <label for="modalHasExpiry">Expiry Date Available?</label>
@@ -60,16 +65,14 @@ export function openAddProductModal() {
               <input id="modalProdExpiry" name="expiry" type="date">
             </div>
             <div class="form-group full">
-              <label for="modalProdDesc">Description</label>
-              <textarea id="modalProdDesc" name="description" placeholder="Optional product notes" rows="2"></textarea>
+              <label for="modalProdDesc">Description / Notes <small class="form-hint">(Max 50 words)</small></label>
+              <textarea id="modalProdDesc" name="description" placeholder="Optional product details or supplier notes (Max 50 words)" rows="4" maxlength="300" style="resize:none"></textarea>
             </div>
           </div>
         </div>
         <div class="modal-foot">
           <button class="ghost-btn" id="cancelAddProduct" type="button">Cancel</button>
-          <button class="primary-btn" id="confirmAddProduct" type="submit">
-            <img class="btn-icon" src="src/icon/white/add.svg" alt=""> Save Product
-          </button>
+          <button class="primary-btn" id="confirmAddProduct" type="submit">Save Product</button>
         </div>
       </form>
     </div>`;
@@ -93,20 +96,50 @@ export function openAddProductModal() {
     if (!on) expiryInput.value = "";
   });
 
+  const titleCaseInput = (input) => {
+    if (!input) return;
+    input.addEventListener("input", () => {
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      input.value = input.value.replace(/(?:^|\s)\S/g, match => match.toUpperCase());
+      input.setSelectionRange(start, end);
+    });
+  };
+
+  titleCaseInput(document.getElementById("modalProdName"));
+  titleCaseInput(document.getElementById("modalProdCategory"));
+
+  const descTextarea = document.getElementById("modalProdDesc");
+  if (descTextarea) {
+    descTextarea.addEventListener("input", () => {
+      const words = descTextarea.value.trim().split(/\s+/).filter(Boolean);
+      if (words.length > 50) {
+        descTextarea.value = words.slice(0, 50).join(" ");
+      }
+    });
+  }
+
   document.getElementById("addProductModalForm").addEventListener("submit", async e => {
     e.preventDefault();
     const f = new FormData(e.target);
     const saveBtn = document.getElementById("confirmAddProduct");
     saveBtn.disabled = true;
+
+    const price = Number(f.get("price"));
+    const cost = Number(f.get("cost"));
+    const stock = Number(f.get("stock"));
+    const alertLevel = Number(f.get("low_stock_alert_level")) || 20;
+
     try {
       await apiRequest("products.php?action=add", {
         method: "POST",
         body: JSON.stringify({
           name: f.get("name"),
           category: f.get("category"),
-          price: Number(f.get("price")),
-          cost: Number(f.get("cost")),
-          stock: Number(f.get("stock")),
+          price,
+          cost,
+          stock,
+          low_stock_alert_level: alertLevel,
           expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : "",
           description: f.get("description")
         })
@@ -114,7 +147,7 @@ export function openAddProductModal() {
       await loadDashboardData();
       updateStats();
       close();
-      toast("Product added successfully.");
+      toast("Product added successfully to database.");
       renderPage("products");
     } catch (error) {
       toast(`Could not add product: ${error.message}`);

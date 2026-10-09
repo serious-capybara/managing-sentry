@@ -4,15 +4,14 @@
  * from a sub-directory or the root.
  * ============================================================ */
 
-export const API_BASE = "../backend/web/api";
+export const API_BASE = "./backend/web/api";
 
 let detectedApiBase = null;
 
 const CANDIDATE_BASES = [
-  "../backend/web/api",
-  "backend/web/api",
+  "./backend/web/api",
   "/backend/web/api",
-  "./backend/web/api"
+  "backend/web/api"
 ];
 
 /**

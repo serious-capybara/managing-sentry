@@ -50,10 +50,7 @@ try {
             sa.quantity_changed AS qty,
             (sa.unit_cost * ABS(sa.quantity_changed)) AS amount,
             sa.unit_cost AS cost_per_unit,
-<<<<<<< HEAD
-=======
             (sa.unit_cost * ABS(sa.quantity_changed)) AS cogs,
->>>>>>> Clary
             sa.audit_notes AS notes,
             'COMPLETED' AS order_status
         FROM stock_adjustments sa
