@@ -1710,8 +1710,398 @@ table:has(.sell-cart-empty) {
 
 .report-table {
   width: 100%;
-  min-height: 100%;
   border-collapse: collapse;
+}
+
+.report-table tbody tr {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.report-table tbody td {
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+
+/* ============================================================
+ * PRINT HISTORY & EXECUTIVE REPORTS FORMAL DOCUMENT STYLING
+ * ============================================================ */
+.history-print-paper {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: none !important;
+  padding: 28px !important;
+  border-radius: 8px !important;
+}
+
+.history-print-paper .report-kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 10px !important;
+  margin-bottom: 20px !important;
+}
+
+.history-print-paper .report-kpi-card {
+  padding: 12px 14px !important;
+}
+
+.report-company-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #64748B;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.report-header-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  padding: 6px 14px;
+  border-radius: 6px;
+}
+
+.report-header-badge span {
+  font-size: 11px;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: 0.5px;
+}
+
+.report-header-badge small {
+  font-size: 9px;
+  font-weight: 700;
+  color: #64748B;
+  letter-spacing: 1px;
+}
+
+.kpi-unit {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  margin-left: 2px;
+}
+
+/* History Print Report Section Title */
+.report-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #1E293B;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1.5px solid #E2E8F0;
+}
+
+/* History Chart Layout */
+.report-chart-section {
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+
+.report-chart-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.report-chart-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-block-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.chart-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.chart-subtitle {
+  font-size: 10px;
+  color: #64748B;
+  font-weight: 500;
+}
+
+.top-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  flex: 1;
+}
+
+.top-product-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.top-product-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.top-product-info .rank {
+  font-weight: 800;
+  color: #0F172A;
+  width: 22px;
+}
+
+.top-product-info .name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 8px;
+}
+
+.top-product-info .val {
+  font-weight: 700;
+  color: #059669;
+}
+
+.top-product-bar-track {
+  height: 6px;
+  background: #E2E8F0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.top-product-bar-fill {
+  height: 100%;
+  background: #059669;
+  border-radius: 3px;
+}
+
+.chart-empty-note {
+  font-size: 11px;
+  color: #94A3B8;
+  font-style: italic;
+  padding: 20px;
+  text-align: center;
+}
+
+/* History Report Table Badges */
+.report-type-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.report-type-badge.sale {
+  background: #DCFCE7;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+}
+
+.report-type-badge.stock-in {
+  background: #DBEAFE;
+  color: #1E40AF;
+  border: 1px solid #BFDBFE;
+}
+
+.report-type-badge.stock-out {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+.report-items-tag {
+  display: inline-block !important;
+  font-size: 10px;
+  font-weight: 700;
+  color: #475569;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+}
+
+.history-report-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+}
+
+.history-report-table thead th {
+  border-bottom: 2px solid #94A3B8 !important;
+  background: #F8FAFC !important;
+  color: #0F172A !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  padding: 10px 12px !important;
+}
+
+.history-report-table tbody tr {
+  border: none !important;
+  background: transparent !important;
+  page-break-inside: avoid !important;
+}
+
+.history-report-table tbody td {
+  padding: 10px 12px !important;
+  font-size: 11px !important;
+  color: #1E293B !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid #CBD5E1 !important;
+  vertical-align: middle !important;
+}
+
+.history-report-table tfoot td {
+  border-top: 2px solid #CBD5E1 !important;
+  background: #F8FAFC !important;
+  color: #0F172A !important;
+  padding: 12px !important;
+}
+
+.history-report-table td:nth-child(3) {
+  max-width: 220px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  vertical-align: middle !important;
+}
+
+.history-report-table td:nth-child(3) strong {
+  display: inline-block !important;
+  max-width: 150px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  vertical-align: middle !important;
+}
+
+/* Executive Sign-off Footer */
+.report-sign-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32px;
+  padding-top: 16px;
+}
+
+.sign-block {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+}
+
+.sign-line {
+  height: 1px;
+  background: #0F172A;
+  margin-bottom: 6px;
+}
+
+.sign-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Order Item Hover Cell & Tooltip */
+.order-extra-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy, #1E293B);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  margin-left: 6px;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.order-hover-cell {
+  position: relative;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-hover-cell:hover {
+  color: var(--navy, #1E293B);
+}
+
+.order-hover-cell:hover .order-extra-badge {
+  transform: scale(1.08);
+}
+
+.order-items-tooltip {
+  position: fixed;
+  background: var(--navy, #1E293B);
+  color: #FFFFFF;
+  padding: 12px 16px;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
+  font-size: 13px;
+  max-width: 340px;
+  line-height: 1.4;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 99999;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+.order-items-tooltip .tooltip-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #94A3B8;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.order-items-tooltip .tooltip-list {
+  margin: 0;
+  padding-left: 18px;
+  list-style-type: disc;
+}
+
+.order-items-tooltip .tooltip-list li {
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.order-items-tooltip .tooltip-list li:last-child {
+  margin-bottom: 0;
 }
 
 .report-table thead th {

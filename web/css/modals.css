@@ -729,6 +729,61 @@ body.checkout-open {
   padding: 20px 24px;
 }
 
+/* Category Single-Row Input & Filter Icon Dropdown Menu in Add Product Modal */
+.category-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.category-input-row input {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+}
+
+.category-picker-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.category-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: var(--radius-button, 8px);
+  border: 1px solid var(--border-light, #CBD5E1);
+  background: #F8FAFC;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.category-picker-btn:hover,
+.category-picker-btn[aria-expanded="true"] {
+  border-color: var(--navy, #1E293B);
+  background: #FFFFFF;
+}
+
+.category-picker-btn .btn-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.category-picker-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: auto;
+  min-width: 220px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 250;
+}
+
 .stock-modal .modal-head {
   padding: 20px 24px 16px;
   border-bottom: 1px solid var(--border-light);

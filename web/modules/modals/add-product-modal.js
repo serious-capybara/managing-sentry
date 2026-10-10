@@ -9,10 +9,22 @@ import { updateStats } from "../stock-logic.js";
 import { toast, escapeHtml } from "../utils.js";
 import { renderPage } from "../router.js";
 import { state } from "../state.js";
+import { bindStyledSelects } from "../styled-select.js";
 
 export function openAddProductModal() {
   const existing = document.getElementById("addProductModal");
   if (existing) existing.remove();
+
+  const establishedCategories = Array.from(
+    new Set(
+      (state.products || [])
+        .map(p => p.category && String(p.category).trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+  const defaultCategories = ["Beverages", "Canned Goods", "Dry Goods", "Snacks", "Dairy", "General"];
+  const allCategories = Array.from(new Set([...establishedCategories, ...defaultCategories]));
 
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
@@ -35,7 +47,23 @@ export function openAddProductModal() {
             </div>
             <div class="form-group">
               <label for="modalProdCategory">Category</label>
-              <input id="modalProdCategory" name="category" required placeholder="e.g. Beverages" autocomplete="off">
+              <div class="category-input-row">
+                <input id="modalProdCategory" name="category" list="categoryDatalist" required placeholder="e.g. Beverages" autocomplete="off">
+                <div class="category-picker-wrap">
+                  <button type="button" class="category-picker-btn" id="modalCategoryPickerBtn" title="Select Established Category" aria-haspopup="listbox" aria-expanded="false">
+                    <img class="btn-icon" src="src/icon/dark/sort-filter.svg" alt="Select Category">
+                  </button>
+                  <div id="modalCategoryMenu" class="styled-select-menu category-picker-menu" hidden role="listbox">
+                    ${allCategories.map(cat => `
+                      <button type="button" class="styled-select-option" data-category-val="${escapeHtml(cat)}" role="option">${escapeHtml(cat)}</button>
+                    `).join("")}
+                    <button type="button" class="styled-select-option" data-category-val="__NEW__" role="option">+ Type Custom Category...</button>
+                  </div>
+                </div>
+                <datalist id="categoryDatalist">
+                  ${allCategories.map(cat => `<option value="${escapeHtml(cat)}"></option>`).join("")}
+                </datalist>
+              </div>
             </div>
             <div class="form-group">
               <label for="modalProdCost">Cost Price (Base Cost)</label>
@@ -85,6 +113,41 @@ export function openAddProductModal() {
   overlay.addEventListener("click", e => {
     if (e.target === overlay) close();
   });
+
+  const pickerBtn = document.getElementById("modalCategoryPickerBtn");
+  const pickerMenu = document.getElementById("modalCategoryMenu");
+  const catInput = document.getElementById("modalProdCategory");
+
+  if (pickerBtn && pickerMenu && catInput) {
+    pickerBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      const willOpen = pickerMenu.hidden;
+      pickerMenu.hidden = !willOpen;
+      pickerBtn.setAttribute("aria-expanded", String(willOpen));
+    });
+
+    pickerMenu.querySelectorAll("[data-category-val]").forEach(optBtn => {
+      optBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        const val = optBtn.dataset.categoryVal;
+        if (val === "__NEW__") {
+          catInput.value = "";
+          catInput.focus();
+        } else if (val) {
+          catInput.value = val;
+        }
+        pickerMenu.hidden = true;
+        pickerBtn.setAttribute("aria-expanded", "false");
+      });
+    });
+
+    document.addEventListener("click", e => {
+      if (!pickerBtn.contains(e.target) && !pickerMenu.contains(e.target)) {
+        pickerMenu.hidden = true;
+        pickerBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
 
   const hasExpiry = document.getElementById("modalHasExpiry");
   const expiryWrap = document.getElementById("modalExpiryWrap");
