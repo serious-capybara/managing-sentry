@@ -204,8 +204,7 @@ export function openAddProductModal() {
           cost,
           stock,
           low_stock_alert_level: alertLevel,
-          expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : "",
-          description: f.get("description")
+          expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : ""
         })
       });
       await loadDashboardData();

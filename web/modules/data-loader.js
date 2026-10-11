@@ -115,11 +115,8 @@ export async function loadDashboardData() {
   });
 
   /* 3. Normalize Capital & Sales Totals */
-  if (capitalRes && (capitalRes.capital !== undefined || capitalRes.amount !== undefined)) {
-    state.capital = Number(capitalRes.capital ?? capitalRes.amount ?? 0);
-    state.operatingExpenses = Number(capitalRes.operating_expenses || 0);
-    state.interest = Number(capitalRes.interest || 0);
-    state.taxes = Number(capitalRes.taxes || 0);
+  if (capitalRes && (capitalRes.capital !== undefined || capitalRes.current_balance !== undefined)) {
+    state.capital = Number(capitalRes.capital ?? capitalRes.current_balance ?? 0);
   } else if (state.capital === undefined) {
     state.capital = 0;
   }

@@ -107,19 +107,14 @@ export function expiringPanel() {
     return days <= 7;
   });
   return `
-    <div class="panel dash-panel-card">
-      <div class="panel-title"><img class="panel-icon" src="src/icon/white/low-stock-alert.svg" alt=""> Expiring Soon / Expired (within 7 days)</div>
-      <div class="panel-body panel-table-body">
-        <div class="wire-table-wrap panel-table-wrap">
-          <table class="dashboard-inventory-table">
-            <thead><tr><th>ID</th><th>NAME</th><th>CATEGORY</th><th>STOCK</th><th>SRP</th><th>EXPIRATION DATE</th><th>STATUS</th></tr></thead>
-            <tbody>${soon.length
-              ? expiringRows(soon)
-              : `<tr><td colspan="7" class="table-empty">✓ No expiring items within the next 7 days.</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <div class="wire-table-wrap dash-expiring-table-wrap">
+      <table class="dashboard-inventory-table">
+        <thead><tr><th>ID</th><th>NAME</th><th>CATEGORY</th><th>STOCK</th><th>SRP</th><th>EXPIRATION DATE</th><th>STATUS</th></tr></thead>
+        <tbody>${soon.length
+          ? expiringRows(soon)
+          : `<tr><td colspan="7" class="table-empty">✓ No expiring items within the next 7 days.</td></tr>`}
+        </tbody>
+      </table>
     </div>`;
 }
 
@@ -173,6 +168,9 @@ export function renderDashboard() {
     </div>
 
     <div class="dashboard-bottom-section" id="dashboardBottomSection">
+      <div class="dashboard-resizer-bar" id="dashboardResizerBar" title="Drag up or down to adjust section height">
+        <span class="dashboard-resizer-grip"></span>
+      </div>
       <div class="dashboard-tabs-header">
         <div class="dashboard-tabs">
           <button class="tab-btn ${activeDashTab === "expiring" ? "active" : ""}" data-tab="expiring">

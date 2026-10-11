@@ -83,21 +83,40 @@ export function bindSidebarEvents() {
   if (loginForm) {
     loginForm.addEventListener("submit", async e => {
       e.preventDefault();
-      const username = document.getElementById("username")?.value.trim();
-      const password = document.getElementById("password")?.value;
+      const usernameInput = document.getElementById("username");
+      const passwordInput = document.getElementById("password");
+      const username = usernameInput?.value?.trim() || "admin";
+      const password = passwordInput?.value || "";
       const message = document.getElementById("loginMessage");
 
       if (message) message.textContent = "Signing in…";
       try {
         const user = await apiRequest("login.php", {
-          method: "POST",
-          body: JSON.stringify({ username, password })
-        });
-        saveSession(username || "admin", user.full_name || username || "admin");
-        await loadDashboardData();
+            method: "POST",
+            body: JSON.stringify({ username, password })
+          });
+
+        saveSession(username || "admin", user?.full_name || user?.username || username || "admin");
+
+        try {
+          await loadDashboardData();
+        } catch (dataErr) {
+          console.warn("Could not sync dashboard data during login:", dataErr);
+        }
+
         if (message) message.textContent = "";
-        if (loginScreen) loginScreen.classList.add("hidden");
-        if (app) app.classList.remove("hidden");
+
+        const loginScreenEl = document.getElementById("loginScreen");
+        const appEl = document.getElementById("app");
+        if (loginScreenEl) {
+          loginScreenEl.style.setProperty("display", "none", "important");
+          loginScreenEl.classList.add("hidden");
+        }
+        if (appEl) {
+          appEl.style.setProperty("display", "block", "important");
+          appEl.classList.remove("hidden");
+        }
+
         renderPage("dashboard");
       } catch (error) {
         if (message) message.textContent = error.message;

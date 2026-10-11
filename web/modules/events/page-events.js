@@ -196,15 +196,81 @@ export function bindPageEvents(page) {
       if (isCollapsed) {
         bottomSection.classList.add("collapsed-section");
         toggleIcon.src = "src/icon/dark/dropdown-open-expand.svg";
+      } else {
+        bottomSection.classList.remove("collapsed-section");
+        toggleIcon.src = "src/icon/dark/dropdown-close-expand.svg";
       }
 
       toggleBtn.addEventListener("click", () => {
         const collapsed = bottomSection.classList.toggle("collapsed-section");
         toggleIcon.src = collapsed
-          ? "src/icon/dark/dropdown-close-expand.svg"
+          ? "src/icon/dark/dropdown-open-expand.svg"
           : "src/icon/dark/dropdown-close-expand.svg";
         localStorage.setItem("sentryDashSectionCollapsed", collapsed ? "true" : "false");
       });
+    }
+
+    const dashResizer = document.getElementById("dashboardResizerBar");
+    if (dashResizer && bottomSection) {
+      const getMaxDashPanelHeight = () => {
+        const container = bottomSection.parentElement;
+        const h = container ? container.getBoundingClientRect().height : 0;
+        const containerHeight = h > 300 ? h : (window.innerHeight || 800);
+        return Math.max(250, containerHeight - 380);
+      };
+
+      const savedHeight = localStorage.getItem("sentryDashPanelHeight");
+      const numHeight = Number(savedHeight);
+      const maxAllowed = getMaxDashPanelHeight();
+      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 250)
+        ? Math.min(numHeight, maxAllowed)
+        : Math.min(320, maxAllowed);
+
+      bottomSection.style.height = `${initialHeight}px`;
+      bottomSection.style.flex = "0 0 auto";
+
+      let startY = 0;
+      let startHeight = 0;
+
+      const onMouseMove = e => {
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const deltaY = startY - clientY;
+        const maxAllowedHeight = getMaxDashPanelHeight();
+        const newHeight = Math.max(250, Math.min(maxAllowedHeight, startHeight + deltaY));
+        bottomSection.style.height = `${newHeight}px`;
+        bottomSection.style.flex = "0 0 auto";
+        dashResizer.classList.add("dragging");
+      };
+
+      const onMouseUp = () => {
+        dashResizer.classList.remove("dragging");
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        document.removeEventListener("touchmove", onMouseMove);
+        document.removeEventListener("touchend", onMouseUp);
+        const finalHeight = parseInt(bottomSection.style.height, 10);
+        if (finalHeight && finalHeight >= 250) {
+          localStorage.setItem("sentryDashPanelHeight", finalHeight);
+        }
+      };
+
+      const onMouseDown = e => {
+        e.preventDefault();
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
+        startHeight = bottomSection.getBoundingClientRect().height;
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = "ns-resize";
+
+        document.addEventListener("mousemove", onMouseMove, { passive: false });
+        document.addEventListener("mouseup", onMouseUp);
+        document.addEventListener("touchmove", onMouseMove, { passive: false });
+        document.addEventListener("touchend", onMouseUp);
+      };
+
+      dashResizer.addEventListener("mousedown", onMouseDown);
+      dashResizer.addEventListener("touchstart", onMouseDown, { passive: false });
     }
 
     renderActiveTab();
@@ -250,8 +316,8 @@ export function bindPageEvents(page) {
     if (resizer && lowPanel) {
       const getMaxLowPanelHeight = () => {
         const container = lowPanel.closest(".stocks-overview") || lowPanel.parentElement;
-        const containerHeight = container ? container.getBoundingClientRect().height : window.innerHeight;
-        // Reserve space for toolbar + upper table header + at least 3 visible rows (~280px)
+        const h = container ? container.getBoundingClientRect().height : 0;
+        const containerHeight = h > 300 ? h : (window.innerHeight || 800);
         return Math.max(250, containerHeight - 280);
       };
 

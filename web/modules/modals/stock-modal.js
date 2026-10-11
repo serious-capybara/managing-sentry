@@ -286,7 +286,7 @@ export function openStockOutModal(targetProductId = null) {
 
   searchInput.addEventListener("input", renderStockOptions);
   renderStockOptions();
-  syncMaxQuery(selectedProductId);
+  syncMaxQty(selectedProductId);
 
   const notesTextarea = document.getElementById("stockOutNotes");
   if (notesTextarea) {

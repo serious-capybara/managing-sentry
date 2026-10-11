@@ -1,5 +1,4 @@
-import { state } from "../state.js";
-import { apiRequest } from "../api.js";
+import { state, persist } from "../state.js";
 import { toast } from "../utils.js";
 import { updateStats } from "../stock-logic.js";
 
@@ -68,22 +67,13 @@ export function openExpenseTotalsModal() {
 
     saveButton.disabled = true;
     errorMessage.classList.add("hidden");
-    try {
-      await apiRequest("capital.php", {
-        method: "POST",
-        body: JSON.stringify({ action: "save_expense_totals", ...values })
-      });
-      state.operatingExpenses = values.operating_expenses;
-      state.interest = values.interest;
-      state.taxes = values.taxes;
-      updateStats();
-      close();
-      toast("Expense totals saved.");
-    } catch (error) {
-      errorMessage.textContent = `Could not save expense totals: ${error.message}`;
-      errorMessage.classList.remove("hidden");
-      saveButton.disabled = false;
-    }
+    state.operatingExpenses = values.operating_expenses;
+    state.interest = values.interest;
+    state.taxes = values.taxes;
+    persist();
+    updateStats();
+    close();
+    toast("Expense totals saved.");
   });
 
   setTimeout(() => overlay.querySelector("#operatingExpensesInput")?.focus(), 50);

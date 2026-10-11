@@ -41,7 +41,10 @@ services:
     restart: always
     working_dir: /app
     volumes:
+      # Static frontend (index.html, style.css, script.js) becomes the document root
       - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/web:/app
+      # PHP API files mounted at /app/backend/web, matching script.js's fetch paths
+      # like /backend/web/api/login.php
       - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend/web:/app/backend/web
     ports:
       - "8002:8000"
@@ -49,6 +52,7 @@ services:
     depends_on:
       - db
 
+  
   fastapi:
     image: python:3.11-slim
     environment:
@@ -63,6 +67,24 @@ services:
       - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend-fastapi/app:/app
     ports:
       - "8001:8000"
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload"
+    depends_on:
+      - db
+
+  fastapi-web:
+    image: python:3.11-slim
+    environment:
+      DB_HOST: ${F_DB_HOST}
+      DB_PORT: ${F_DB_PORT}
+      DB_USER: ${F_DB_USER}
+      DB_NAME: ${F_DB_NAME}
+      DB_PASSWORD: ${F_DB_PASSWORD}
+    restart: always
+    working_dir: /app
+    volumes:
+      - /home/the-grand-capybara/Desktop/Axiom/Projects/Managing-Sentry/backend-fastapi/web:/app
+    ports:
+      - "8003:8000"
     command: sh -c "pip install --no-cache-dir -r requirements.txt && uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
       - db
