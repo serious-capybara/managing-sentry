@@ -4,7 +4,7 @@
  * Session cookie auth is sent with every request.
  * ============================================================ */
 
-export const API_BASE = "http://127.0.0.1:8003/api";
+export const API_BASE = "https://managing-sentry-web.vercel.app/api";
 
 /**
  * Redirect the user to the login screen (used on 401 responses).
