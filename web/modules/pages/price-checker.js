@@ -10,16 +10,18 @@ import { money, escapeHtml } from "../utils.js";
 export function renderPriceChecker() {
   return `
     <div class="price-checker-new">
-      <div class="price-checker-toolbar">
-        <div class="toolbar-sort-wrap">
-          <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Sort:</span>
-          <select class="compact-select styled-select-native" id="priceSort" aria-label="Sort products">
-            <option value="alphabetical">Alphabetical Order</option>
-            <option value="category">Category</option>
-          </select>
+      <div class="page-toolbar price-checker-toolbar">
+        <div class="toolbar-left">
+          <div class="toolbar-sort-wrap">
+            <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Sort:</span>
+            <select class="compact-select styled-select-native" id="priceSort" aria-label="Sort products">
+              <option value="alphabetical">Alphabetical Order</option>
+              <option value="category">Category</option>
+            </select>
+          </div>
         </div>
-        <div class="price-search-wrap">
-          <input id="priceSearch" placeholder="Search product..." autocomplete="off">
+        <div class="toolbar-right">
+          <input id="priceSearch" class="compact-input" placeholder="Search product..." autocomplete="off">
         </div>
       </div>
 

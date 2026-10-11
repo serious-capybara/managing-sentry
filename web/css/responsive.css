@@ -297,7 +297,6 @@
   .compact-input { width: 200px; }
 
   .form-grid { grid-template-columns: 1fr 1fr; }
-  .price-checker-toolbar { grid-template-columns: 180px 1fr; }
 
   .report-tabs { flex-wrap: wrap; }
 
@@ -432,8 +431,6 @@
 
   th, td { font-size: 13px; padding: 10px 12px; }
 
-  .price-checker-toolbar { grid-template-columns: 1fr; }
-  .price-sort-select { width: 100%; }
   .price-directory { max-height: 360px; }
   .price-result { padding: 20px; }
   .price-result h2 { font-size: 22px; }
