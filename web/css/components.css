@@ -1121,6 +1121,54 @@ table:has(.table-empty) tbody tr {
   background: #FFFFFF;
 }
 
+/* Reports Sales Table Scoped Order Cell & Badges */
+.sales-report-table .report-order-cell {
+  position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sales-report-table .report-order-cell.order-hover-cell {
+  cursor: pointer;
+}
+
+.sales-report-table .report-order-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--navy);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  vertical-align: middle;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+/* Reports Sales Table Column Widths (ID -> ITEM -> DATE/TIME -> QTY -> SRP/UNT -> BASE/UNT -> SRP TOT -> BASE TOT -> PROFIT) */
+.sales-report-table th:nth-child(1),
+.sales-report-table td:not(.table-empty):nth-child(1) { width: 50px; text-align: center; }
+.sales-report-table th:nth-child(2),
+.sales-report-table td:not(.table-empty):nth-child(2) { width: 28%; }
+.sales-report-table th:nth-child(3),
+.sales-report-table td:not(.table-empty):nth-child(3) { width: 17%; }
+.sales-report-table th:nth-child(4),
+.sales-report-table td:not(.table-empty):nth-child(4) { width: 6%; text-align: center; }
+.sales-report-table th:nth-child(5),
+.sales-report-table td:not(.table-empty):nth-child(5) { width: 10%; }
+.sales-report-table th:nth-child(6),
+.sales-report-table td:not(.table-empty):nth-child(6) { width: 10%; }
+.sales-report-table th:nth-child(7),
+.sales-report-table td:not(.table-empty):nth-child(7) { width: 10%; }
+.sales-report-table th:nth-child(8),
+.sales-report-table td:not(.table-empty):nth-child(8) { width: 10%; }
+.sales-report-table th:nth-child(9),
+.sales-report-table td:not(.table-empty):nth-child(9) { width: 10%; }
+
 /* Layout Container Structure for Tables */
 .products-overview,
 .stocks-overview,

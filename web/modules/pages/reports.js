@@ -91,19 +91,35 @@ function salesReportRows(transactions = getFilteredTransactions()) {
     return `<tr><td colspan="9" class="table-empty">No sales recorded for ${getRangeLabel()}.</td></tr>`;
   }
   return sales.map((t, i) => {
-    const qty      = Number(t.qty || 0);
-    const product  = state.products.find(p => p.name === t.name);
+    const qty       = Number(t.qty || 0);
+    const items     = parseOrderItems(t.name, t);
+    const firstItem = items[0] || t.name || "Transaction Item";
+    const extraCount = items.length - 1;
+    const isMultiItem = extraCount > 0;
+    const itemDisplayText = isMultiItem
+      ? `${escapeHtml(firstItem)} <span class="report-order-badge">+${extraCount}</span>`
+      : escapeHtml(firstItem);
+    const encodedItems = encodeURIComponent(JSON.stringify(items));
+
+    const product   = state.products.find(p => p.name === t.name);
     const baseTotal = t.cogs != null
       ? Number(t.cogs)
       : (t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0)) * qty;
-    const baseUnit = qty ? baseTotal / qty : 0;
-    const srpTotal = Number(t.amount || 0);
-    const profit   = srpTotal - baseTotal;
-    const srpUnit  = qty ? srpTotal / qty : 0;
+    const baseUnit  = qty ? baseTotal / qty : 0;
+    const srpTotal  = Number(t.amount || 0);
+    const profit    = srpTotal - baseTotal;
+    const srpUnit   = qty ? srpTotal / qty : 0;
+
     return `<tr>
-      <td>${escapeHtml(t.date || "—")}</td><td>#${i + 1}</td><td>${escapeHtml(t.name || "—")}</td><td>${qty}</td>
-      <td>${reportMoney(srpUnit)}</td><td>${reportMoney(baseUnit)}</td>
-      <td>${reportMoney(srpTotal)}</td><td>${reportMoney(baseTotal)}</td><td>${reportMoney(profit)}</td>
+      <td>#${i + 1}</td>
+      <td class="report-order-cell ${isMultiItem ? "order-hover-cell" : ""}" data-order-items="${encodedItems}">${itemDisplayText}</td>
+      <td>${escapeHtml(t.date || "—")}</td>
+      <td>${qty}</td>
+      <td>${reportMoney(srpUnit)}</td>
+      <td>${reportMoney(baseUnit)}</td>
+      <td>${reportMoney(srpTotal)}</td>
+      <td>${reportMoney(baseTotal)}</td>
+      <td>${reportMoney(profit)}</td>
     </tr>`;
   }).join("");
 }
@@ -430,7 +446,7 @@ export function renderSalesProfitReport(range = activeReportRange) {
 
       <div class="report-table-wrap">
         <table class="report-table sales-report-table">
-          <thead><tr><th>DATE/TIME</th><th>ID</th><th>ITEM</th><th>QTY</th><th>SRP/UNT</th><th>BASE/UNT</th><th>SRP TOT</th><th>BASE TOT</th><th>PROFIT</th></tr></thead>
+          <thead><tr><th>ID</th><th>ITEM</th><th>DATE/TIME</th><th>QTY</th><th>SRP/UNT</th><th>BASE/UNT</th><th>SRP TOT</th><th>BASE TOT</th><th>PROFIT</th></tr></thead>
           <tbody>${salesReportRows(filtered)}</tbody>
           ${sales.length ? `<tfoot><tr><td colspan="6" class="tfoot-label">RUNNING TOTALS:</td><td class="tfoot-val">${reportMoney(totalSales)}</td><td class="tfoot-val">${reportMoney(cogs)}</td><td class="tfoot-val highlight-profit">${reportMoney(grossProfit)}</td></tr></tfoot>` : ""}
         </table>
@@ -635,9 +651,9 @@ export function renderSalesProfitPrintReport(range = activeReportRange) {
         <table class="report-table history-report-table">
           <thead>
             <tr>
-              <th>DATE / TIME</th>
               <th>ID</th>
               <th>ITEM / ORDER</th>
+              <th>DATE / TIME</th>
               <th>QTY</th>
               <th>SRP / UNT</th>
               <th>BASE / UNT</th>
@@ -649,6 +665,15 @@ export function renderSalesProfitPrintReport(range = activeReportRange) {
           <tbody>
             ${sales.length ? sales.map((t, i) => {
               const qty = Number(t.qty || 0);
+              const items = parseOrderItems(t.name, t);
+              const firstItem = items[0] || t.name || "Transaction Item";
+              const extraCount = items.length - 1;
+              const isMultiItem = extraCount > 0;
+              const itemDisplayText = isMultiItem
+                ? `${escapeHtml(firstItem)} <span class="report-order-badge">+${extraCount}</span>`
+                : escapeHtml(firstItem);
+              const encodedItems = encodeURIComponent(JSON.stringify(items));
+
               const product = state.products.find(p => p.name === t.name);
               const baseTotal = t.cogs != null
                 ? Number(t.cogs)
@@ -660,9 +685,9 @@ export function renderSalesProfitPrintReport(range = activeReportRange) {
 
               return `
                 <tr>
-                  <td>${escapeHtml(t.date || "—")}</td>
                   <td>#${i + 1}</td>
-                  <td><strong title="${escapeHtml(t.name)}">${escapeHtml(truncate(t.name || "—", 24))}</strong></td>
+                  <td class="report-order-cell ${isMultiItem ? "order-hover-cell" : ""}" data-order-items="${encodedItems}">${itemDisplayText}</td>
+                  <td>${escapeHtml(t.date || "—")}</td>
                   <td>${qty}</td>
                   <td>${reportMoney(srpUnit)}</td>
                   <td>${reportMoney(baseUnit)}</td>

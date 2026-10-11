@@ -153,6 +153,7 @@ export function bindPageEvents(page) {
   const pageContent = document.getElementById("pageContent");
   if (!pageContent) return;
   bindStyledSelects(pageContent);
+  initOrderHoverTooltip();
 
   pageContent.querySelectorAll("[data-go]").forEach(btn =>
     btn.addEventListener("click", () => {
