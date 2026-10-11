@@ -10,6 +10,7 @@ import { apiRequest } from "../api.js";
 import { loadDashboardData } from "../data-loader.js";
 import { updateStats } from "../stock-logic.js";
 import { renderPage, currentPage } from "../router.js";
+import { bindStyledSelects } from "../styled-select.js";
 
 function stockProductOptions(products = state.products, selectedId = null) {
   return products
@@ -75,7 +76,7 @@ export function openStockInModal(targetProductId = null) {
             </div>
             <div class="form-group">
               <label for="stockInHasExpiry">Expiry Date Available?</label>
-              <select name="hasExpiry" id="stockInHasExpiry">
+              <select name="hasExpiry" id="stockInHasExpiry" class="compact-select styled-select-native" aria-label="Expiry Date Available?">
                 <option value="no">No Expiration</option>
                 <option value="yes">Yes</option>
               </select>
@@ -98,6 +99,7 @@ export function openStockInModal(targetProductId = null) {
     </div>`;
 
   document.body.appendChild(overlay);
+  bindStyledSelects(overlay);
 
   const close = () => overlay.remove();
   document.getElementById("closeStockIn").addEventListener("click", close);

@@ -83,7 +83,7 @@ export function openAddProductModal() {
             </div>
             <div class="form-group">
               <label for="modalHasExpiry">Expiry Date Available?</label>
-              <select name="hasExpiry" id="modalHasExpiry">
+              <select name="hasExpiry" id="modalHasExpiry" class="compact-select styled-select-native" aria-label="Expiry Date Available?">
                 <option value="no">No Expiration</option>
                 <option value="yes">Yes</option>
               </select>
@@ -106,6 +106,7 @@ export function openAddProductModal() {
     </div>`;
 
   document.body.appendChild(overlay);
+  bindStyledSelects(overlay);
 
   const close = () => overlay.remove();
   document.getElementById("closeAddProduct").addEventListener("click", close);

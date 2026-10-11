@@ -108,7 +108,7 @@ export function stockForm(type) {
       <div class="form-group"><label>Quantity</label><input name="qty" type="number" min="1" required></div>
       <div class="form-group"><label>Reference / Supplier</label><input name="ref" placeholder="Optional"></div>
       ${isIn ? `
-      <div class="form-group"><label>Expiry Date Available?</label><select name="hasExpiry" id="hasExpiry"><option value="no">No Expiration</option><option value="yes">Yes</option></select></div>
+      <div class="form-group"><label for="hasExpiry">Expiry Date Available?</label><select name="hasExpiry" id="hasExpiry" class="compact-select styled-select-native" aria-label="Expiry Date Available?"><option value="no">No Expiration</option><option value="yes">Yes</option></select></div>
       <div class="form-group" id="expiryWrap" style="display:none"><label>Expiry Date</label><input name="expiry" type="date"></div>` : ""}
       <div class="form-group full"><label>Notes</label><textarea name="notes"></textarea></div>
     </div><button class="action-btn" style="margin-top:20px"><img class="btn-icon" src="src/icon/white/${isIn ? "add" : "minus"}.svg" alt=""> Record Stock ${type}</button></form></div>`;

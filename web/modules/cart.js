@@ -91,7 +91,7 @@ export function renderSellTab() {
         <div class="toolbar-left">
           <div class="toolbar-sort-wrap">
             <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Sort:</span>
-            <select class="compact-select" id="sellSort">
+            <select class="compact-select styled-select-native" id="sellSort" aria-label="Sort sell products">
               <option value="name">Sort by name</option>
               <option value="price">Sort by price</option>
               <option value="stock">Sort by quantity</option>

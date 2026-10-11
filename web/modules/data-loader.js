@@ -116,12 +116,12 @@ export async function loadDashboardData() {
 
   /* 3. Normalize Capital & Sales Totals */
   if (capitalRes && (capitalRes.capital !== undefined || capitalRes.amount !== undefined)) {
-    state.capital = Number(capitalRes.capital ?? capitalRes.amount ?? 20000);
+    state.capital = Number(capitalRes.capital ?? capitalRes.amount ?? 0);
     state.operatingExpenses = Number(capitalRes.operating_expenses || 0);
     state.interest = Number(capitalRes.interest || 0);
     state.taxes = Number(capitalRes.taxes || 0);
-  } else if (!state.capital) {
-    state.capital = 20000;
+  } else if (state.capital === undefined) {
+    state.capital = 0;
   }
 
   state.salesToday = getSalesRevenue("today");

@@ -4,7 +4,7 @@
  * ============================================================ */
 
 export const defaultState = {
-  capital: 20000,
+  capital: 0,
   salesToday: 0,
   totalSales: 0,
   profit: 0,
@@ -21,9 +21,15 @@ const savedState = JSON.parse(localStorage.getItem("inventorySuperAdmin") || "nu
 /** Shared reactive state object used across all modules. */
 export const state = { ...structuredClone(defaultState), ...(savedState || {}) };
 
-/** Persist cart to localStorage so it survives page reloads. */
+/** Persist cart and financial settings to localStorage so they survive page reloads. */
 export function persist() {
-  localStorage.setItem("inventorySuperAdmin", JSON.stringify({ cart: state.cart }));
+  localStorage.setItem("inventorySuperAdmin", JSON.stringify({
+    cart: state.cart,
+    capital: state.capital,
+    operatingExpenses: state.operatingExpenses,
+    interest: state.interest,
+    taxes: state.taxes
+  }));
 }
 
 /* ============================================================
