@@ -1,0 +1,43 @@
+/* ============================================================
+ * css/variables.css — Design Tokens & CSS Variables
+ * ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --navy: #111844;
+  --navy-hover: #0A0F2B;
+  --navy-light: #1D265C;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --border-light: #E2E8F0;
+  --border-mid: #94A3B8;
+  --bg-page: #F8FAFC;
+  --bg-card: #FFFFFF;
+
+  --success-green: #618764;
+  --success-green-hover: #4D6D50;
+  --success-green-bg: #EBF3EC;
+
+  --danger-red: #E53935;
+  --danger-red-dark: #991B1B;
+  --danger-red-bg: #FEE2E2;
+
+  --warning-amber: #D97706;
+  --warning-amber-bg: #FEF3C7;
+
+  --accent-purple: #6366F1;
+  --accent-blue: #2563EB;
+
+  --radius-modal: 24px;
+  --radius-card: 20px;
+  --radius-input: 12px;
+  --radius-button: 8px;
+  --radius-badge: 8px;
+
+  --sidebar-width: clamp(240px, 25vw, 340px);
+
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+}

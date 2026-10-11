@@ -55,10 +55,11 @@ public abstract class BaseFragment extends Fragment {
     protected void setupConnectionStatusMonitoring(View root) {
         if (root == null || getContext() == null) return;
         View dot = root.findViewById(R.id.connection_status_dot);
+        TextView statusText = root.findViewById(R.id.connection_status_text);
         if (dot == null) return;
 
         boolean isConnected = NetworkUtils.isNetworkConnected(getContext());
-        dot.setBackgroundResource(isConnected ? R.drawable.shape_status_dot_green : R.drawable.shape_status_dot_red);
+        updateConnectionStatusUI(dot, statusText, isConnected);
         startDotPulseAnimation(dot);
 
         ConnectivityManager cm = (ConnectivityManager) requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -89,9 +90,17 @@ public abstract class BaseFragment extends Fragment {
         View view = getView();
         if (view == null || getContext() == null) return;
         View dot = view.findViewById(R.id.connection_status_dot);
+        TextView statusText = view.findViewById(R.id.connection_status_text);
         if (dot != null) {
-            dot.setBackgroundResource(isConnected ? R.drawable.shape_status_dot_green : R.drawable.shape_status_dot_red);
+            updateConnectionStatusUI(dot, statusText, isConnected);
             startDotPulseAnimation(dot);
+        }
+    }
+
+    private void updateConnectionStatusUI(View dot, TextView statusText, boolean isConnected) {
+        dot.setBackgroundResource(isConnected ? R.drawable.shape_status_dot_green : R.drawable.shape_status_dot_red);
+        if (statusText != null) {
+            statusText.setText(isConnected ? "Online" : "Offline");
         }
     }
 
