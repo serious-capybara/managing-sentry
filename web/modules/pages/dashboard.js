@@ -4,7 +4,7 @@
  * panels as well as the sell tab container.
  * ============================================================ */
 
-import { state }     from "../state.js";
+import { state } from "../state.js";
 import { money, escapeHtml } from "../utils.js";
 import { renderSellTab } from "../cart.js";
 import { getProfitBreakdown, getSalesRevenue } from "../finance.js";
@@ -12,7 +12,7 @@ import { getProfitBreakdown, getSalesRevenue } from "../finance.js";
 export let activeDashTab = "expiring";
 export function setActiveDashTab(tab) { activeDashTab = tab; }
 
-export let activeProfitType = (function() {
+export let activeProfitType = (function () {
   try {
     const savedType = localStorage.getItem("sentryDashboardProfitDisplay");
     return ["gross", "net"].includes(savedType) ? savedType : "net";
@@ -24,7 +24,7 @@ export let activeProfitType = (function() {
 export function setActiveProfitType(type) {
   if (!["gross", "net"].includes(type)) return;
   activeProfitType = type;
-  try { localStorage.setItem("sentryDashboardProfitDisplay", type); } catch (e) {}
+  try { localStorage.setItem("sentryDashboardProfitDisplay", type); } catch (e) { }
 }
 
 /* ── stat cards (shown only on the dashboard) ─────────────── */
@@ -100,7 +100,7 @@ export function expiringRows(list) {
 
 /* ── expiring-soon panel ───────────────────────────────────── */
 export function expiringPanel() {
-  const now  = new Date();
+  const now = new Date();
   const soon = state.products.filter(p => {
     if (!p.expiry) return false;
     const days = Math.ceil((new Date(p.expiry) - now) / 86400000);
@@ -111,8 +111,8 @@ export function expiringPanel() {
       <table class="dashboard-inventory-table">
         <thead><tr><th>ID</th><th>NAME</th><th>CATEGORY</th><th>STOCK</th><th>SRP</th><th>EXPIRATION DATE</th><th>STATUS</th></tr></thead>
         <tbody>${soon.length
-          ? expiringRows(soon)
-          : `<tr><td colspan="7" class="table-empty">✓ No expiring items within the next 7 days.</td></tr>`}
+      ? expiringRows(soon)
+      : `<tr><td colspan="7" class="table-empty">✓ No expiring items within the next 7 days.</td></tr>`}
         </tbody>
       </table>
     </div>`;

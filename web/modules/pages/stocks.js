@@ -41,17 +41,21 @@ export function renderStocks() {
         </div>
       </div>
 
-      <div class="panel stocks-low-panel" id="stocksLowPanel">
+      <div class="stocks-low-section" id="stocksLowPanel">
         <div class="stocks-resizer-bar" id="stocksResizerBar" title="Drag up or down to adjust table height">
           <span class="stocks-resizer-grip"></span>
         </div>
-        <div class="panel-title stocks-low-title">
-          <div class="panel-title-text"><img class="panel-icon" src="src/icon/white/low-stock-alert.svg" alt=""> Low On Stock ${low.length ? `<span class="alert-dot"></span>` : ""}</div>
+        <div class="dashboard-tabs-header stocks-low-header">
+          <div class="dashboard-tabs">
+            <button class="tab-btn active" type="button" tabindex="-1">
+              <img class="tab-icon" src="src/icon/white/low-stock-alert.svg" alt=""> Low On Stock ${low.length ? `<span class="alert-dot"></span>` : ""}
+            </button>
+          </div>
           <button class="dashboard-toggle-btn" id="stocksSectionToggle" title="Toggle Low Stock Section Visibility">
             <img id="stocksToggleIcon" class="btn-icon" src="src/icon/dark/dropdown-close-expand.svg" alt="Toggle Section">
           </button>
         </div>
-        <div class="panel-body stocks-low-body" id="stocksLowBody">
+        <div class="stocks-low-body" id="stocksLowBody">
           <div class="wire-table-wrap stocks-low-table-wrap">
             <table class="stocks-low-table">
               <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th><th>Status</th></tr></thead>

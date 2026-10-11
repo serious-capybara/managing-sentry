@@ -346,6 +346,8 @@ export function bindPageEvents(page) {
 
       const onMouseUp = () => {
         resizer.classList.remove("dragging");
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
         document.removeEventListener("touchmove", onMouseMove);
@@ -360,6 +362,8 @@ export function bindPageEvents(page) {
         e.preventDefault();
         startY = e.touches ? e.touches[0].clientY : e.clientY;
         startHeight = lowPanel.getBoundingClientRect().height;
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = "ns-resize";
 
         document.addEventListener("mousemove", onMouseMove, { passive: false });
         document.addEventListener("mouseup", onMouseUp);
