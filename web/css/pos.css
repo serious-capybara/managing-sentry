@@ -52,9 +52,9 @@
 
 /* Right Panel: Shopping Cart */
 .sell-cart-panel {
-  flex: 0 0 380px;
-  min-width: 320px;
-  max-width: 440px;
+  flex: 0 0 420px;
+  min-width: 360px;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-card);
@@ -229,7 +229,22 @@
 }
 
 /* Sticky Headers with Design System Palette */
-.sell-table thead th,
+.sell-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #F1F5F9;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-light);
+  box-shadow: 0 1px 0 var(--border-light);
+  line-height: 1.2;
+}
+
 .sell-cart-table thead th {
   position: sticky;
   top: 0;
@@ -240,16 +255,24 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 10px 16px;
+  padding: 10px 10px;
   border-bottom: 1px solid var(--border-light);
   box-shadow: 0 1px 0 var(--border-light);
   line-height: 1.2;
 }
 
 /* Symmetrical Cell Padding & Clean Alignment */
-.sell-table td,
+.sell-table td {
+  padding: 10px 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-light);
+  background: #FFFFFF;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
 .sell-cart-table td {
-  padding: 10px 16px;
+  padding: 10px 10px;
   vertical-align: middle;
   border-bottom: 1px solid var(--border-light);
   background: #FFFFFF;
@@ -378,16 +401,6 @@
   transform: translateY(0);
 }
 
-.sell-add-btn.has-cart {
-  background: var(--navy);
-  box-shadow: 0 1px 3px rgba(17, 24, 68, 0.2);
-}
-
-.sell-add-btn.has-cart:hover {
-  background: var(--navy-hover);
-  box-shadow: 0 3px 6px rgba(17, 24, 68, 0.3);
-}
-
 .sell-add-btn:disabled {
   background: #F1F5F9;
   color: #94A3B8;
@@ -396,27 +409,22 @@
   transform: none;
 }
 
-/* Cart Table Columns */
+/* Cart Table Columns: Name 46%, Qty 28%, Total 26% */
 .sell-cart-table th:nth-child(1), .sell-cart-table td:nth-child(1) {
-  width: 36%;
+  width: 46%;
   padding-left: 16px;
   text-align: left;
 }
 
 .sell-cart-table th:nth-child(2), .sell-cart-table td:nth-child(2) {
-  width: 32%;
+  width: 28%;
   text-align: center;
 }
 
 .sell-cart-table th:nth-child(3), .sell-cart-table td:nth-child(3) {
-  width: 20%;
+  width: 26%;
   text-align: right;
   white-space: nowrap;
-}
-
-.sell-cart-table th:nth-child(4), .sell-cart-table td:nth-child(4) {
-  width: 12%;
-  text-align: center;
   padding-right: 16px;
 }
 
@@ -456,15 +464,15 @@
   align-items: center;
   background: #F1F5F9;
   border: 1px solid var(--border-light);
-  border-radius: 8px;
+  border-radius: 7px;
   padding: 2px;
   gap: 2px;
 }
 
 .qty-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
   background: #FFFFFF;
   border: 1px solid var(--border-light);
   color: var(--text-primary);
@@ -472,7 +480,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  flex: 0 0 24px;
+  flex: 0 0 22px;
   transition: all 0.15s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
@@ -494,8 +502,8 @@
 }
 
 .sell-cart-table .sell-qty-input {
-  width: 30px;
-  height: 24px;
+  width: 26px;
+  height: 22px;
   border: 0;
   background: transparent;
   text-align: center;
@@ -508,7 +516,7 @@
 
 /* Clean Remove Item Action */
 .remove-btn {
-  height: 28px;
+  height: 26px;
   padding: 0 8px;
   border-radius: 6px;
   background: #FEE2E2;
@@ -520,6 +528,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
@@ -529,6 +538,10 @@
   color: #FFFFFF;
   border-color: #DC2626;
   transform: translateY(-1px);
+}
+
+.remove-btn svg {
+  flex-shrink: 0;
 }
 
 /* Empty Cart State */
@@ -586,112 +599,100 @@
   border-top: 1px solid var(--border-light);
   background: #F8FAFC;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.sell-summary-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.sell-summary-row {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-.sell-summary-row.subtotal {
-  font-size: 13px;
-  color: var(--text-secondary);
-  font-weight: 600;
+.sell-summary-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.sell-summary-val {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.sell-summary-row.total {
-  padding-top: 8px;
-  border-top: 1px dashed var(--border-light);
-  font-size: 14px;
+.sell-summary-label {
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .sell-total-amount {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 900;
   color: var(--navy);
+  line-height: 1.2;
+}
+
+.sell-summary-items-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .sell-summary-actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 150px;
+  flex: 0 0 150px;
 }
 
+/* Green Checkout Pill Button (matching app design) */
 .sell-checkout-btn {
-  height: 44px;
+  height: 40px;
   width: 100%;
-  border-radius: var(--radius-button);
-  background: var(--navy);
+  border-radius: 16px;
+  background: var(--success-green);
   color: #FFFFFF;
   font-weight: 700;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 0;
-  cursor: pointer;
-  box-shadow: 0 3px 8px rgba(17, 24, 68, 0.2);
-  transition: all 0.2s ease;
-}
-
-.sell-checkout-btn:hover {
-  background: var(--navy-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 5px 12px rgba(17, 24, 68, 0.28);
-}
-
-.sell-checkout-btn:disabled {
-  background: #E2E8F0;
-  color: #94A3B8;
-  box-shadow: none;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.sell-clear-btn {
-  height: 36px;
-  width: 100%;
-  border-radius: var(--radius-button);
-  background: #FFFFFF;
-  border: 1px solid var(--border-light);
-  color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  border: 0;
   cursor: pointer;
-  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(97, 135, 100, 0.25);
+  transition: all 0.2s ease;
+}
+
+.sell-checkout-btn:hover {
+  background: var(--success-green-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(97, 135, 100, 0.35);
+}
+
+/* Red Clean Cart Pill Button (matching app design) */
+.sell-clear-btn {
+  height: 40px;
+  width: 100%;
+  border-radius: 16px;
+  background: var(--danger-red);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(229, 57, 53, 0.25);
+  transition: all 0.2s ease;
 }
 
 .sell-clear-btn:hover {
-  background: #FEE2E2;
-  border-color: #FECACA;
-  color: #DC2626;
+  background: #C62828;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(229, 57, 53, 0.35);
 }
 
+.sell-checkout-btn:disabled,
 .sell-clear-btn:disabled {
-  background: #F8FAFC;
-  border-color: #E2E8F0;
-  color: #CBD5E1;
-  cursor: not-allowed;
+  background: #CBD5E1 !important;
+  color: #94A3B8 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
 }

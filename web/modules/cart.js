@@ -150,26 +150,20 @@ export function renderSellTab() {
               <th>Name</th>
               <th style="text-align:center">Qty</th>
               <th style="text-align:right">Total</th>
-              <th style="text-align:center">Action</th>
             </tr>
           </thead>
           <tbody id="sellCartRows">${sellCartRows()}</tbody>
         </table>
       </div>
       <div class="sell-summary">
-        <div class="sell-summary-rows">
-          <div class="sell-summary-row subtotal">
-            <span>Items in cart</span>
-            <span class="sell-summary-val" id="sellCartItemCount">${cartCount()} items</span>
-          </div>
-          <div class="sell-summary-row total">
-            <span>Total Amount</span>
-            <strong class="sell-total-amount">${money(cartTotal())}</strong>
-          </div>
+        <div class="sell-summary-left">
+          <span class="sell-summary-label">Total :</span>
+          <strong class="sell-total-amount">${money(cartTotal())}</strong>
+          <span class="sell-summary-items-count" id="sellCartItemCount">${cartCount()} items</span>
         </div>
         <div class="sell-summary-actions">
           <button class="sell-checkout-btn" id="sellCheckoutBtn" ${state.cart.length ? "" : "disabled"}><img class="btn-icon" src="src/icon/white/cart.svg" alt=""> Checkout</button>
-          <button class="sell-clear-btn" id="clearCartBtn" ${state.cart.length ? "" : "disabled"}><img class="btn-icon" src="src/icon/dark/reset.svg" alt=""> Clean Cart</button>
+          <button class="sell-clear-btn" id="clearCartBtn" ${state.cart.length ? "" : "disabled"}><img class="btn-icon" src="src/icon/white/reset.svg" alt=""> Clean Cart</button>
         </div>
       </div>
     </section>
@@ -200,8 +194,8 @@ export function sellProductRows(products = state.products.filter(p => p.stock > 
         }
       </td>
       <td style="text-align:right">
-        <button class="sell-add-btn ${inCart > 0 ? "has-cart" : ""}" type="button" data-add="${p.id}" ${available ? "" : "disabled"}>
-          ${available ? `<img class="btn-sm-icon" src="src/icon/white/add.svg" alt=""> Add${inCart > 0 ? ` (${inCart})` : ""}` : "Out"}
+        <button class="sell-add-btn" type="button" data-add="${p.id}" ${available ? "" : "disabled"}>
+          ${available ? `<img class="btn-sm-icon" src="src/icon/white/add.svg" alt=""> Add` : "Out"}
         </button>
       </td>
     </tr>`;
@@ -211,7 +205,7 @@ export function sellProductRows(products = state.products.filter(p => p.stock > 
 export function sellCartRows() {
   if (!state.cart.length) {
     return `<tr>
-      <td class="sell-cart-empty-cell" colspan="4">
+      <td class="sell-cart-empty-cell" colspan="3">
         <div class="sell-cart-empty-state">
           <div class="sell-empty-icon-wrap">
             <img src="src/icon/dark/cart.svg" alt="">
@@ -238,11 +232,6 @@ export function sellCartRows() {
     </td>
     <td style="text-align:right">
       <span class="sell-cart-line-total">${money(item.price * item.qty)}</span>
-    </td>
-    <td style="text-align:center">
-      <button class="remove-btn" data-cart-remove="${item.id}" title="Remove item" aria-label="Remove ${escapeHtml(item.name)}">
-        Remove
-      </button>
     </td>
   </tr>`).join("");
 }
