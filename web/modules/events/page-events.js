@@ -69,9 +69,25 @@ export function renderActiveTab() {
     }
   });
 
+  const prevSearch = target.querySelector("#sellSearch")?.value || "";
+  const prevSort = target.querySelector("#sellSort")?.value || "";
+
   target.innerHTML = dashTabHtml(activeDashTab);
   bindTabActions(target);
+  bindStyledSelects(target);
   updateCartPill();
+
+  if (activeDashTab === "sell") {
+    const searchEl = target.querySelector("#sellSearch");
+    const sortEl = target.querySelector("#sellSort");
+    if (searchEl && prevSearch) {
+      searchEl.value = prevSearch;
+    }
+    if (sortEl && prevSort) {
+      sortEl.value = prevSort;
+      sortEl.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
 }
 
 /**

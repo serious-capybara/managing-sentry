@@ -84,9 +84,21 @@ export async function clearSellCart() {
 // ---------------------------------------------------------------------------
 
 export function renderSellTab() {
+  const availableCount = state.products.filter(p => p.stock > 0).length;
   return `<div class="sell-workspace">
     <section class="panel sell-panel">
-      <div class="panel-title"><img class="panel-icon" src="src/icon/dark/cart.svg" alt=""> Pick Items to Sell</div>
+      <div class="sell-panel-header">
+        <div class="sell-panel-title-group">
+          <div class="sell-header-icon-badge">
+            <img class="panel-icon" src="src/icon/dark/cart.svg" alt="">
+          </div>
+          <div>
+            <div class="sell-panel-heading">Pick Items to Sell</div>
+            <div class="sell-panel-subheading">Select products to add to current transaction</div>
+          </div>
+        </div>
+        <div class="sell-badge-pill" id="sellItemsCount">${availableCount} Products Available</div>
+      </div>
       <div class="sell-toolbar">
         <div class="toolbar-left">
           <div class="toolbar-sort-wrap">
@@ -99,32 +111,65 @@ export function renderSellTab() {
           </div>
         </div>
         <div class="toolbar-right">
-          <input class="compact-input" id="sellSearch" type="search" placeholder="Search products…">
+          <div class="sell-search-wrap">
+            <input class="compact-input sell-search-input" id="sellSearch" type="search" placeholder="Search products…">
+          </div>
         </div>
       </div>
       <div class="sell-table-scroll">
         <table class="sell-table">
-          <thead><tr><th>Name</th><th>SRP</th><th>Qty</th><th style="text-align:right">Action</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>SRP</th>
+              <th style="text-align:center">Qty</th>
+              <th style="text-align:right">Action</th>
+            </tr>
+          </thead>
           <tbody id="sellProductRows">${sellProductRows()}</tbody>
         </table>
       </div>
     </section>
     <section class="panel sell-cart-panel">
-      <div class="panel-title">
-        <img class="panel-icon" src="src/icon/dark/cart.svg" alt=""> Cart
+      <div class="sell-cart-header">
+        <div class="sell-cart-title-group">
+          <div class="sell-header-icon-badge">
+            <img class="panel-icon" src="src/icon/dark/cart.svg" alt="">
+          </div>
+          <div>
+            <div class="sell-cart-heading">Current Cart</div>
+            <div class="sell-cart-subheading">Review items before checkout</div>
+          </div>
+        </div>
         <span class="cart-pill" id="cartPill">${cartCount()}</span>
       </div>
       <div class="sell-cart-scroll">
         <table class="sell-cart-table">
-          <thead><tr><th>Name</th><th style="text-align:center">Qty</th><th style="text-align:center">Total</th><th style="text-align:center">Action</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th style="text-align:center">Qty</th>
+              <th style="text-align:right">Total</th>
+              <th style="text-align:center">Action</th>
+            </tr>
+          </thead>
           <tbody id="sellCartRows">${sellCartRows()}</tbody>
         </table>
       </div>
       <div class="sell-summary">
-        <div class="sell-total"><span>Total</span><strong>${money(cartTotal())}</strong></div>
+        <div class="sell-summary-rows">
+          <div class="sell-summary-row subtotal">
+            <span>Items in cart</span>
+            <span class="sell-summary-val" id="sellCartItemCount">${cartCount()} items</span>
+          </div>
+          <div class="sell-summary-row total">
+            <span>Total Amount</span>
+            <strong class="sell-total-amount">${money(cartTotal())}</strong>
+          </div>
+        </div>
         <div class="sell-summary-actions">
           <button class="sell-checkout-btn" id="sellCheckoutBtn" ${state.cart.length ? "" : "disabled"}><img class="btn-icon" src="src/icon/white/cart.svg" alt=""> Checkout</button>
-          <button class="sell-clear-btn" id="clearCartBtn" ${state.cart.length ? "" : "disabled"}><img class="btn-icon" src="src/icon/white/reset.svg" alt=""> Clean Cart</button>
+          <button class="sell-clear-btn" id="clearCartBtn" ${state.cart.length ? "" : "disabled"}><img class="btn-icon" src="src/icon/dark/reset.svg" alt=""> Clean Cart</button>
         </div>
       </div>
     </section>
@@ -139,27 +184,66 @@ export function sellProductRows(products = state.products.filter(p => p.stock > 
     const inCart    = state.cart.find(i => i.id === p.id)?.qty || 0;
     const available = Math.max(0, p.stock - inCart);
     return `<tr>
-      <td title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</td>
-      <td>${money(p.price)}</td>
-      <td>${available}</td>
-      <td style="text-align:right"><button class="sell-add-btn" type="button" data-add="${p.id}" ${available ? "" : "disabled"}>${available ? "Add" : "Out"}</button></td>
+      <td title="${escapeHtml(p.name)}">
+        <div class="sell-prod-cell">
+          <span class="sell-prod-name">${escapeHtml(p.name)}</span>
+          ${p.category ? `<span class="sell-prod-cat">${escapeHtml(p.category)}</span>` : ""}
+        </div>
+      </td>
+      <td><span class="sell-prod-srp">${money(p.price)}</span></td>
+      <td style="text-align:center">
+        ${available <= 5 && available > 0
+          ? `<span class="sell-stock-tag low" title="Low stock: ${available} left">${available} left</span>`
+          : available > 5
+          ? `<span class="sell-stock-tag normal">${available}</span>`
+          : `<span class="sell-stock-tag out">0 left</span>`
+        }
+      </td>
+      <td style="text-align:right">
+        <button class="sell-add-btn ${inCart > 0 ? "has-cart" : ""}" type="button" data-add="${p.id}" ${available ? "" : "disabled"}>
+          ${available ? `<img class="btn-sm-icon" src="src/icon/white/add.svg" alt=""> Add${inCart > 0 ? ` (${inCart})` : ""}` : "Out"}
+        </button>
+      </td>
     </tr>`;
   }).join("");
 }
 
 export function sellCartRows() {
   if (!state.cart.length) {
-    return `<tr><td class="sell-cart-empty" colspan="4">Your cart is empty. Add products to start checkout.</td></tr>`;
+    return `<tr>
+      <td class="sell-cart-empty-cell" colspan="4">
+        <div class="sell-cart-empty-state">
+          <div class="sell-empty-icon-wrap">
+            <img src="src/icon/dark/cart.svg" alt="">
+          </div>
+          <div class="sell-empty-title">Your cart is empty</div>
+          <div class="sell-empty-text">Click &ldquo;+ Add&rdquo; on any item from the catalog to begin checkout.</div>
+        </div>
+      </td>
+    </tr>`;
   }
   return state.cart.map(item => `<tr>
-    <td title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</td>
-    <td style="text-align:center"><div class="sell-cart-qty">
-      <button class="qty-btn" data-cart-remove-step="${item.id}" aria-label="Decrease ${escapeHtml(item.name)} quantity"><img class="btn-sm-icon" src="src/icon/dark/minus.svg" alt="−"></button>
-      <input class="sell-qty-input" type="number" min="1" value="${item.qty}" data-cart-qty data-cart-id="${item.id}" aria-label="${escapeHtml(item.name)} quantity">
-      <button class="qty-btn" data-cart-add-step="${item.id}" aria-label="Increase ${escapeHtml(item.name)} quantity"><img class="btn-sm-icon" src="src/icon/dark/add.svg" alt="+"></button>
-    </div></td>
-    <td style="text-align:center">${money(item.price * item.qty)}</td>
-    <td style="text-align:center"><button class="remove-btn" data-cart-remove="${item.id}">Remove</button></td>
+    <td title="${escapeHtml(item.name)}">
+      <div class="sell-cart-item-info">
+        <span class="sell-cart-item-name">${escapeHtml(item.name)}</span>
+        <span class="sell-cart-item-unit">${money(item.price)} each</span>
+      </div>
+    </td>
+    <td style="text-align:center">
+      <div class="sell-cart-qty">
+        <button class="qty-btn" data-cart-remove-step="${item.id}" aria-label="Decrease ${escapeHtml(item.name)} quantity"><img class="btn-sm-icon" src="src/icon/dark/minus.svg" alt="−"></button>
+        <input class="sell-qty-input" type="number" min="1" value="${item.qty}" data-cart-qty data-cart-id="${item.id}" aria-label="${escapeHtml(item.name)} quantity">
+        <button class="qty-btn" data-cart-add-step="${item.id}" aria-label="Increase ${escapeHtml(item.name)} quantity"><img class="btn-sm-icon" src="src/icon/dark/add.svg" alt="+"></button>
+      </div>
+    </td>
+    <td style="text-align:right">
+      <span class="sell-cart-line-total">${money(item.price * item.qty)}</span>
+    </td>
+    <td style="text-align:center">
+      <button class="remove-btn" data-cart-remove="${item.id}" title="Remove item" aria-label="Remove ${escapeHtml(item.name)}">
+        Remove
+      </button>
+    </td>
   </tr>`).join("");
 }
 
