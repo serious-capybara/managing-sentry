@@ -11,18 +11,33 @@ import { updateStats } from "../stock-logic.js";
 import { askYesNo } from "./dialogs.js";
 import { renderPage } from "../router.js";
 
+export function renderProductPickerItem(p, selectedId = null) {
+  const isSelected = Number(p.id) === Number(selectedId);
+  const isLow = Number(p.stock) <= Number(p.low_stock_alert_level || 20);
+  return `
+    <button type="button" class="remove-product-option ${isSelected ? "selected" : ""}" data-id="${p.id}">
+      <div class="remove-product-info">
+        <span class="remove-product-title">${escapeHtml(p.name)}</span>
+        <div class="remove-product-meta">
+          <span class="meta-tag category">${escapeHtml(p.category || "General")}</span>
+          <span class="meta-tag stock ${isLow ? "low" : ""}">${p.stock} in stock</span>
+        </div>
+      </div>
+      <div class="remove-product-right">
+        <span class="remove-product-price">${money(p.price)}</span>
+        <div class="select-indicator">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+    </button>`;
+}
+
 export function removeProductOptions(products = state.products, selectedId = null) {
   return products
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map(p => `
-      <button type="button" class="remove-product-option ${Number(p.id) === Number(selectedId) ? "selected" : ""}" data-id="${p.id}">
-        <span class="remove-product-main">
-          <strong>${escapeHtml(p.name)}</strong>
-          <small>${escapeHtml(p.category || "Uncategorized")} • ${p.stock} in stock</small>
-        </span>
-        <span class="remove-product-price">${money(p.price)}</span>
-      </button>`).join("");
+    .map(p => renderProductPickerItem(p, selectedId))
+    .join("");
 }
 
 export async function deleteProductById(productId) {
@@ -71,7 +86,8 @@ export function openRemoveProductModal() {
       </div>
       <div class="modal-body">
         <div class="remove-search-wrap">
-          <input id="removeProductSearch" type="search" placeholder="Search products..." autocomplete="off">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="removeProductSearch" type="search" placeholder="Search products by name or category..." autocomplete="off">
         </div>
         <div class="remove-product-list" id="removeProductList">
           ${removeProductOptions()}

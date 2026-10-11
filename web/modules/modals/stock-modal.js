@@ -11,19 +11,14 @@ import { loadDashboardData } from "../data-loader.js";
 import { updateStats } from "../stock-logic.js";
 import { renderPage, currentPage } from "../router.js";
 import { bindStyledSelects } from "../styled-select.js";
+import { renderProductPickerItem } from "./remove-product-modal.js";
 
 function stockProductOptions(products = state.products, selectedId = null) {
   return products
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map(p => `
-      <button type="button" class="remove-product-option ${Number(p.id) === Number(selectedId) ? "selected" : ""}" data-id="${p.id}">
-        <span class="remove-product-main">
-          <strong>${escapeHtml(p.name)}</strong>
-          <small>${escapeHtml(p.category || "Uncategorized")} • ${p.stock} in stock</small>
-        </span>
-        <span class="remove-product-price">${money(p.price)}</span>
-      </button>`).join("");
+    .map(p => renderProductPickerItem(p, selectedId))
+    .join("");
 }
 
 /**
@@ -58,10 +53,11 @@ export function openStockInModal(targetProductId = null) {
           <div class="form-grid">
             <div class="form-group full">
               <label>Select Product</label>
-              <div class="remove-search-wrap" style="margin-bottom: 8px;">
-                <input id="stockInSearch" type="text" placeholder="Search products..." autocomplete="off">
+              <div class="remove-search-wrap">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="stockInSearch" type="search" placeholder="Search products by name or category..." autocomplete="off">
               </div>
-              <div class="remove-product-list" id="stockInProductList" style="max-height: 200px;">
+              <div class="remove-product-list" id="stockInProductList">
                 ${stockProductOptions(state.products, defaultId)}
               </div>
               <input type="hidden" id="stockInProduct" name="product" value="${defaultId}" required>
@@ -220,10 +216,11 @@ export function openStockOutModal(targetProductId = null) {
           <div class="form-grid">
             <div class="form-group full">
               <label>Select Product</label>
-              <div class="remove-search-wrap" style="margin-bottom: 8px;">
-                <input id="stockOutSearch" type="text" placeholder="Search products..." autocomplete="off">
+              <div class="remove-search-wrap">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="stockOutSearch" type="search" placeholder="Search products by name or category..." autocomplete="off">
               </div>
-              <div class="remove-product-list" id="stockOutProductList" style="max-height: 200px;">
+              <div class="remove-product-list" id="stockOutProductList">
                 ${stockProductOptions(state.products, defaultId)}
               </div>
               <input type="hidden" id="stockOutProduct" name="product" value="${defaultId}" required>
