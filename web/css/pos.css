@@ -546,7 +546,7 @@
 
 /* Empty Cart State */
 .sell-cart-empty-cell {
-  padding: 40px 16px !important;
+  padding: 16px !important;
   text-align: center !important;
   vertical-align: middle !important;
   background: #FFFFFF !important;

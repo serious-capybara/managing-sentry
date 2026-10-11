@@ -260,6 +260,21 @@ export async function finalizeSale({ method, online, received, ref, notes, cashi
     throw new Error("The server did not return a valid order ID and total.");
   }
 
+  const newTx = {
+    id: Number(result.order_id) || Date.now(),
+    type: "SALE",
+    name: saleItems.map(i => i.qty > 1 ? `${i.name} (x${i.qty})` : i.name).join(", "),
+    amount: saleTotal,
+    qty: saleItems.reduce((s, i) => s + i.qty, 0),
+    timestamp: Date.now(),
+    date: date || new Date().toISOString(),
+    items: saleItems,
+    notes: notes || ""
+  };
+  if (!state.transactions.some(t => Number(t.id) === Number(newTx.id))) {
+    state.transactions.unshift(newTx);
+  }
+
   state.cart = [];
   persist();
   try {

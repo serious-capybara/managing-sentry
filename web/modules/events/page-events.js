@@ -230,15 +230,17 @@ export function bindPageEvents(page) {
     if (dashResizer && bottomSection) {
       const getMaxDashPanelHeight = () => {
         const container = bottomSection.parentElement;
-        const h = container ? container.getBoundingClientRect().height : 0;
-        const containerHeight = h > 300 ? h : (window.innerHeight || 800);
-        return Math.max(250, containerHeight - 380);
+        const containerHeight = (container && container.getBoundingClientRect().height > 300)
+          ? container.getBoundingClientRect().height
+          : (window.innerHeight || 800);
+        // Reserve 420px for stats + toolbar + upper table (showing ~4 rows)
+        return Math.max(180, containerHeight - 420);
       };
 
       const savedHeight = localStorage.getItem("sentryDashPanelHeight");
       const numHeight = Number(savedHeight);
       const maxAllowed = getMaxDashPanelHeight();
-      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 250)
+      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 180)
         ? Math.min(numHeight, maxAllowed)
         : Math.min(320, maxAllowed);
 
@@ -252,7 +254,7 @@ export function bindPageEvents(page) {
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const deltaY = startY - clientY;
         const maxAllowedHeight = getMaxDashPanelHeight();
-        const newHeight = Math.max(250, Math.min(maxAllowedHeight, startHeight + deltaY));
+        const newHeight = Math.max(180, Math.min(maxAllowedHeight, startHeight + deltaY));
         bottomSection.style.height = `${newHeight}px`;
         bottomSection.style.flex = "0 0 auto";
         dashResizer.classList.add("dragging");
@@ -267,7 +269,7 @@ export function bindPageEvents(page) {
         document.removeEventListener("touchmove", onMouseMove);
         document.removeEventListener("touchend", onMouseUp);
         const finalHeight = parseInt(bottomSection.style.height, 10);
-        if (finalHeight && finalHeight >= 250) {
+        if (finalHeight && finalHeight >= 180) {
           localStorage.setItem("sentryDashPanelHeight", finalHeight);
         }
       };
@@ -332,15 +334,16 @@ export function bindPageEvents(page) {
     if (resizer && lowPanel) {
       const getMaxLowPanelHeight = () => {
         const container = lowPanel.closest(".stocks-overview") || lowPanel.parentElement;
-        const h = container ? container.getBoundingClientRect().height : 0;
-        const containerHeight = h > 300 ? h : (window.innerHeight || 800);
-        return Math.max(250, containerHeight - 280);
+        const containerHeight = (container && container.getBoundingClientRect().height > 300)
+          ? container.getBoundingClientRect().height
+          : (window.innerHeight || 800);
+        return Math.max(180, containerHeight - 150);
       };
 
       const savedHeight = localStorage.getItem("sentryStocksLowPanelHeight");
       const numHeight = Number(savedHeight);
       const maxAllowed = getMaxLowPanelHeight();
-      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 250)
+      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 180)
         ? Math.min(numHeight, maxAllowed)
         : Math.min(320, maxAllowed);
 
@@ -354,7 +357,7 @@ export function bindPageEvents(page) {
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const deltaY = startY - clientY;
         const maxAllowedHeight = getMaxLowPanelHeight();
-        const newHeight = Math.max(250, Math.min(maxAllowedHeight, startHeight + deltaY));
+        const newHeight = Math.max(180, Math.min(maxAllowedHeight, startHeight + deltaY));
         lowPanel.style.height = `${newHeight}px`;
         lowPanel.style.flex = "0 0 auto";
         resizer.classList.add("dragging");

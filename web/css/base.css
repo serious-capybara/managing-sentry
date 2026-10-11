@@ -49,6 +49,12 @@ input[type="number"] {
   display: none !important;
 }
 
+/* Set on <html> before the app boots while a session is still valid, so a
+   reload does not briefly show the login form (see index.html <head>). */
+.session-active #loginScreen {
+  display: none;
+}
+
 .toast {
   position: fixed;
   right: 32px;

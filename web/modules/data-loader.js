@@ -33,11 +33,9 @@ export async function loadDashboardData() {
   }
 
   /* 1. Normalize Products */
-  const rawProducts = productsRes !== null
+  const rawProducts = (productsRes !== null && Array.isArray(productsRes) && productsRes.length > 0)
     ? productsRes
-    : (state.products.length
-      ? state.products
-      : []);
+    : state.products;
 
   state.products = rawProducts.map(p => {
     const id = Number(p.id ?? p.product_id ?? 0);
@@ -74,7 +72,7 @@ export async function loadDashboardData() {
   });
 
   /* 2. Normalize Transactions */
-  const rawTransactions = transactionsRes !== null
+  const rawTransactions = (transactionsRes !== null && Array.isArray(transactionsRes) && transactionsRes.length > 0)
     ? transactionsRes
     : state.transactions;
   state.transactions = rawTransactions.map((t, idx) => {

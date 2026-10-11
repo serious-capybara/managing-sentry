@@ -1,6 +1,6 @@
 /* ============================================================
  * state.js — Application state, default values, persistence, and session management.
- * Handles 7-day session persistence across browser refreshes and reloads.
+ * Handles 1-hour session persistence across browser refreshes and reloads.
  * ============================================================ */
 
 export const defaultState = {
@@ -21,10 +21,12 @@ const savedState = JSON.parse(localStorage.getItem("inventorySuperAdmin") || "nu
 /** Shared reactive state object used across all modules. */
 export const state = { ...structuredClone(defaultState), ...(savedState || {}) };
 
-/** Persist cart and financial settings to localStorage so they survive page reloads. */
+/** Persist cart, products, transactions and financial settings to localStorage so they survive page reloads. */
 export function persist() {
   localStorage.setItem("inventorySuperAdmin", JSON.stringify({
     cart: state.cart,
+    products: state.products,
+    transactions: state.transactions,
     capital: state.capital,
     operatingExpenses: state.operatingExpenses,
     interest: state.interest,
@@ -33,29 +35,27 @@ export function persist() {
 }
 
 /* ============================================================
- * SESSION & ROUTE PERSISTENCE (7-DAY EXPIRATION)
+ * SESSION & ROUTE PERSISTENCE (1-HOUR EXPIRATION)
  * ============================================================ */
 const SESSION_KEY = "sentrySession";
 const ACTIVE_PAGE_KEY = "sentryActivePage";
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
 /**
- * Save logged-in user session for 7 days.
+ * Save logged-in user session; it is valid for one hour from this login.
  * @param {string} username
  * @param {string} fullName
  */
 export function saveSession(username = "admin", fullName = username) {
-  const session = {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({
     username,
     fullName,
-    loginTime: Date.now(),
-    expiryTime: Date.now() + SEVEN_DAYS_MS
-  };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    loginTime: Date.now()
+  }));
 }
 
 /**
- * Get saved session if valid, or clear and return null if expired (>= 7 days).
+ * Get saved session if it is less than an hour old, else clear it and return null.
  * @returns {object|null}
  */
 export function getSession() {
@@ -63,8 +63,7 @@ export function getSession() {
     const data = localStorage.getItem(SESSION_KEY);
     if (!data) return null;
     const session = JSON.parse(data);
-    if (!session || !session.expiryTime) return null;
-    if (Date.now() >= session.expiryTime) {
+    if (!session?.loginTime || Date.now() - session.loginTime >= ONE_HOUR_MS) {
       clearSession();
       return null;
     }
@@ -81,7 +80,7 @@ export function clearSession() {
 }
 
 /**
- * Check if active session exists and is within the 7-day window.
+ * Check if active session exists and is within the 1-hour window.
  * @returns {boolean}
  */
 export function isSessionValid() {
