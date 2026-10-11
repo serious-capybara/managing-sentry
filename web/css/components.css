@@ -786,7 +786,7 @@ table:has(.sell-cart-empty) {
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 0;
+  min-height: 190px;
   overflow: hidden;
   border-radius: var(--radius-card);
   border: 1px solid var(--border-light);
@@ -808,10 +808,46 @@ table:has(.sell-cart-empty) {
   box-shadow: 0 1px 0 var(--border-light);
 }
 
+/* Stocks Resizer Bar */
+.stocks-resizer-bar {
+  width: 100%;
+  height: 12px;
+  background: var(--navy);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ns-resize;
+  user-select: none;
+  touch-action: none;
+  transition: background-color 0.2s ease;
+  position: relative;
+  z-index: 10;
+}
+
+.stocks-resizer-bar:hover,
+.stocks-resizer-bar.dragging {
+  background: #1E293B;
+}
+
+.stocks-resizer-grip {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.4);
+  transition: background-color 0.2s ease, width 0.2s ease;
+}
+
+.stocks-resizer-bar:hover .stocks-resizer-grip,
+.stocks-resizer-bar.dragging .stocks-resizer-grip {
+  background: rgba(255, 255, 255, 0.8);
+  width: 48px;
+}
+
 .stocks-low-panel {
-  flex: 0 0 30vh;
-  height: 30vh;
-  max-height: 30vh;
+  flex: 0 0 auto;
+  height: 320px;
+  min-height: 250px;
   display: flex;
   flex-direction: column;
   margin-top: 0;
@@ -834,13 +870,15 @@ table:has(.sell-cart-empty) {
   gap: 10px;
 }
 
-.stocks-low-panel.collapsed-section {
-  flex: 0 0 auto !important;
+.stocks-low-panel.stocks-collapsed {
   height: auto !important;
+  min-height: 0 !important;
   max-height: none !important;
+  flex: 0 0 auto !important;
 }
 
-.stocks-low-panel.collapsed-section .stocks-low-body {
+.stocks-low-panel.stocks-collapsed .stocks-low-body,
+.stocks-low-panel.stocks-collapsed .stocks-resizer-bar {
   display: none !important;
 }
 

@@ -230,12 +230,15 @@ export function bindPageEvents(page) {
     if (toggleBtn && lowPanel && toggleIcon) {
       const isCollapsed = localStorage.getItem("sentryStockSectionCollapsed") === "true";
       if (isCollapsed) {
-        lowPanel.classList.add("collapsed-section");
+        lowPanel.classList.add("stocks-collapsed");
         toggleIcon.src = "src/icon/dark/dropdown-open-expand.svg";
+      } else {
+        lowPanel.classList.remove("stocks-collapsed");
+        toggleIcon.src = "src/icon/dark/dropdown-close-expand.svg";
       }
 
       toggleBtn.addEventListener("click", () => {
-        const collapsed = lowPanel.classList.toggle("collapsed-section");
+        const collapsed = lowPanel.classList.toggle("stocks-collapsed");
         toggleIcon.src = collapsed
           ? "src/icon/dark/dropdown-open-expand.svg"
           : "src/icon/dark/dropdown-close-expand.svg";
@@ -245,11 +248,22 @@ export function bindPageEvents(page) {
 
     const resizer = document.getElementById("stocksResizerBar");
     if (resizer && lowPanel) {
+      const getMaxLowPanelHeight = () => {
+        const container = lowPanel.closest(".stocks-overview") || lowPanel.parentElement;
+        const containerHeight = container ? container.getBoundingClientRect().height : window.innerHeight;
+        // Reserve space for toolbar + upper table header + at least 3 visible rows (~280px)
+        return Math.max(250, containerHeight - 280);
+      };
+
       const savedHeight = localStorage.getItem("sentryStocksLowPanelHeight");
-      if (savedHeight) {
-        lowPanel.style.height = `${savedHeight}px`;
-        lowPanel.style.flex = "0 0 auto";
-      }
+      const numHeight = Number(savedHeight);
+      const maxAllowed = getMaxLowPanelHeight();
+      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 250)
+        ? Math.min(numHeight, maxAllowed)
+        : Math.min(320, maxAllowed);
+
+      lowPanel.style.height = `${initialHeight}px`;
+      lowPanel.style.flex = "0 0 auto";
 
       let startY = 0;
       let startHeight = 0;
@@ -257,7 +271,8 @@ export function bindPageEvents(page) {
       const onMouseMove = e => {
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const deltaY = startY - clientY;
-        const newHeight = Math.max(260, Math.min(window.innerHeight * 0.70, startHeight + deltaY));
+        const maxAllowedHeight = getMaxLowPanelHeight();
+        const newHeight = Math.max(250, Math.min(maxAllowedHeight, startHeight + deltaY));
         lowPanel.style.height = `${newHeight}px`;
         lowPanel.style.flex = "0 0 auto";
         resizer.classList.add("dragging");
@@ -270,7 +285,7 @@ export function bindPageEvents(page) {
         document.removeEventListener("touchmove", onMouseMove);
         document.removeEventListener("touchend", onMouseUp);
         const finalHeight = parseInt(lowPanel.style.height, 10);
-        if (finalHeight) {
+        if (finalHeight && finalHeight >= 250) {
           localStorage.setItem("sentryStocksLowPanelHeight", finalHeight);
         }
       };
