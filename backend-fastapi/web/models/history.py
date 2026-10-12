@@ -18,3 +18,7 @@ class HistoryResponse(BaseModel):
     total_amount: float
     transaction_timestamp: str | None
     ref: str = ""
+    # Sale lines from order_items (price/cost SNAPSHOT at the time of the sale)
+    items: list[dict] = []
+    amount_received: float | None = None
+    change_given: float | None = None

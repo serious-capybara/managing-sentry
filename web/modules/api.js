@@ -9,18 +9,35 @@ export const API_BASE = "https://managing-sentry-web.vercel.app/api";
 
 let detectedApiBase = null;
 
-const CANDIDATE_BASES = [
-  "https://managing-sentry-web.vercel.app/api",
-  "http://127.0.0.1:8003/api",
-  "http://localhost:8003/api",
-  "http://127.0.0.1:8003",
-  "http://localhost:8003",
-  "http://localhost:8080/api",
-  "http://localhost:8000/api",
-  "./api",
-  "/api",
-  "./backend/web/api"
-];
+export function getCandidateBases() {
+  const isLocal = typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+  if (isLocal) {
+    const host = window.location.hostname;
+    return [
+      `http://${host}:8003/api`,
+      `http://${host}:8003`,
+      "http://localhost:8003/api",
+      "http://localhost:8003",
+      "http://127.0.0.1:8003/api",
+      "http://127.0.0.1:8003",
+      "https://managing-sentry-web.vercel.app/api",
+      "./api",
+      "/api"
+    ];
+  }
+
+  return [
+    "https://managing-sentry-web.vercel.app/api",
+    "http://localhost:8003/api",
+    "http://localhost:8003",
+    "http://127.0.0.1:8003/api",
+    "http://127.0.0.1:8003",
+    "./api",
+    "/api"
+  ];
+}
 
 /**
  * Switch between the app view and the login screen.
@@ -49,11 +66,13 @@ export function setAuthView(loggedIn) {
  * @param {RequestInit} options - standard fetch options
  * @returns {Promise<any>}   Parsed JSON response body
  */
-export async function apiRequest(endpoint, options = {}) {
+export async function apiRequest(endpoint, rawOptions = {}) {
+  const { onResponse, ...options } = rawOptions;   // onResponse(response) lets a caller read headers
   const cleanEndpoint = endpoint.replace(/^\/+/, "");
+  const baseList = getCandidateBases();
   const candidateBases = detectedApiBase
-    ? [detectedApiBase, ...CANDIDATE_BASES.filter(b => b !== detectedApiBase)]
-    : CANDIDATE_BASES;
+    ? [detectedApiBase, ...baseList.filter(b => b !== detectedApiBase)]
+    : baseList;
 
   let lastError = null;
 
@@ -65,15 +84,22 @@ export async function apiRequest(endpoint, options = {}) {
       let response;
       try {
         response = await fetch(url, {
+          cache: "no-store",
           ...options,
           credentials: "include",
           headers: { "Content-Type": "application/json", ...(options.headers || {}) }
         });
       } catch (fetchErr) {
         response = await fetch(url, {
+          cache: "no-store",
           ...options,
           headers: { "Content-Type": "application/json", ...(options.headers || {}) }
         });
+      }
+
+      if (response.status === 404 && i < candidateBases.length - 1) {
+        if (base === detectedApiBase) detectedApiBase = null;
+        continue;
       }
 
       const rawText = await response.text();
@@ -83,9 +109,11 @@ export async function apiRequest(endpoint, options = {}) {
         result = rawText ? JSON.parse(rawText) : {};
       } catch (jsonErr) {
         if (response.status === 404 && i < candidateBases.length - 1) {
+          if (base === detectedApiBase) detectedApiBase = null;
           continue;
         }
         if (!response.ok) {
+          if (base === detectedApiBase) detectedApiBase = null;
           throw new Error(`Server returned status ${response.status} (${response.statusText})`);
         }
         throw new Error("Invalid response from server (expected JSON).");
@@ -97,16 +125,26 @@ export async function apiRequest(endpoint, options = {}) {
       }
 
       if (!response.ok) {
+        if (response.status === 404 && i < candidateBases.length - 1) {
+          if (base === detectedApiBase) detectedApiBase = null;
+          continue;
+        }
         throw new Error(result.error || `Server error (${response.status})`);
       }
 
       detectedApiBase = base;
+      if (typeof onResponse === "function") onResponse(response, base);
       return result;
     } catch (err) {
       lastError = err;
+      if (base === detectedApiBase) detectedApiBase = null;
       if (
         i < candidateBases.length - 1 &&
-        (err.name === "TypeError" || err.message.includes("404") || err.message.includes("fetch") || err.message.includes("NetworkError"))
+        (err.name === "TypeError" ||
+         err.message.includes("404") ||
+         err.message.includes("fetch") ||
+         err.message.includes("NetworkError") ||
+         err.message.includes("Failed to fetch"))
       ) {
         continue;
       }

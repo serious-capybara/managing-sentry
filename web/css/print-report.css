@@ -1,0 +1,171 @@
+/* ============================================================
+ * css/print-report.css — Printed reports (History, Inventory & Capital,
+ * Sales & Profit). Plain black / grey on white, minimal lines.
+ * Sizes: title 18px, everything else 12px.
+ * ============================================================ */
+
+@media print {
+  @page pro {
+    size: A4 portrait;
+    margin: 15mm 14mm 17mm;
+    @bottom-left  { content: "Confidential"; font: 12px Arial, Helvetica, sans-serif; color: #777; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 12px Arial, Helvetica, sans-serif; color: #777; }
+  }
+
+  html:has(body.printing-history),
+  html:has(body.printing-report) { overflow: visible !important; height: auto !important; }
+  body.printing-history,
+  body.printing-report { page: pro; background: #fff !important; overflow: visible !important; height: auto !important; min-height: 0 !important; }
+
+  /* Print only the document: take the app out of the layout completely */
+  body.printing-history > *:not(#printArea),
+  body.printing-report > *:not(#printArea) { display: none !important; }
+
+  body.printing-history #printArea,
+  body.printing-report #printArea {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    visibility: visible !important;
+  }
+  body.printing-history #printArea *,
+  body.printing-report #printArea * { visibility: visible !important; }
+
+  .pro-report {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #111;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .pro-report * { box-sizing: border-box; }
+
+  /* Letterhead */
+  .pro-letterhead {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #111;
+  }
+  .pro-store { font-size: 12px; font-weight: 700; }
+  .pro-store-sub { font-size: 12px; color: #555; }
+  .pro-confidential { font-size: 12px; color: #777; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Title */
+  .pro-title-block { margin: 18px 0 12px; }
+  .pro-title-block h1 { margin: 0; font-size: 18px; font-weight: 700; color: #111; }
+  .pro-title-block p { margin: 2px 0 0; font-size: 12px; color: #555; }
+
+  /* Document details: plain, no box */
+  .pro-details {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px 16px;
+    margin: 0 0 6px;
+  }
+  .pro-details dt { font-size: 12px; color: #777; }
+  .pro-details dd { margin: 0; font-size: 12px; font-weight: 700; }
+
+  /* Section headings */
+  .pro-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 22px 0 8px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #999;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #111;
+    break-after: avoid;
+  }
+  .pro-heading small { font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: 0; color: #666; }
+
+  /* Summary: figures separated by space, not boxes */
+  .pro-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px 16px;
+    margin-bottom: 10px;
+    break-inside: avoid;
+  }
+  .pro-figure-label { display: block; font-size: 12px; color: #666; }
+  .pro-figure-value { display: block; font-size: 12px; font-weight: 700; color: #111; }
+  .pro-figure-note { display: block; font-size: 12px; color: #888; }
+
+  /* Tables: header + footer rules only, hairlines between rows */
+  .pro-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 12px; margin-bottom: 6px; }
+  .pro-table thead { display: table-header-group; }      /* header repeats on each page */
+  .pro-table tfoot { display: table-row-group; }          /* totals print once, at the end */
+  .pro-table tr { break-inside: avoid; }
+  .pro-table th {
+    padding: 5px 6px;
+    border-top: 1px solid #111;
+    border-bottom: 1px solid #111;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+    color: #111;
+    background: none;
+  }
+  .pro-table td { padding: 4px 6px; border-bottom: 1px solid #e3e3e3; vertical-align: top; overflow-wrap: anywhere; }
+  .pro-table .num { text-align: right; white-space: nowrap; }
+  .pro-table .nowrap { white-space: nowrap; }
+  .pro-table .empty { padding: 14px; text-align: center; color: #777; }
+  .pro-table tfoot td { padding: 6px; border-top: 1px solid #111; border-bottom: 1px solid #111; font-weight: 700; }
+  .pro-table tfoot .label { text-align: right; }
+
+  /* Type labels: plain text */
+  .pro-tag { font-size: 12px; font-weight: 400; color: #333; }
+  .pro-tag.stock-in, .pro-tag.stock-out { color: #333; }
+
+  /* Charts: no frames, greyscale */
+  .pro-report .report-chart-section { margin: 14px 0 0; break-inside: avoid; }
+  .pro-report .report-section-title {
+    margin: 22px 0 8px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #999;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #111;
+  }
+  .pro-report .report-chart-section { margin: 0; }
+  .pro-report .report-chart-container { display: block; padding: 0; border: 0; background: none; font-size: 0; }
+  .pro-report .report-chart-block {
+    display: inline-block;            /* atomic: moves to the next page as a whole */
+    vertical-align: top;
+    width: 48%;
+    margin: 0 4% 0 0;
+    padding: 0;
+    border: 0;
+    font-size: 12px;
+    break-inside: avoid;
+  }
+  .pro-report .report-chart-block:last-child { margin-right: 0; }
+  .pro-report .chart-block-header { margin-bottom: 4px; }
+  .pro-report .chart-title { display: block; font-size: 12px; font-weight: 700; color: #111; text-transform: none; letter-spacing: 0; }
+  .pro-report .chart-subtitle { display: block; font-size: 12px; color: #777; }
+  .pro-report .report-svg-chart { display: block; width: 100%; height: auto; }
+  .pro-report .report-svg-chart line { stroke: #bbb; }
+  .pro-report .report-svg-chart g.bar-group:nth-of-type(1) rect { fill: #222; }
+  .pro-report .report-svg-chart g.bar-group:nth-of-type(2) rect { fill: #777; }
+  .pro-report .report-svg-chart g.bar-group:nth-of-type(3) rect { fill: #bbb; }
+  .pro-report .top-product-info .val, .pro-report .top-product-info .rank { color: #111 !important; font-weight: 700; }
+  .pro-report .top-product-row { margin-bottom: 6px; }
+  .pro-report .top-product-info { display: flex; gap: 6px; font-size: 12px; }
+  .pro-report .top-product-info .name { flex: 1; }
+  .pro-report .top-product-bar-track { height: 4px; background: #e3e3e3 !important; }
+  .pro-report .top-product-bar-fill { height: 100%; background: #333 !important; }
+
+  /* Signatures */
+  .pro-signatures { display: flex; justify-content: space-between; gap: 48px; margin-top: 40px; break-inside: avoid; }
+  .pro-signatures > div { flex: 1; text-align: center; font-size: 12px; color: #333; }
+  .pro-sign-line { display: block; height: 28px; border-bottom: 1px solid #111; margin-bottom: 4px; }
+  .pro-signatures small { display: block; font-size: 12px; color: #888; }
+  .pro-endnote { margin: 18px 0 0; text-align: center; font-size: 12px; color: #999; }
+}

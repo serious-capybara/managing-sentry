@@ -9,6 +9,8 @@ DEFAULT_CAPITAL = 20000.0
 
 
 @router.get("/capital", response_model=CapitalResponse)
+@router.get("/capital.php", response_model=CapitalResponse, include_in_schema=False)
+@router.get("/api/capital", response_model=CapitalResponse, include_in_schema=False)
 @router.get("/api/capital.php", response_model=CapitalResponse, include_in_schema=False)
 async def get_capital(request: Request):
     require_web_access(request)
@@ -33,6 +35,8 @@ async def get_capital(request: Request):
 
 
 @router.post("/capital")
+@router.post("/capital.php", include_in_schema=False)
+@router.post("/api/capital", include_in_schema=False)
 @router.post("/api/capital.php", include_in_schema=False)
 async def set_capital(data: CapitalUpdate, request: Request):
     require_web_access(request)

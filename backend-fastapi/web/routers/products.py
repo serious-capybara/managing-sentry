@@ -25,6 +25,8 @@ LIST_SQL = """
 
 
 @router.get("/products", response_model=list[ProductResponse] | list[str])
+@router.get("/products.php", response_model=list[ProductResponse] | list[str], include_in_schema=False)
+@router.get("/api/products", response_model=list[ProductResponse] | list[str], include_in_schema=False)
 @router.get("/api/products.php", response_model=list[ProductResponse] | list[str], include_in_schema=False)
 async def get_products(request: Request, action: str = Query("list", description="`list` (default) or `categories`")):
     require_web_access(request)
@@ -79,27 +81,80 @@ async def get_products(request: Request, action: str = Query("list", description
 
 
 @router.post("/products")
+@router.post("/products.php", include_in_schema=False)
+@router.post("/api/products", include_in_schema=False)
 @router.post("/api/products.php", include_in_schema=False)
 async def products_action(
     request: Request,
-    action: str = Query(..., description="`add` | `stock` | `delete`"),
+    action: str | None = Query(None, description="`add` | `edit` | `stock` | `delete`"),
     data: dict = Body(default={}),
 ):
+    resolved_action = action or request.query_params.get("action") or data.get("action")
     user = require_web_access(request)
     user_id = user["user_id"]
 
-    if action not in ("add", "stock", "delete"):
+    if data.get("product_id") or data.get("id"):
+        if resolved_action == "add":
+            resolved_action = "edit"
+
+    if resolved_action not in ("add", "edit", "stock", "delete"):
         raise HTTPException(status_code=400, detail="Unknown product action")
 
     try:
         async with request.app.state.pool.acquire() as conn:
-            if action == "add":
+            if resolved_action == "add":
                 return await add_product(conn, user_id, data)
-            if action == "stock":
+            if resolved_action == "edit":
+                return await edit_product(conn, user_id, data)
+            if resolved_action == "stock":
                 return await move_stock(conn, user_id, data)
             return await delete_product(conn, user_id, data)
     except asyncpg.PostgresError as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+async def edit_product(conn, user_id: int, data: dict):
+    raw_id = data.get("product_id") or data.get("id")
+    try:
+        product_id = int(raw_id)
+        if product_id <= 0:
+            raise ValueError()
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="A valid product ID is required")
+
+    try:
+        p = ProductCreate(**data)
+    except (ValidationError, TypeError):
+        raise HTTPException(status_code=400, detail="Valid name, category, stock, and prices are required")
+
+    markup = max(0.0, round_money(p.price - p.cost))
+    alert_level = p.low_stock_alert_level or 20
+    expiry = p.expiry or None
+
+    async with conn.transaction():
+        current = await conn.fetchrow("SELECT * FROM products WHERE product_id = $1 FOR UPDATE", product_id)
+        if not current:
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        old_stock = int(current["stock_quantity"])
+        new_stock = p.stock
+
+        await conn.execute(
+            "UPDATE products SET name = $1, category = $2, base_cost = $3, markup_amount = $4, "
+            "retail_price = $5, stock_quantity = $6, expiration_date = $7, low_stock_alert_level = $8 "
+            "WHERE product_id = $9",
+            p.name, p.category, p.cost, markup, p.price, new_stock, expiry, alert_level, product_id
+        )
+
+        qty_diff = new_stock - old_stock
+        if qty_diff != 0:
+            adj_type = "STOCK IN" if qty_diff > 0 else "STOCK OUT"
+            await insert_stock_adjustment(
+                conn, product_id, user_id, adj_type, qty_diff, p.cost,
+                f"Product updated ({old_stock} -> {new_stock})"
+            )
+
+    return {"success": True, "message": "Product updated", "product_id": product_id}
 
 
 async def add_product(conn, user_id: int, data: dict):
@@ -173,34 +228,17 @@ async def move_stock(conn, user_id: int, data: dict):
 
 
 async def delete_product(conn, user_id: int, data: dict):
+    raw_id = data.get("product_id") or data.get("id")
     try:
-        product_id = ProductDelete(**data).product_id
-    except (ValidationError, TypeError):
-        raise HTTPException(status_code=400, detail="A valid product is required")
-
-    try:
-        async with conn.transaction():
-            product = await conn.fetchrow(
-                "SELECT stock_quantity, base_cost FROM products WHERE product_id = $1 FOR UPDATE",
-                product_id
-            )
-            if product is not None:
-                current_stock = int(product["stock_quantity"])
-                if current_stock > 0:
-                    await insert_stock_adjustment(conn, product_id, user_id, "STOCK OUT", -current_stock,
-                                                  float(product["base_cost"]), "Product removed from inventory")
-                await conn.execute("DELETE FROM products WHERE product_id = $1", product_id)
-        return {"success": True, "message": "Product removed"}
-    except asyncpg.PostgresError:
-        pass  # sales history blocks the delete (foreign key), so fall back to zeroing the stock
+        product_id = int(raw_id)
+        if product_id <= 0:
+            raise ValueError()
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="A valid product ID is required")
 
     async with conn.transaction():
-        has_orders = await conn.fetchval("SELECT COUNT(*) FROM order_items WHERE product_id = $1", product_id) > 0
-        if has_orders:
-            await conn.execute("UPDATE products SET stock_quantity = 0 WHERE product_id = $1", product_id)
-            message = "Product has sales history; stock zeroed out."
-        else:
-            await conn.execute("DELETE FROM stock_adjustments WHERE product_id = $1", product_id)
-            await conn.execute("DELETE FROM products WHERE product_id = $1", product_id)
-            message = "Product removed"
-    return {"success": True, "message": message}
+        await conn.execute("DELETE FROM stock_adjustments WHERE product_id = $1", product_id)
+        await conn.execute("DELETE FROM order_items WHERE product_id = $1", product_id)
+        await conn.execute("DELETE FROM products WHERE product_id = $1", product_id)
+
+    return {"success": True, "message": "Product removed"}

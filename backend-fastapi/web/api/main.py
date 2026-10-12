@@ -16,24 +16,18 @@ app.add_middleware(
     secret_key=config.SECRET_KEY,
     session_cookie="session",
     max_age=None,
-    same_site="none",
-    https_only=True,
+    same_site=config.SESSION_SAME_SITE,
+    https_only=config.SESSION_HTTPS_ONLY,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        # Live web frontend on Vercel
-        "https://managing-sentry-alekos-admin.vercel.app",
-        # Local development / defense on localhost
-        "http://localhost:8002",
-        "http://127.0.0.1:8002",
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-    ],
+    allow_origins=config.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 

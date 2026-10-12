@@ -5,20 +5,18 @@
 
 import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";
+import { proDocument, proHeading, proSummary } from "../print-report.js";
 
 export function renderTransactions() {
   return `<div class="transactions-overview">
     <div class="page-toolbar">
       <div class="toolbar-left">
         <div class="toolbar-sort-wrap">
-          <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> View / Sort:</span>
-          <select class="compact-select styled-select-native" id="historySort" aria-label="View or sort history">
-            <option value="date" selected>Newest First</option>
-            <option value="name">By Product Name</option>
-            <option value="SALE">Sales Only</option>
-            <option value="STOCK_IN">Stock In Only (Restock)</option>
-            <option value="STOCK_OUT">Stock Out Only</option>
-            <option value="sales">Highest Sales Amount</option>
+          <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Show:</span>
+          <select class="compact-select styled-select-native" id="historySort" aria-label="Filter history">
+            <option value="newest" selected>Newest</option>
+            <option value="sales">Sales</option>
+            <option value="stock">Stock</option>
           </select>
         </div>
       </div>
@@ -27,15 +25,43 @@ export function renderTransactions() {
         <button class="wire-btn" id="printHistoryBtn"><img class="btn-icon" src="src/icon/dark/reports.svg" alt=""> Print History</button>
       </div>
     </div>
+    ${historyBanner()}
     <div class="wire-table-wrap transactions-table-card">
       <div class="transactions-table-scroll">
         <table class="transactions-inventory-table">
-          <thead><tr><th>ID</th><th>Time Stamp</th><th>Order</th><th>Quantity</th><th>Sales</th><th>Status</th><th>Notes</th></tr></thead>
+          <thead><tr><th>ID</th><th>Time Stamp</th><th>Order</th><th>Quantity</th><th>Amount</th><th>Status</th><th>Notes</th></tr></thead>
           <tbody id="transactionRows">${transactionRows()}</tbody>
         </table>
       </div>
     </div>
   </div>`;
+}
+
+/** Red notice above the table whenever the server history failed (fully or partly). */
+export function historyBanner() {
+  if (!state.historyError) return `<div id="historyBanner" class="history-banner hidden" role="alert"></div>`;
+  const where = state.historySource ? ` <small>(server: ${escapeHtml(state.historySource)})</small>` : "";
+  return `<div id="historyBanner" class="history-banner" role="alert">
+    <span>${escapeHtml(state.historyError)}${where}</span>
+    <button type="button" class="wire-btn" id="retryHistoryBtn">Retry</button>
+  </div>`;
+}
+
+/** Type helpers shared by the filter, the table and the reports. */
+export const isSaleType  = t => String(t?.type || "").trim().toUpperCase() === "SALE";
+export const isStockType = t => /^STOCK[ _]?(IN|OUT)$/.test(String(t?.type || "").trim().toUpperCase());
+
+/**
+ * Filter + order the history list.
+ *  newest → everything, newest first   sales → sales only   stock → stock in/out only
+ */
+export function filterHistory(list, mode = "newest", query = "") {
+  const q = String(query || "").trim().toLowerCase();
+  let out = [...list];
+  if (mode === "sales") out = out.filter(isSaleType);
+  else if (mode === "stock") out = out.filter(isStockType);
+  if (q) out = out.filter(t => `${t.name} ${t.type} ${t.date} ${t.notes || ""}`.toLowerCase().includes(q));
+  return out.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0) || (b.id || 0) - (a.id || 0));
 }
 
 export function parseOrderItems(fullName, tx = null) {
@@ -80,9 +106,12 @@ export function format24hDate(raw) {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-export function transactionRows(list = state.transactions.slice().reverse()) {
+export function transactionRows(list = state.transactions) {
   if (!list.length) {
-    return `<tr><td colspan="7" class="table-empty">No transactions recorded yet.</td></tr>`;
+    const why = state.historyError
+      ? `Could not load history from the server: ${escapeHtml(state.historyError)}`
+      : "No transactions to show.";
+    return `<tr><td colspan="7" class="table-empty">${why}</td></tr>`;
   }
   return list.map((t, i) => {
     const hasNotes = !!(t.notes && String(t.notes).trim());
@@ -95,13 +124,15 @@ export function transactionRows(list = state.transactions.slice().reverse()) {
       : escapeHtml(firstItem);
 
     const encodedItems = encodeURIComponent(JSON.stringify(items));
-    const formattedDate = format24hDate(t.timestamp || t.date || t.created_at);
+    const formattedDate = t.timestamp ? format24hDate(t.timestamp) : (t.date || "—");
+    const isStock = isStockType(t);
+    const qtyText = isStock ? `${Number(t.qty) > 0 ? "+" : ""}${Number(t.qty)}` : String(t.qty);
 
     return `<tr>
     <td>${i + 1}</td>
     <td>${escapeHtml(formattedDate)}</td>
     <td class="${isMultiItem ? "order-hover-cell" : ""}" data-order-items="${encodedItems}">${orderDisplayText}</td>
-    <td>${t.qty}</td>
+    <td>${qtyText}</td>
     <td>${money(t.amount)}</td>
     <td><span class="badge ${t.type === "SALE" ? "green" : "orange"}">${escapeHtml(t.type)}</span></td>
     <td><button class="notes-btn ${hasNotes ? "has" : "none"}" data-notes-idx="${state.transactions.indexOf(t)}" ${hasNotes ? "" : "disabled"}>${hasNotes ? "Notes" : "Unavailable"}</button></td>
@@ -124,9 +155,9 @@ export function generateHistoryChartSvg(list = []) {
   const totalStockInVal = stockInList.reduce((s, t) => s + Number(t.amount || 0), 0);
   const totalStockOutVal = stockOutList.reduce((s, t) => s + Number(t.amount || 0), 0);
 
-  const salesQty = salesList.reduce((s, t) => s + Number(t.qty || 0), 0);
-  const stockInQty = stockInList.reduce((s, t) => s + Number(t.qty || 0), 0);
-  const stockOutQty = stockOutList.reduce((s, t) => s + Number(t.qty || 0), 0);
+  const salesQty = salesList.reduce((s, t) => s + Math.abs(Number(t.qty || 0)), 0);
+  const stockInQty = stockInList.reduce((s, t) => s + Math.abs(Number(t.qty || 0)), 0);
+  const stockOutQty = stockOutList.reduce((s, t) => s + Math.abs(Number(t.qty || 0)), 0);
 
   // Top 5 products by sales volume/value
   const productMap = {};
@@ -227,125 +258,69 @@ export function generateHistoryChartSvg(list = []) {
 }
 
 /**
- * Render an executive printable PDF report for transaction history.
- * @param {Array} list
- * @returns {string} HTML printable report
+ * Printable transaction-history report (professional layout, see css/print-report.css).
+ * @param {Array} list  the rows currently shown on screen
+ * @param {string} mode "newest" | "sales" | "stock" — printed as the filter used
  */
-export function renderHistoryPrintReport(list = state.transactions) {
-  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-  const totalAmount = list.reduce((s, t) => s + Number(t.amount || 0), 0);
-  const totalQty = list.reduce((s, t) => s + Number(t.qty || 0), 0);
-  const salesCount = list.filter(t => (t.type || "").toUpperCase() === "SALE").length;
-  const avgSaleVal = salesCount > 0 ? totalAmount / salesCount : 0;
-  const docRef = `LOG-${Date.now().toString(36).toUpperCase()}`;
+export function renderHistoryPrintReport(list = state.transactions, mode = "newest") {
+  const typeOf = t => String(t.type || "").toUpperCase().replace(/_/g, " ");
+  const sales = list.filter(isSaleType);
+  const stockIn = list.filter(t => typeOf(t) === "STOCK IN");
+  const stockOut = list.filter(t => typeOf(t) === "STOCK OUT");
+  const sum = (arr, f) => arr.reduce((n, t) => n + f(t), 0);
+  const revenue = sum(sales, t => Number(t.amount || 0));
+  const unitsSold = sum(sales, t => Math.abs(Number(t.qty || 0)));
+  const unitsIn = sum(stockIn, t => Math.abs(Number(t.qty || 0)));
+  const unitsOut = sum(stockOut, t => Math.abs(Number(t.qty || 0)));
+  const filterLabel = { newest: "All activity (newest first)", sales: "Sales only", stock: "Stock movements only" }[mode] || "All activity";
 
-  return `
-    <div class="report-paper history-print-paper">
-      <div class="report-header-banner">
-        <div class="report-header-left">
-          <div class="report-company-title">MANAGING SENTRY • POS &amp; INVENTORY MANAGEMENT</div>
-          <div class="report-title-main">OFFICIAL TRANSACTION HISTORY AUDIT REPORT</div>
-          <div class="report-subtitle-date">Document ID: <strong>${docRef}</strong> • Generated on ${dateStr}</div>
-        </div>
-        <div class="report-header-badge">
-          <span>OFFICIAL AUDIT REPORT</span>
-          <small>CONFIDENTIAL</small>
-        </div>
-      </div>
+  const rows = list.map((t, i) => {
+    const items = parseOrderItems(t.name, t);
+    const type = typeOf(t) || "SALE";
+    const cls = type === "SALE" ? "sale" : type === "STOCK IN" ? "stock-in" : "stock-out";
+    const qty = isStockType(t) ? `${Number(t.qty) > 0 ? "+" : ""}${Number(t.qty)}` : String(t.qty ?? 1);
+    return `<tr>
+      <td class="num">${i + 1}</td>
+      <td class="nowrap">${escapeHtml(t.timestamp ? format24hDate(t.timestamp) : (t.date || "—"))}</td>
+      <td><span class="pro-tag ${cls}">${escapeHtml(type)}</span></td>
+      <td>${escapeHtml(items.join(", ") || "—")}</td>
+      <td class="num">${escapeHtml(qty)}</td>
+      <td class="num">${money(t.amount || 0)}</td>
+      <td>${escapeHtml(t.notes || "—")}</td>
+    </tr>`;
+  }).join("");
 
-      <div class="report-kpi-grid">
-        <div class="report-kpi-card">
-          <div class="kpi-label">Total Transactions</div>
-          <div class="kpi-value">${list.length} <span class="kpi-unit">records</span></div>
-          <div class="kpi-sub">All logged events</div>
-        </div>
-        <div class="report-kpi-card">
-          <div class="kpi-label">Sales Transactions</div>
-          <div class="kpi-value primary">${salesCount} <span class="kpi-unit">sales</span></div>
-          <div class="kpi-sub">Completed purchases</div>
-        </div>
-        <div class="report-kpi-card">
-          <div class="kpi-label">Total Volume</div>
-          <div class="kpi-value">${totalQty} <span class="kpi-unit">units</span></div>
-          <div class="kpi-sub">Items processed</div>
-        </div>
-        <div class="report-kpi-card highlight">
-          <div class="kpi-label">Total Sales Revenue</div>
-          <div class="kpi-value success">${money(totalAmount)}</div>
-          <div class="kpi-sub">Avg ${money(avgSaleVal)} / sale</div>
-        </div>
-      </div>
+  const body = `
+    ${proHeading("Summary")}
+    ${proSummary([
+      { label: "Records listed", value: String(list.length), note: filterLabel },
+      { label: "Sales", value: String(sales.length), note: `${unitsSold} units sold` },
+      { label: "Sales revenue", value: money(revenue), tone: "good", note: sales.length ? `Avg ${money(revenue / sales.length)} per sale` : "No sales" },
+      { label: "Stock movements", value: String(stockIn.length + stockOut.length), note: `+${unitsIn} in / −${unitsOut} out` }
+    ])}
 
-      ${generateHistoryChartSvg(list)}
 
-      <div class="report-section-title" style="margin-top: 20px;">
-        <span>DETAILED TRANSACTION AUDIT LOGS (${list.length})</span>
-      </div>
+    ${generateHistoryChartSvg(list)}
 
-      <div class="report-table-wrap">
-        <table class="report-table history-report-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>DATE / TIMESTAMP</th>
-              <th>ORDER / ITEMS</th>
-              <th>QTY</th>
-              <th>AMOUNT</th>
-              <th>TYPE</th>
-              <th>NOTES</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${list.length ? list.map((t, i) => {
-              const items = parseOrderItems(t.name, t);
-              const firstItem = items[0] || "Transaction Item";
-              const truncatedFirst = truncate(firstItem, 20);
-              const extraCount = items.length - 1;
-              const orderSummaryHtml = extraCount > 0
-                ? `<strong title="${escapeHtml(firstItem)}">${escapeHtml(truncatedFirst)}</strong> <span class="report-items-tag">+${extraCount} items</span>`
-                : `<strong title="${escapeHtml(firstItem)}">${escapeHtml(truncatedFirst)}</strong>`;
+    ${proHeading("Transaction log", `${list.length} record${list.length === 1 ? "" : "s"}`)}
+    <table class="pro-table">
+      <colgroup><col style="width:5%"><col style="width:21%"><col style="width:11%"><col style="width:27%"><col style="width:6%"><col style="width:12%"><col style="width:18%"></colgroup>
+      <thead><tr>
+        <th class="num">No.</th><th>Date &amp; time</th><th>Type</th><th>Order / item</th>
+        <th class="num">Qty</th><th class="num">Amount</th><th>Notes</th>
+      </tr></thead>
+      <tbody>${rows || `<tr><td colspan="7" class="empty">No transaction records found.</td></tr>`}</tbody>
+      ${list.length ? `<tfoot><tr>
+        <td colspan="5" class="label">Total sales revenue</td>
+        <td class="num">${money(revenue)}</td><td></td>
+      </tr></tfoot>` : ""}
+    </table>`;
 
-              return `
-                <tr>
-                  <td>#${i + 1}</td>
-                  <td>${escapeHtml(t.date || "—")}</td>
-                  <td>${orderSummaryHtml}</td>
-                  <td>${t.qty || 1}</td>
-                  <td>${money(t.amount || 0)}</td>
-                  <td><span class="report-type-badge ${String(t.type).toUpperCase().includes("SALE") ? "sale" : String(t.type).toUpperCase().includes("IN") ? "stock-in" : "stock-out"}">${escapeHtml(t.type || "SALE")}</span></td>
-                  <td>${escapeHtml(t.notes || "—")}</td>
-                </tr>
-              `;
-            }).join("") : `<tr><td colspan="7" class="table-empty">No transaction records found.</td></tr>`}
-          </tbody>
-          ${list.length ? `
-            <tfoot>
-              <tr>
-                <td colspan="3" class="tfoot-label">TOTAL AUDIT RUNNING SUMMARY:</td>
-                <td>${totalQty} units</td>
-                <td class="tfoot-val highlight-profit">${money(totalAmount)}</td>
-                <td colspan="2"></td>
-              </tr>
-            </tfoot>
-          ` : ""}
-        </table>
-      </div>
-
-      <div class="report-sign-footer">
-        <div class="sign-block">
-          <div class="sign-line"></div>
-          <div class="sign-label">Prepared By (Auditor / Staff)</div>
-        </div>
-        <div class="sign-block">
-          <div class="sign-line"></div>
-          <div class="sign-label">Approved By (Super Admin / Manager)</div>
-        </div>
-      </div>
-
-      <div class="report-footer-note">
-        <span>Confidential • Managing Sentry System Official Audit Document</span>
-        <span>Page 1 of 1 • ${dateStr}</span>
-      </div>
-    </div>
-  `;
+  return proDocument({
+    prefix: "HST",
+    title: "Transaction History Report",
+    subtitle: "Sales and inventory movements",
+    details: [["Filter", filterLabel]],
+    body
+  });
 }

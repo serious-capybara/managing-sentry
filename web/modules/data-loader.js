@@ -6,6 +6,7 @@
 
 import { state, persist } from "./state.js";
 import { apiRequest }     from "./api.js";
+import { parseTimestamp, formatDateTime24 } from "./utils.js";
 import { ensureStockBaseline, ensureExpiryBatches, earliestExpiry } from "./stock-logic.js";
 import { getProfitBreakdown, getSalesRevenue } from "./finance.js";
 
@@ -21,21 +22,34 @@ export async function loadDashboardData() {
   try {
     const [p, t, c] = await Promise.allSettled([
       apiRequest("products.php"),
-      apiRequest("get_history.php"),
+      apiRequest("get_history.php", {
+        onResponse: (res, base) => {
+          state.historySource = base;
+          state.historyWarning = res?.headers?.get?.("X-History-Warnings") || "";
+        }
+      }),
       apiRequest("capital.php")
     ]);
 
     if (p.status === "fulfilled" && Array.isArray(p.value)) productsRes = p.value;
-    if (t.status === "fulfilled" && Array.isArray(t.value)) transactionsRes = t.value;
+    if (t.status === "fulfilled" && Array.isArray(t.value)) {
+      transactionsRes = t.value;
+      state.historyError = state.historyWarning
+        ? `Part of the history could not be loaded (${state.historyWarning}).`
+        : "";
+    } else if (t.status === "rejected") {
+      state.historyError = t.reason?.message || "Could not load history from the server.";
+      console.warn("History request failed:", t.reason);
+    }
     if (c.status === "fulfilled" && c.value) capitalRes = c.value;
   } catch (err) {
     console.warn("Backend API sync offline, using local/cached state:", err);
   }
 
   /* 1. Normalize Products */
-  const rawProducts = (productsRes !== null && Array.isArray(productsRes) && productsRes.length > 0)
-    ? productsRes
-    : state.products;
+  // Use the server's answer whenever we got one (even an empty list); only fall back to the
+  // cached copy when the request itself failed.
+  const rawProducts = Array.isArray(productsRes) ? productsRes : state.products;
 
   state.products = rawProducts.map(p => {
     const id = Number(p.id ?? p.product_id ?? 0);
@@ -72,35 +86,26 @@ export async function loadDashboardData() {
   });
 
   /* 2. Normalize Transactions */
-  const rawTransactions = (transactionsRes !== null && Array.isArray(transactionsRes) && transactionsRes.length > 0)
-    ? transactionsRes
-    : state.transactions;
+  const rawTransactions = Array.isArray(transactionsRes) ? transactionsRes : state.transactions;
   state.transactions = rawTransactions.map((t, idx) => {
-    const id = Number(t.id ?? t.order_id ?? (idx + 1));
-    const type = t.type || "SALE";
+    const id = Number(t.id ?? t.entry_id ?? t.order_id ?? (idx + 1));
     const name = t.name || (t.order_id ? `Order #${t.order_id}` : "Transaction");
     const amount = Number(t.amount ?? t.total_amount ?? 0);
     const qty = Number(t.qty ?? t.total_quantity ?? 1);
     const costPerUnit = Number(t.costPerUnit ?? t.cost_per_unit ?? 0);
     const cogs = t.cogs == null ? undefined : Number(t.cogs);
-    const rawDate = t.date || t.transaction_timestamp || new Date().toISOString();
-    const dateObj = new Date(rawDate);
-    const timestamp = isNaN(dateObj.getTime()) ? Date.now() : dateObj.getTime();
-    let dateStr = String(rawDate);
-    if (!isNaN(dateObj.getTime())) {
-      const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const day = String(dateObj.getDate()).padStart(2, "0");
-      const hours = String(dateObj.getHours()).padStart(2, "0");
-      const minutes = String(dateObj.getMinutes()).padStart(2, "0");
-      const seconds = String(dateObj.getSeconds()).padStart(2, "0");
-      dateStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    }
+    const rawDate = t.date || t.created_at || t.transaction_timestamp;
+    const parsed = parseTimestamp(rawDate) ?? parseTimestamp(t.timestamp);
+    const timestamp = parsed ?? 0;
+    const dateStr = parsed != null ? formatDateTime24(parsed) : "—";
+    const type = String(t.type || "SALE").trim().toUpperCase().replace(/_/g, " ");
+    const items = Array.isArray(t.items) ? t.items : [];
 
     return {
       ...t,
       id,
       type,
+      items,
       name,
       amount,
       qty,
@@ -110,11 +115,12 @@ export async function loadDashboardData() {
       date: dateStr,
       notes: t.notes || ""
     };
-  });
+  }).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
   /* 3. Normalize Capital & Sales Totals */
   if (capitalRes && (capitalRes.capital !== undefined || capitalRes.current_balance !== undefined)) {
     state.capital = Number(capitalRes.capital ?? capitalRes.current_balance ?? 0);
+    state.startingCapital = Number(capitalRes.starting_capital ?? state.capital);
   } else if (state.capital === undefined) {
     state.capital = 0;
   }

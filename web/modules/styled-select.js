@@ -88,6 +88,15 @@ export function bindStyledSelect(select) {
     trigger.setAttribute("aria-expanded", String(willOpen));
     wrapper.classList.toggle("is-open", willOpen);
     if (willOpen) {
+      // Open upward when the menu would be cut off by the modal / screen bottom
+      wrapper.classList.remove("opens-up");
+      const bounds = wrapper.closest(".modal")?.getBoundingClientRect();
+      const limit = Math.min(bounds ? bounds.bottom : Infinity, window.innerHeight) - 8;
+      const menuRect = menu.getBoundingClientRect();
+      const triggerRect = trigger.getBoundingClientRect();
+      if (menuRect.bottom > limit && triggerRect.top - menuRect.height > 8) {
+        wrapper.classList.add("opens-up");
+      }
       const selectedIndex = [...menu.querySelectorAll('[role="option"]')]
         .findIndex(option => option.getAttribute("aria-selected") === "true");
       focusOption(menu, selectedIndex);

@@ -12,4 +12,25 @@ if not SECRET_KEY or SECRET_KEY == "change_me":
     log.warning("SECRET_KEY is not set - using a random key. Sessions are lost on restart. Set SECRET_KEY in your env.")
 
 SESSION_HTTPS_ONLY = os.getenv("SESSION_HTTPS_ONLY", "false").lower() in ("1", "true", "yes", "on")
-CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://127.0.0.1:8002,http://localhost:8002,http://127.0.0.1:8003,http://localhost:8003,http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:8000,http://localhost:8000").split(",") if o.strip()]
+SESSION_SAME_SITE = os.getenv("SESSION_SAME_SITE", "none" if SESSION_HTTPS_ONLY else "lax")
+
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:8002",
+    "http://127.0.0.1:8002",
+    "http://localhost:8003",
+    "http://127.0.0.1:8003",
+    "https://managing-sentry-web.vercel.app",
+    "https://managing-sentry-alekos-admin.vercel.app",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
+env_cors = os.getenv("CORS_ORIGINS", "")
+if env_cors:
+    extra_origins = [o.strip() for o in env_cors.split(",") if o.strip()]
+    CORS_ORIGINS = list(dict.fromkeys(DEFAULT_CORS_ORIGINS + extra_origins))
+else:
+    CORS_ORIGINS = DEFAULT_CORS_ORIGINS
+

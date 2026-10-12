@@ -8,9 +8,10 @@ from core.security import ALLOWED_ROLES, normalize_role, sign_in, sign_out, veri
 router = APIRouter(tags=["auth"])
 
 
-@router.post("/login", response_model=LoginResponse | MessageResponse)
-@router.api_route("/api/login.php", methods=["GET", "POST"], response_model=LoginResponse | MessageResponse,
-                  include_in_schema=False)
+@router.api_route("/login", methods=["GET", "POST"], response_model=LoginResponse | MessageResponse)
+@router.api_route("/login.php", methods=["GET", "POST"], response_model=LoginResponse | MessageResponse, include_in_schema=False)
+@router.api_route("/api/login", methods=["GET", "POST"], response_model=LoginResponse | MessageResponse, include_in_schema=False)
+@router.api_route("/api/login.php", methods=["GET", "POST"], response_model=LoginResponse | MessageResponse, include_in_schema=False)
 async def login(
     request: Request,
     action: str = Query("login", description="`login` (default) or `logout`"),

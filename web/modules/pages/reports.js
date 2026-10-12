@@ -5,13 +5,18 @@
 
 import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";
-import { truncate, parseOrderItems } from "./transactions.js";
+import { truncate, parseOrderItems, isSaleType } from "./transactions.js";
+import { proDocument, proHeading, proSummary } from "../print-report.js";
 
 export let activeReportTab = "inventory";
 export let activeReportRange = "30";
 
 export function setActiveReportTab(tab) { activeReportTab = tab; }
 export function setActiveReportRange(range) { activeReportRange = range; }
+
+/** On-screen Sales & Profit report shows ONE of these at a time: "breakdown" | "prices". */
+export let activeSalesView = "breakdown";
+export function setActiveSalesView(view) { activeSalesView = view === "prices" ? "prices" : "breakdown"; }
 
 // ---------------------------------------------------------------------------
 // Shared helpers & date range filter
@@ -32,31 +37,7 @@ export function getRangeLabel(range = activeReportRange) {
 }
 
 export function getFilteredTransactions(range = activeReportRange) {
-  const now = Date.now();
-  const currentDate = new Date();
-
-  return state.transactions.filter(t => {
-    const ts = Number(t.timestamp) || Date.now();
-
-    if (range === "60") {
-      return ts >= now - (60 * 86400 * 1000);
-    }
-    if (range === "90") {
-      return ts >= now - (90 * 86400 * 1000);
-    }
-    if (range === "this_year") {
-      const startThisYear = new Date(currentDate.getFullYear(), 0, 1).getTime();
-      return ts >= startThisYear;
-    }
-    if (range === "last_year") {
-      const startLastYear = new Date(currentDate.getFullYear() - 1, 0, 1).getTime();
-      const endLastYear = new Date(currentDate.getFullYear() - 1, 11, 31, 23, 59, 59, 999).getTime();
-      return ts >= startLastYear && ts <= endLastYear;
-    }
-
-    // Default "30": Last 30 Days
-    return ts >= now - (30 * 86400 * 1000);
-  });
+  return state.transactions.filter(t => Number(t.timestamp) > 0 && inRange(t.timestamp, range));
 }
 
 function getExpiryStats() {
@@ -74,6 +55,176 @@ function getExpiryStats() {
   return { expired, expiringSoon };
 }
 
+// ---------------------------------------------------------------------------
+// Sales & profit engine (built on order_items snapshots)
+// ---------------------------------------------------------------------------
+
+function rangeStart(range = activeReportRange) {
+  const now = new Date();
+  if (range === "60") return { from: Date.now() - 60 * 86400000, to: Infinity };
+  if (range === "90") return { from: Date.now() - 90 * 86400000, to: Infinity };
+  if (range === "this_year") return { from: new Date(now.getFullYear(), 0, 1).getTime(), to: Infinity };
+  if (range === "last_year") {
+    return {
+      from: new Date(now.getFullYear() - 1, 0, 1).getTime(),
+      to: new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999).getTime()
+    };
+  }
+  return { from: Date.now() - 30 * 86400000, to: Infinity };
+}
+
+function inRange(ts, range) {
+  const { from, to } = rangeStart(range);
+  return Number(ts) >= from && Number(ts) <= to;
+}
+
+/** One line per product sold. Uses the order_items snapshot (price/cost at the time of sale). */
+export function saleLines(sales) {
+  const lines = [];
+  sales.forEach(t => {
+    const items = Array.isArray(t.items) ? t.items.filter(i => i && typeof i === "object") : [];
+    if (items.length && items.every(i => i.price != null && i.cost != null)) {
+      items.forEach(i => {
+        const qty = Number(i.qty ?? i.quantity ?? 0);
+        const price = Number(i.price);
+        const cost = Number(i.cost);
+        lines.push({
+          orderId: t.order_id ?? t.id, ts: t.timestamp, date: t.date,
+          productId: i.product_id ?? null, name: i.name || "Item",
+          qty, price, cost, revenue: price * qty, cogs: cost * qty
+        });
+      });
+    } else {
+      // Older cached rows without line items: fall back to the order totals.
+      const qty = Number(t.qty || 0);
+      const cogs = t.cogs != null ? Number(t.cogs) : Number(t.costPerUnit || 0) * qty;
+      const revenue = Number(t.amount || 0);
+      lines.push({
+        orderId: t.order_id ?? t.id, ts: t.timestamp, date: t.date, productId: null,
+        name: t.name || "Transaction Item", qty,
+        price: qty ? revenue / qty : 0, cost: qty ? cogs / qty : 0, revenue, cogs
+      });
+    }
+  });
+  return lines;
+}
+
+/**
+ * Price / cost changes detected from sales history.
+ * For each product, walk its sale lines oldest → newest; whenever the price (or cost) snapshot differs from
+ * the previous sale, that is one change. A product whose CURRENT price differs from its last sold snapshot is
+ * also reported as a pending change (not sold yet at the new price).
+ */
+export function computePriceChanges(range = activeReportRange) {
+  const allSales = state.transactions.filter(isSaleType);
+  const lines = saleLines(allSales)
+    .filter(l => l.productId != null)
+    .sort((a, b) => (a.ts || 0) - (b.ts || 0));
+
+  const byProduct = new Map();
+  lines.forEach(l => {
+    if (!byProduct.has(l.productId)) byProduct.set(l.productId, []);
+    byProduct.get(l.productId).push(l);
+  });
+
+  const eq = (a, b) => Math.abs(Number(a) - Number(b)) < 0.005;
+  const events = [];
+
+  byProduct.forEach((list, productId) => {
+    for (let i = 1; i < list.length; i++) {
+      const prev = list[i - 1], cur = list[i];
+      if (eq(prev.price, cur.price) && eq(prev.cost, cur.cost)) continue;
+      if (!inRange(cur.ts, range)) continue;
+      events.push({
+        productId, name: cur.name, ts: cur.ts, date: cur.date, pending: false,
+        oldPrice: prev.price, newPrice: cur.price, oldCost: prev.cost, newCost: cur.cost
+      });
+    }
+    const last = list[list.length - 1];
+    const product = state.products.find(p => Number(p.id) === Number(productId));
+    if (product && (!eq(product.price, last.price) || !eq(product.cost, last.cost))) {
+      events.push({
+        productId, name: product.name, ts: null, date: null, pending: true,
+        oldPrice: last.price, newPrice: Number(product.price), oldCost: last.cost, newCost: Number(product.cost)
+      });
+    }
+  });
+
+  events.sort((a, b) => (b.ts ?? Infinity) - (a.ts ?? Infinity));
+  const products = new Set(events.map(e => e.productId));
+  return { events, productsChanged: products.size, changeCount: events.length };
+}
+
+export function computeSalesReport(range = activeReportRange) {
+  const filtered = getFilteredTransactions(range);
+  const sales = filtered.filter(isSaleType);
+  const typeOf = t => String(t.type || "").toUpperCase().replace(/_/g, " ");
+  const stockIn = filtered.filter(t => typeOf(t) === "STOCK IN");
+  const stockOut = filtered.filter(t => typeOf(t) === "STOCK OUT");
+  const lines = saleLines(sales);
+
+  const revenue = sales.reduce((s, t) => s + Number(t.amount || 0), 0);
+  const cogs = lines.reduce((s, l) => s + l.cogs, 0);
+  const grossProfit = revenue - cogs;
+  const stockInCost = stockIn.reduce((s, t) => s + Number(t.amount || 0), 0);
+  const productsAdded = filtered.filter(t => /^product added/i.test(String(t.notes || ""))).length;
+  const priceChanges = computePriceChanges(range);
+
+  return {
+    filtered, sales, stockIn, stockOut, lines, revenue, cogs, grossProfit,
+    margin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
+    stockInCost, productsAdded, priceChanges
+  };
+}
+
+function salesLineRows(lines, range = activeReportRange) {
+  if (!lines.length) {
+    return `<tr><td colspan="9" class="table-empty">No sales recorded for ${getRangeLabel(range)}.</td></tr>`;
+  }
+  return lines.map((l, i) => {
+    const profit = l.revenue - l.cogs;
+    return `<tr>
+      <td>#${i + 1}</td>
+      <td class="report-order-cell"><strong title="${escapeHtml(l.name)}">${escapeHtml(truncate(l.name, 30))}</strong></td>
+      <td>${escapeHtml(l.date || "—")}</td>
+      <td>${l.qty}</td>
+      <td>${reportMoney(l.price)}</td>
+      <td>${reportMoney(l.cost)}</td>
+      <td>${reportMoney(l.revenue)}</td>
+      <td>${reportMoney(l.cogs)}</td>
+      <td><strong style="color: ${profit >= 0 ? "#059669" : "#DC2626"};">${reportMoney(profit)}</strong></td>
+    </tr>`;
+  }).join("");
+}
+
+function priceChangeSection(pc) {
+  const pct = (a, b) => (a > 0 ? ((b - a) / a) * 100 : 0);
+  const arrow = (a, b) => (b > a ? "▲" : b < a ? "▼" : "•");
+  const color = (a, b) => (b > a ? "#D97706" : b < a ? "#2563EB" : "#475569");
+  const rows = pc.events.length
+    ? pc.events.map(e => `<tr>
+        <td><strong title="${escapeHtml(e.name)}">${escapeHtml(truncate(e.name, 28))}</strong></td>
+        <td>${reportMoney(e.oldPrice)}</td>
+        <td>${reportMoney(e.newPrice)}</td>
+        <td style="color:${color(e.oldPrice, e.newPrice)}; font-weight:700;">${arrow(e.oldPrice, e.newPrice)} ${reportMoney(Math.abs(e.newPrice - e.oldPrice))} (${pct(e.oldPrice, e.newPrice).toFixed(1)}%)</td>
+        <td>${reportMoney(e.oldCost)} → ${reportMoney(e.newCost)}</td>
+        <td>${e.pending ? "Current price (not sold yet)" : escapeHtml(e.date || "—")}</td>
+      </tr>`).join("")
+    : `<tr><td colspan="6" class="table-empty">No price changes found in the sales snapshots for this range.</td></tr>`;
+
+  return `
+    <div class="report-divider-title">
+      <span>PRICE CHANGES</span>
+      <small>(${pc.productsChanged} product${pc.productsChanged === 1 ? "" : "s"} changed • ${pc.changeCount} change${pc.changeCount === 1 ? "" : "s"} — from order item snapshots)</small>
+    </div>
+    <div class="report-table-wrap">
+      <table class="report-table price-change-table">
+        <thead><tr><th>PRODUCT</th><th>OLD SRP</th><th>NEW SRP</th><th>CHANGE</th><th>COST (OLD → NEW)</th><th>SEEN ON</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
 function inventoryReportData() {
   const tieUp  = state.products.reduce((s, p) => s + Number(p.cost  || 0) * Number(p.stock || 0), 0);
   const retail = state.products.reduce((s, p) => s + Number(p.price || 0) * Number(p.stock || 0), 0);
@@ -83,45 +234,6 @@ function inventoryReportData() {
     (a, b) => (Number(b.price || 0) * Number(b.stock || 0)) - (Number(a.price || 0) * Number(a.stock || 0))
   );
   return { tieUp, retail, potentialProfit: retail - tieUp, units, expiry, products };
-}
-
-function salesReportRows(transactions = getFilteredTransactions()) {
-  const sales = transactions.filter(t => (t.type || "").toUpperCase() === "SALE");
-  if (!sales.length) {
-    return `<tr><td colspan="9" class="table-empty">No sales recorded for ${getRangeLabel()}.</td></tr>`;
-  }
-  return sales.map((t, i) => {
-    const qty       = Number(t.qty || 0);
-    const items     = parseOrderItems(t.name, t);
-    const firstItem = items[0] || t.name || "Transaction Item";
-    const extraCount = items.length - 1;
-    const isMultiItem = extraCount > 0;
-    const itemDisplayText = isMultiItem
-      ? `${escapeHtml(firstItem)} <span class="report-order-badge">+${extraCount}</span>`
-      : escapeHtml(firstItem);
-    const encodedItems = encodeURIComponent(JSON.stringify(items));
-
-    const product   = state.products.find(p => p.name === t.name);
-    const baseTotal = t.cogs != null
-      ? Number(t.cogs)
-      : (t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0)) * qty;
-    const baseUnit  = qty ? baseTotal / qty : 0;
-    const srpTotal  = Number(t.amount || 0);
-    const profit    = srpTotal - baseTotal;
-    const srpUnit   = qty ? srpTotal / qty : 0;
-
-    return `<tr>
-      <td>#${i + 1}</td>
-      <td class="report-order-cell ${isMultiItem ? "order-hover-cell" : ""}" data-order-items="${encodedItems}">${itemDisplayText}</td>
-      <td>${escapeHtml(t.date || "—")}</td>
-      <td>${qty}</td>
-      <td>${reportMoney(srpUnit)}</td>
-      <td>${reportMoney(baseUnit)}</td>
-      <td>${reportMoney(srpTotal)}</td>
-      <td>${reportMoney(baseTotal)}</td>
-      <td>${reportMoney(profit)}</td>
-    </tr>`;
-  }).join("");
 }
 
 // ---------------------------------------------------------------------------
@@ -215,23 +327,11 @@ export function generateInventoryChartSvg(d) {
   `;
 }
 
-export function generateSalesProfitChartSvg(totalSales, cogs, grossProfit, salesList) {
+export function generateSalesProfitChartSvg(totalSales, cogs, grossProfit, lines = []) {
   const productProfitMap = {};
-  salesList.forEach(t => {
-    const qty = Number(t.qty || 0);
-    const name = t.name || "Item";
-    const product = state.products.find(p => p.name === name);
-    const baseTotal = t.cogs != null
-      ? Number(t.cogs)
-      : (t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0)) * qty;
-    const srpTotal = Number(t.amount || 0);
-    const profit = srpTotal - baseTotal;
-
-    const cleanName = name.trim();
-    if (!productProfitMap[cleanName]) {
-      productProfitMap[cleanName] = 0;
-    }
-    productProfitMap[cleanName] += profit;
+  lines.forEach(l => {
+    const key = (l.name || "Item").trim();
+    productProfitMap[key] = (productProfitMap[key] || 0) + (l.revenue - l.cogs);
   });
 
   const topProfitableProducts = Object.entries(productProfitMap)
@@ -336,7 +436,7 @@ export function renderInventoryCapitalReport(range = activeReportRange) {
 
       <div class="report-kpi-grid">
         <div class="report-kpi-card">
-          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/set-capital.svg" alt=""> Starting Capital</div>
+          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/set-capital.svg" alt=""> Current Capital</div>
           <div class="kpi-value">${reportMoney(state.capital)}</div>
         </div>
         <div class="report-kpi-card">
@@ -383,21 +483,9 @@ export function renderInventoryCapitalReport(range = activeReportRange) {
 }
 
 export function renderSalesProfitReport(range = activeReportRange) {
-  const filtered = getFilteredTransactions(range);
-  const sales      = filtered.filter(t => (t.type || "").toUpperCase() === "SALE");
-  const stockIn    = filtered.filter(t => (t.type || "").toUpperCase() === "STOCK IN" || (t.type || "").toUpperCase() === "STOCK_IN");
-  const stockOut   = filtered.filter(t => (t.type || "").toUpperCase() === "STOCK OUT" || (t.type || "").toUpperCase() === "STOCK_OUT");
-  const priceChanges    = filtered.filter(t => (t.type || "").toUpperCase() === "PRICE CHANGE").length;
-  const stockInCost     = stockIn.reduce((s, t) => s + Number(t.amount || 0), 0);
-  const totalSales      = sales.reduce((s, t) => s + Number(t.amount || 0), 0);
-  const cogs = sales.reduce((s, t) => {
-    const qty = Number(t.qty || 0);
-    const product = state.products.find(p => p.name === t.name);
-    return s + (t.cogs != null
-      ? Number(t.cogs)
-      : (t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0)) * qty);
-  }, 0);
-  const grossProfit = totalSales - cogs;
+  const r = computeSalesReport(range);
+  const { filtered, sales, stockIn, stockOut, revenue: totalSales, cogs, grossProfit, stockInCost } = r;
+  const priceChanges = r.priceChanges.productsChanged;
   const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   const rangeTitle = getRangeLabel(range);
 
@@ -413,7 +501,7 @@ export function renderSalesProfitReport(range = activeReportRange) {
 
       <div class="report-kpi-grid">
         <div class="report-kpi-card">
-          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/set-capital.svg" alt=""> Starting Capital</div>
+          <div class="kpi-label"><img class="inline-icon" src="src/icon/dark/set-capital.svg" alt=""> Current Capital</div>
           <div class="kpi-value">${reportMoney(state.capital)}</div>
         </div>
         <div class="report-kpi-card">
@@ -434,23 +522,33 @@ export function renderSalesProfitReport(range = activeReportRange) {
       <div class="report-pills-row">
         <div class="report-pill"><span>Stock-IN Purchases</span><strong>${reportMoney(stockInCost)} (${stockIn.length})</strong></div>
         <div class="report-pill"><span>Stock-OUT Entries</span><strong>${stockOut.length}</strong></div>
-        <div class="report-pill"><span>Products Added</span><strong>${state.products.length}</strong></div>
-        <div class="report-pill"><span>Price Changes</span><strong>${priceChanges}</strong></div>
+        <div class="report-pill"><span>Products Added</span><strong>${r.productsAdded}</strong></div>
+        <div class="report-pill"><span>Products w/ Price Changes</span><strong>${priceChanges}</strong></div>
         <div class="report-pill"><span>Filtered Logs</span><strong>${filtered.length}</strong></div>
       </div>
 
+      <div class="report-subtabs" role="tablist" aria-label="Sales report sections">
+        <button type="button" role="tab" class="report-subtab ${activeSalesView === "breakdown" ? "active" : ""}" data-sales-view="breakdown" aria-selected="${activeSalesView === "breakdown"}">
+          Detailed Breakdown <span class="report-subtab-count">${r.lines.length}</span>
+        </button>
+        <button type="button" role="tab" class="report-subtab ${activeSalesView === "prices" ? "active" : ""}" data-sales-view="prices" aria-selected="${activeSalesView === "prices"}">
+          Price Changes <span class="report-subtab-count">${r.priceChanges.changeCount}</span>
+        </button>
+      </div>
+
+      ${activeSalesView === "prices" ? priceChangeSection(r.priceChanges) : `
       <div class="report-divider-title">
         <span>DETAILED SALES BREAKDOWN</span>
-        <small>(${rangeTitle} — Prices at time of transaction)</small>
+        <small>(${rangeTitle} — price &amp; cost as recorded at the time of each sale)</small>
       </div>
 
       <div class="report-table-wrap">
         <table class="report-table sales-report-table">
           <thead><tr><th>ID</th><th>ITEM</th><th>DATE/TIME</th><th>QTY</th><th>SRP/UNT</th><th>BASE/UNT</th><th>SRP TOT</th><th>BASE TOT</th><th>PROFIT</th></tr></thead>
-          <tbody>${salesReportRows(filtered)}</tbody>
-          ${sales.length ? `<tfoot><tr><td colspan="6" class="tfoot-label">RUNNING TOTALS:</td><td class="tfoot-val">${reportMoney(totalSales)}</td><td class="tfoot-val">${reportMoney(cogs)}</td><td class="tfoot-val highlight-profit">${reportMoney(grossProfit)}</td></tr></tfoot>` : ""}
+          <tbody>${salesLineRows(r.lines, range)}</tbody>
+          ${r.lines.length ? `<tfoot><tr><td colspan="6" class="tfoot-label">RUNNING TOTALS:</td><td class="tfoot-val">${reportMoney(totalSales)}</td><td class="tfoot-val">${reportMoney(cogs)}</td><td class="tfoot-val highlight-profit">${reportMoney(grossProfit)}</td></tr></tfoot>` : ""}
         </table>
-      </div>
+      </div>`}
     </div>
   </div>`;
 }
@@ -461,273 +559,145 @@ export function renderSalesProfitReport(range = activeReportRange) {
 
 export function renderInventoryCapitalPrintReport(range = activeReportRange) {
   const d = inventoryReportData();
-  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-  const rangeTitle = getRangeLabel(range);
-  const docRef = `INV-${Date.now().toString(36).toUpperCase()}`;
 
-  return `
-    <div class="report-paper history-print-paper">
-      <div class="report-header-banner">
-        <div class="report-header-left">
-          <div class="report-company-title">MANAGING SENTRY • POS &amp; INVENTORY MANAGEMENT</div>
-          <div class="report-title-main">OFFICIAL INVENTORY &amp; CAPITAL AUDIT REPORT</div>
-          <div class="report-subtitle-date">Document ID: <strong>${docRef}</strong> • Range: <strong>${rangeTitle}</strong> • Generated on ${dateStr}</div>
-        </div>
-        <div class="report-header-badge">
-          <span>MANAGEMENT AUDIT</span>
-          <small>CONFIDENTIAL</small>
-        </div>
-      </div>
+  const rows = d.products.map((p, i) => `<tr>
+      <td class="num">${i + 1}</td>
+      <td><strong>${escapeHtml(p.name)}</strong></td>
+      <td>${escapeHtml(p.category || "General")}</td>
+      <td class="num">${Number(p.stock || 0)}</td>
+      <td class="num">${reportMoney(p.cost || 0)}</td>
+      <td class="num">${reportMoney(p.price || 0)}</td>
+      <td class="num">${reportMoney(Number(p.cost || 0) * Number(p.stock || 0))}</td>
+      <td class="num">${reportMoney(Number(p.price || 0) * Number(p.stock || 0))}</td>
+    </tr>`).join("");
 
-      <div class="report-kpi-grid">
-        <div class="report-kpi-card">
-          <div class="kpi-label">Starting Capital</div>
-          <div class="kpi-value">${reportMoney(state.capital)}</div>
-          <div class="kpi-sub">Baseline capital</div>
-        </div>
-        <div class="report-kpi-card">
-          <div class="kpi-label">Tie-Up Capital (Cost)</div>
-          <div class="kpi-value">${reportMoney(d.tieUp)}</div>
-          <div class="kpi-sub">Stock cost on hand</div>
-        </div>
-        <div class="report-kpi-card">
-          <div class="kpi-label">Retail Value (SRP)</div>
-          <div class="kpi-value primary">${reportMoney(d.retail)}</div>
-          <div class="kpi-sub">SRP stock value</div>
-        </div>
-        <div class="report-kpi-card highlight">
-          <div class="kpi-label">Potential Gross Profit</div>
-          <div class="kpi-value success">${reportMoney(d.potentialProfit)}</div>
-          <div class="kpi-sub">Expected margin</div>
-        </div>
-      </div>
+  const body = `
+    ${proHeading("Summary", "Position as of the generated date")}
+    ${proSummary([
+      { label: "Current capital", value: reportMoney(state.capital) },
+      { label: "Stock cost on hand", value: reportMoney(d.tieUp), note: "Tie-up capital at base cost" },
+      { label: "Retail value (SRP)", value: reportMoney(d.retail) },
+      { label: "Potential gross profit", value: reportMoney(d.potentialProfit), tone: d.potentialProfit >= 0 ? "good" : "bad" }
+    ])}
+    ${proSummary([
+      { label: "Products", value: String(state.products.length) },
+      { label: "Units in stock", value: String(d.units) },
+      { label: "Expired items", value: String(d.expiry.expired), tone: d.expiry.expired ? "bad" : "" },
+      { label: "Expiring within 7 days", value: String(d.expiry.expiringSoon) }
+    ])}
 
-      <div class="report-pills-row">
-        <div class="report-pill"><span>Total Products:</span> <strong>${state.products.length} items</strong></div>
-        <div class="report-pill"><span>Units In Stock:</span> <strong>${d.units} units</strong></div>
-        <div class="report-pill ${d.expiry.expired ? "alert-red" : ""}"><span>Expired Items:</span> <strong>${d.expiry.expired}</strong></div>
-        <div class="report-pill ${d.expiry.expiringSoon ? "alert-amber" : ""}"><span>Expiring Soon (7d):</span> <strong>${d.expiry.expiringSoon}</strong></div>
-      </div>
 
-      ${generateInventoryChartSvg(d)}
+    ${generateInventoryChartSvg(d)}
 
-      <div class="report-section-title" style="margin-top: 20px;">
-        <span>PER-PRODUCT INVENTORY &amp; CAPITAL AUDIT (${d.products.length})</span>
-      </div>
+    ${proHeading("Inventory &amp; capital detail", `${d.products.length} products, highest SRP value first`)}
+    <table class="pro-table">
+      <colgroup><col style="width:5%"><col style="width:24%"><col style="width:12%"><col style="width:7%"><col style="width:11%"><col style="width:11%"><col style="width:15%"><col style="width:15%"></colgroup>
+      <thead><tr>
+        <th class="num">No.</th><th>Product</th><th>Category</th><th class="num">Stock</th>
+        <th class="num">Cost / unit</th><th class="num">SRP / unit</th><th class="num">Cost value</th><th class="num">SRP value</th>
+      </tr></thead>
+      <tbody>${rows || `<tr><td colspan="8" class="empty">No products available.</td></tr>`}</tbody>
+      ${d.products.length ? `<tfoot><tr>
+        <td colspan="3" class="label">Totals</td><td class="num">${d.units}</td><td></td><td></td>
+        <td class="num">${reportMoney(d.tieUp)}</td><td class="num">${reportMoney(d.retail)}</td>
+      </tr></tfoot>` : ""}
+    </table>`;
 
-      <div class="report-table-wrap">
-        <table class="report-table history-report-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>PRODUCT NAME</th>
-              <th>CATEGORY</th>
-              <th>STOCK</th>
-              <th>COST / UNT</th>
-              <th>SRP / UNT</th>
-              <th>BASE VAL</th>
-              <th>SRP VAL</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${d.products.length ? d.products.map((p, i) => `
-              <tr>
-                <td>#${i + 1}</td>
-                <td><strong title="${escapeHtml(p.name)}">${escapeHtml(truncate(p.name, 26))}</strong></td>
-                <td>${escapeHtml(p.category || "General")}</td>
-                <td>${Number(p.stock || 0)}</td>
-                <td>${reportMoney(p.cost || 0)}</td>
-                <td>${reportMoney(p.price || 0)}</td>
-                <td>${reportMoney(Number(p.cost || 0) * Number(p.stock || 0))}</td>
-                <td>${reportMoney(Number(p.price || 0) * Number(p.stock || 0))}</td>
-              </tr>
-            `).join("") : `<tr><td colspan="8" class="table-empty">No products available.</td></tr>`}
-          </tbody>
-          ${d.products.length ? `
-            <tfoot>
-              <tr>
-                <td colspan="3" class="tfoot-label">TOTAL STOCK RUNNING VALUATION:</td>
-                <td>${d.units} units</td>
-                <td colspan="2"></td>
-                <td class="tfoot-val">${reportMoney(d.tieUp)}</td>
-                <td class="tfoot-val highlight-profit">${reportMoney(d.retail)}</td>
-              </tr>
-            </tfoot>
-          ` : ""}
-        </table>
-      </div>
-
-      <div class="report-sign-footer">
-        <div class="sign-block">
-          <div class="sign-line"></div>
-          <div class="sign-label">Prepared By (Auditor / Staff)</div>
-        </div>
-        <div class="sign-block">
-          <div class="sign-line"></div>
-          <div class="sign-label">Approved By (Super Admin / Manager)</div>
-        </div>
-      </div>
-
-      <div class="report-footer-note">
-        <span>Confidential • Managing Sentry System Official Inventory &amp; Capital Audit Document</span>
-        <span>Page 1 of 1 • ${dateStr}</span>
-      </div>
-    </div>
-  `;
+  return proDocument({
+    prefix: "INV",
+    title: "Inventory &amp; Capital Report",
+    subtitle: "Stock valuation and capital position",
+    details: [["Report range", getRangeLabel(range)]],
+    body
+  });
 }
 
 export function renderSalesProfitPrintReport(range = activeReportRange) {
-  const filtered = getFilteredTransactions(range);
-  const sales      = filtered.filter(t => (t.type || "").toUpperCase() === "SALE");
-  const stockIn    = filtered.filter(t => (t.type || "").toUpperCase() === "STOCK IN" || (t.type || "").toUpperCase() === "STOCK_IN");
-  const stockOut   = filtered.filter(t => (t.type || "").toUpperCase() === "STOCK OUT" || (t.type || "").toUpperCase() === "STOCK_OUT");
-  const priceChanges = filtered.filter(t => (t.type || "").toUpperCase() === "PRICE CHANGE").length;
-  const stockInCost  = stockIn.reduce((s, t) => s + Number(t.amount || 0), 0);
-  const totalSales   = sales.reduce((s, t) => s + Number(t.amount || 0), 0);
-  const cogs = sales.reduce((s, t) => {
-    const qty = Number(t.qty || 0);
-    const product = state.products.find(p => p.name === t.name);
-    return s + (t.cogs != null
-      ? Number(t.cogs)
-      : (t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0)) * qty);
-  }, 0);
-  const grossProfit = totalSales - cogs;
-  const profitMarginPct = totalSales > 0 ? ((grossProfit / totalSales) * 100).toFixed(1) : "0.0";
-  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const r = computeSalesReport(range);
+  const { sales, stockIn, stockOut, revenue, cogs, grossProfit, stockInCost } = r;
   const rangeTitle = getRangeLabel(range);
-  const docRef = `FIN-${Date.now().toString(36).toUpperCase()}`;
 
+  const body = `
+    ${proHeading("Summary", rangeTitle)}
+    ${proSummary([
+      { label: "Revenue", value: reportMoney(revenue), note: `${sales.length} sale${sales.length === 1 ? "" : "s"}` },
+      { label: "Cost of goods sold", value: reportMoney(cogs), note: "Cost at time of sale" },
+      { label: "Gross profit", value: reportMoney(grossProfit), tone: grossProfit >= 0 ? "good" : "bad" },
+      { label: "Gross margin", value: `${r.margin.toFixed(1)}%` }
+    ])}
+    ${proSummary([
+      { label: "Stock-in purchases", value: reportMoney(stockInCost), note: `${stockIn.length} entr${stockIn.length === 1 ? "y" : "ies"}` },
+      { label: "Stock-out entries", value: String(stockOut.length) },
+      { label: "Products added", value: String(r.productsAdded) },
+      { label: "Products with price changes", value: String(r.priceChanges.productsChanged), note: `${r.priceChanges.changeCount} change${r.priceChanges.changeCount === 1 ? "" : "s"}` }
+    ])}
+
+
+    ${generateSalesProfitChartSvg(revenue, cogs, grossProfit, r.lines)}
+
+    ${proHeading("Detailed sales breakdown", `${r.lines.length} item line${r.lines.length === 1 ? "" : "s"} — price and cost as recorded at each sale`)}
+    <table class="pro-table sales-table">
+      <colgroup><col style="width:4%"><col style="width:20%"><col style="width:14%"><col style="width:5%"><col style="width:10%"><col style="width:10%"><col style="width:12%"><col style="width:12%"><col style="width:13%"></colgroup>
+      <thead><tr>
+        <th class="num">No.</th><th>Item</th><th>Date &amp; time</th><th class="num">Qty</th>
+        <th class="num">SRP / unit</th><th class="num">Cost / unit</th><th class="num">Total SRP</th><th class="num">Total cost</th><th class="num">Profit</th>
+      </tr></thead>
+      <tbody>${printSalesRows(r.lines, rangeTitle)}</tbody>
+      ${r.lines.length ? `<tfoot><tr>
+        <td colspan="6" class="label">Totals</td>
+        <td class="num">${reportMoney(revenue)}</td><td class="num">${reportMoney(cogs)}</td><td class="num">${reportMoney(grossProfit)}</td>
+      </tr></tfoot>` : ""}
+    </table>
+
+    ${printPriceChanges(r.priceChanges)}`;
+
+  return proDocument({
+    prefix: "SPR",
+    title: "Sales &amp; Profit Report",
+    subtitle: "Revenue, cost of goods and price changes",
+    details: [["Report range", rangeTitle]],
+    body
+  });
+}
+
+function printSalesRows(lines, rangeTitle) {
+  if (!lines.length) return `<tr><td colspan="9" class="empty">No sales recorded for ${rangeTitle}.</td></tr>`;
+  return lines.map((l, i) => {
+    const profit = l.revenue - l.cogs;
+    return `<tr>
+      <td class="num">${i + 1}</td>
+      <td><strong>${escapeHtml(l.name)}</strong></td>
+      <td>${escapeHtml(l.date || "—")}</td>
+      <td class="num">${l.qty}</td>
+      <td class="num">${reportMoney(l.price)}</td>
+      <td class="num">${reportMoney(l.cost)}</td>
+      <td class="num">${reportMoney(l.revenue)}</td>
+      <td class="num">${reportMoney(l.cogs)}</td>
+      <td class="num ${profit >= 0 ? "pos" : "neg"}">${reportMoney(profit)}</td>
+    </tr>`;
+  }).join("");
+}
+
+function printPriceChanges(pc) {
+  const pct = (a, b) => (a > 0 ? ((b - a) / a) * 100 : 0);
+  const rows = pc.events.map(e => {
+    const diff = e.newPrice - e.oldPrice;
+    return `<tr>
+      <td><strong>${escapeHtml(e.name)}</strong></td>
+      <td class="num">${reportMoney(e.oldPrice)}</td>
+      <td class="num">${reportMoney(e.newPrice)}</td>
+      <td class="num ${diff > 0 ? "up" : diff < 0 ? "down" : ""}">${diff > 0 ? "+" : diff < 0 ? "−" : ""}${reportMoney(Math.abs(diff))} (${pct(e.oldPrice, e.newPrice).toFixed(1)}%)</td>
+      <td class="num">${reportMoney(e.oldCost)} → ${reportMoney(e.newCost)}</td>
+      <td>${e.pending ? "Current price (not sold yet)" : escapeHtml(e.date || "—")}</td>
+    </tr>`;
+  }).join("");
   return `
-    <div class="report-paper history-print-paper">
-      <div class="report-header-banner">
-        <div class="report-header-left">
-          <div class="report-company-title">MANAGING SENTRY • POS &amp; INVENTORY MANAGEMENT</div>
-          <div class="report-title-main">OFFICIAL SALES, PROFIT &amp; FINANCIAL AUDIT REPORT</div>
-          <div class="report-subtitle-date">Document ID: <strong>${docRef}</strong> • Range: <strong>${rangeTitle}</strong> • Generated on ${dateStr}</div>
-        </div>
-        <div class="report-header-badge">
-          <span>FINANCIAL AUDIT</span>
-          <small>CONFIDENTIAL</small>
-        </div>
-      </div>
-
-      <div class="report-kpi-grid">
-        <div class="report-kpi-card">
-          <div class="kpi-label">Gross Revenue</div>
-          <div class="kpi-value primary">${reportMoney(totalSales)}</div>
-          <div class="kpi-sub">${sales.length} sales (${rangeTitle})</div>
-        </div>
-        <div class="report-kpi-card">
-          <div class="kpi-label">Cost of Goods (COGS)</div>
-          <div class="kpi-value">${reportMoney(cogs)}</div>
-          <div class="kpi-sub">Total product base cost</div>
-        </div>
-        <div class="report-kpi-card highlight">
-          <div class="kpi-label">Gross Profit</div>
-          <div class="kpi-value success">${reportMoney(grossProfit)}</div>
-          <div class="kpi-sub">Net revenue margin</div>
-        </div>
-        <div class="report-kpi-card">
-          <div class="kpi-label">Profit Margin %</div>
-          <div class="kpi-value">${profitMarginPct}%</div>
-          <div class="kpi-sub">Gross margin ratio</div>
-        </div>
-      </div>
-
-      <div class="report-pills-row">
-        <div class="report-pill"><span>Stock-IN Purchases:</span> <strong>${reportMoney(stockInCost)} (${stockIn.length})</strong></div>
-        <div class="report-pill"><span>Stock-OUT Entries:</span> <strong>${stockOut.length}</strong></div>
-        <div class="report-pill"><span>Price Changes:</span> <strong>${priceChanges}</strong></div>
-        <div class="report-pill"><span>Filtered Logs:</span> <strong>${filtered.length} records</strong></div>
-      </div>
-
-      ${generateSalesProfitChartSvg(totalSales, cogs, grossProfit, sales)}
-
-      <div class="report-section-title" style="margin-top: 20px;">
-        <span>DETAILED SALES AUDIT BREAKDOWN (${sales.length})</span>
-      </div>
-
-      <div class="report-table-wrap">
-        <table class="report-table history-report-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>ITEM / ORDER</th>
-              <th>DATE / TIME</th>
-              <th>QTY</th>
-              <th>SRP / UNT</th>
-              <th>BASE / UNT</th>
-              <th>TOTAL SRP</th>
-              <th>TOTAL BASE</th>
-              <th>NET PROFIT</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${sales.length ? sales.map((t, i) => {
-              const qty = Number(t.qty || 0);
-              const items = parseOrderItems(t.name, t);
-              const firstItem = items[0] || t.name || "Transaction Item";
-              const extraCount = items.length - 1;
-              const isMultiItem = extraCount > 0;
-              const itemDisplayText = isMultiItem
-                ? `${escapeHtml(firstItem)} <span class="report-order-badge">+${extraCount}</span>`
-                : escapeHtml(firstItem);
-              const encodedItems = encodeURIComponent(JSON.stringify(items));
-
-              const product = state.products.find(p => p.name === t.name);
-              const baseTotal = t.cogs != null
-                ? Number(t.cogs)
-                : (t.costPerUnit != null ? Number(t.costPerUnit) : Number(product?.cost || 0)) * qty;
-              const baseUnit = qty ? baseTotal / qty : 0;
-              const srpTotal = Number(t.amount || 0);
-              const profit   = srpTotal - baseTotal;
-              const srpUnit  = qty ? srpTotal / qty : 0;
-
-              return `
-                <tr>
-                  <td>#${i + 1}</td>
-                  <td class="report-order-cell ${isMultiItem ? "order-hover-cell" : ""}" data-order-items="${encodedItems}">${itemDisplayText}</td>
-                  <td>${escapeHtml(t.date || "—")}</td>
-                  <td>${qty}</td>
-                  <td>${reportMoney(srpUnit)}</td>
-                  <td>${reportMoney(baseUnit)}</td>
-                  <td>${reportMoney(srpTotal)}</td>
-                  <td>${reportMoney(baseTotal)}</td>
-                  <td><strong style="color: ${profit >= 0 ? "#059669" : "#DC2626"};">${reportMoney(profit)}</strong></td>
-                </tr>
-              `;
-            }).join("") : `<tr><td colspan="9" class="table-empty">No sales recorded for ${getRangeLabel(range)}.</td></tr>`}
-          </tbody>
-          ${sales.length ? `
-            <tfoot>
-              <tr>
-                <td colspan="6" class="tfoot-label">TOTAL FINANCIAL RUNNING SUMMARY:</td>
-                <td class="tfoot-val">${reportMoney(totalSales)}</td>
-                <td class="tfoot-val">${reportMoney(cogs)}</td>
-                <td class="tfoot-val highlight-profit">${reportMoney(grossProfit)}</td>
-              </tr>
-            </tfoot>
-          ` : ""}
-        </table>
-      </div>
-
-      <div class="report-sign-footer">
-        <div class="sign-block">
-          <div class="sign-line"></div>
-          <div class="sign-label">Prepared By (Auditor / Staff)</div>
-        </div>
-        <div class="sign-block">
-          <div class="sign-line"></div>
-          <div class="sign-label">Approved By (Super Admin / Manager)</div>
-        </div>
-      </div>
-
-      <div class="report-footer-note">
-        <span>Confidential • Managing Sentry System Official Financial Audit Document</span>
-        <span>Page 1 of 1 • ${dateStr}</span>
-      </div>
-    </div>
-  `;
+    ${proHeading("Price changes", `${pc.productsChanged} product${pc.productsChanged === 1 ? "" : "s"}, ${pc.changeCount} change${pc.changeCount === 1 ? "" : "s"} — from order item snapshots`)}
+    <table class="pro-table">
+      <colgroup><col style="width:24%"><col style="width:11%"><col style="width:11%"><col style="width:20%"><col style="width:18%"><col style="width:16%"></colgroup>
+      <thead><tr><th>Product</th><th class="num">Old SRP</th><th class="num">New SRP</th><th class="num">Change</th><th class="num">Cost (old → new)</th><th>Seen on</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="6" class="empty">No price changes found for this range.</td></tr>`}</tbody>
+    </table>`;
 }
 
 // ---------------------------------------------------------------------------

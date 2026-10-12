@@ -244,10 +244,23 @@
   border-radius: var(--radius-input);
   background: var(--bg-card);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.styled-select-menu::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .styled-select-menu[hidden] {
   display: none;
+}
+
+.styled-select.opens-up .styled-select-menu {
+  top: auto;
+  bottom: calc(100% + 6px);
 }
 
 .styled-select-option {
@@ -1148,6 +1161,18 @@ table:has(.table-empty) tbody tr {
   vertical-align: middle;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
 }
+
+/* Reports Inventory & Capital Table Column Widths (ID -> NAME -> STOCK -> BASE VAL -> SRP VAL) */
+.inventory-report-table th:nth-child(1),
+.inventory-report-table td:not(.table-empty):nth-child(1) { width: 55px; text-align: center; }
+.inventory-report-table th:nth-child(2),
+.inventory-report-table td:not(.table-empty):nth-child(2) { width: 40%; }
+.inventory-report-table th:nth-child(3),
+.inventory-report-table td:not(.table-empty):nth-child(3) { width: 15%; }
+.inventory-report-table th:nth-child(4),
+.inventory-report-table td:not(.table-empty):nth-child(4) { width: 22.5%; }
+.inventory-report-table th:nth-child(5),
+.inventory-report-table td:not(.table-empty):nth-child(5) { width: 22.5%; }
 
 /* Reports Sales Table Column Widths (ID -> ITEM -> DATE/TIME -> QTY -> SRP/UNT -> BASE/UNT -> SRP TOT -> BASE TOT -> PROFIT) */
 .sales-report-table th:nth-child(1),
@@ -2461,3 +2486,70 @@ table:has(.table-empty) tbody tr {
   box-shadow: 0 -1px 0 var(--border-light);
   font-weight: 800;
 }
+
+/* Reports: breathing room before the Price Changes section */
+.report-table-wrap + .report-divider-title { margin-top: 28px; }
+.price-change-table td { white-space: normal; }
+
+
+/* History: visible notice when the server history could not be (fully) loaded */
+.history-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-input);
+  background: var(--danger-red-bg);
+  color: var(--danger-red-dark);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.history-banner.hidden { display: none; }
+
+/* Sales & Profit report: Detailed Breakdown / Price Changes buttons */
+.report-subtabs {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0 16px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+
+.report-subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  background: #F1F5F9;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-button);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.report-subtab:hover { border-color: var(--navy); }
+
+.report-subtab.active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #FFFFFF;
+}
+
+.report-subtab-count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.1);
+  font-size: 11px;
+  text-align: center;
+}
+
+.report-subtab.active .report-subtab-count { background: rgba(255, 255, 255, 0.22); }
+
+@media print { .report-subtabs { display: none; } }

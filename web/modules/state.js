@@ -27,6 +27,7 @@ export function persist() {
     cart: state.cart,
     products: state.products,
     transactions: state.transactions,
+    startingCapital: state.startingCapital,
     capital: state.capital,
     operatingExpenses: state.operatingExpenses,
     interest: state.interest,
