@@ -7,6 +7,8 @@ router = APIRouter(tags=["reset"])
 
 
 @router.post("/reset", response_model=MessageResponse)
+@router.post("/reset.php", response_model=MessageResponse, include_in_schema=False)
+@router.post("/api/reset", response_model=MessageResponse, include_in_schema=False)
 @router.post("/api/reset.php", response_model=MessageResponse, include_in_schema=False)
 async def reset_dashboard(request: Request):
     require_web_access(request)

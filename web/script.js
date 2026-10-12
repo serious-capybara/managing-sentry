@@ -1,6 +1,7 @@
 /* ============================================================
  * script.js — Main application orchestrator for Managing Sentry.
- * Coordinates 7-day session auto-restoration on page reloads/refreshes.
+ * Coordinates the 1-hour session: restores it on reload and signs
+ * the user out once an hour has passed since the last login.
  * ============================================================ */
 
 import { state, persist, isSessionValid, getActivePage, clearSession } from "./modules/state.js";
@@ -13,22 +14,20 @@ import {
 } from "./modules/stock-logic.js";
 import { bindSidebarEvents } from "./modules/events/sidebar-events.js";
 import { renderPage } from "./modules/router.js";
+import { setAuthView } from "./modules/api.js";
+import { toast } from "./modules/utils.js";
 
 // Initialize application event listeners (login, nav, actions)
 bindSidebarEvents();
 
 /**
  * Initialize application session state on startup / page refresh.
- * Automatically restores active session if within 7-day window.
+ * Keeps the signed-in user in the app while the session is inside its
+ * 1-hour window, and only shows the login screen once it lapses.
  */
 async function initSession() {
-  const loginScreen = document.getElementById("loginScreen");
-  const app = document.getElementById("app");
-
   if (isSessionValid()) {
-    // Show main app and hide login screen immediately for smooth refresh
-    if (loginScreen) loginScreen.classList.add("hidden");
-    if (app) app.classList.remove("hidden");
+    setAuthView(true);
 
     try {
       await loadDashboardData();
@@ -39,10 +38,9 @@ async function initSession() {
     // Restore the user's active page view (or default to dashboard)
     renderPage(getActivePage());
   } else {
-    // Session expired (>= 7 days) or not logged in
+    // Session expired (>= 1 hour) or never signed in
     clearSession();
-    if (app) app.classList.add("hidden");
-    if (loginScreen) loginScreen.classList.remove("hidden");
+    setAuthView(false);
   }
 
   // Stock baseline & batch integrity check
@@ -56,6 +54,23 @@ async function initSession() {
     persist();
     updateStats();
   }
+
+  watchSessionExpiry();
+}
+
+/**
+ * Sign the user out when the saved session passes 1 hour after login,
+ * even if the tab is left open.
+ */
+function watchSessionExpiry() {
+  setInterval(() => {
+    if (isSessionValid()) return;
+    // Already signed out, or sitting on the login screen — nothing to do.
+    if (document.getElementById("app")?.classList.contains("hidden")) return;
+    clearSession();
+    setAuthView(false);
+    toast("Session expired an hour after login. Please sign in again.");
+  }, 20000);
 }
 
 initSession();

@@ -8,7 +8,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style.css?v=21">
+  <script>
+    /* Hide the login screen before first paint while the saved session is inside
+       its one-hour window, so refreshing keeps the user in the app. The window
+       must stay in sync with ONE_HOUR_MS in modules/state.js. */
+    try {
+      const saved = JSON.parse(localStorage.getItem("sentrySession") || "null");
+      if (saved?.loginTime && Date.now() - saved.loginTime < 3600000) {
+        document.documentElement.classList.add("session-active");
+        // Safety valve: if the app modules fail to boot, bring the login form back.
+        setTimeout(() => document.documentElement.classList.remove("session-active"), 2000);
+      }
+    } catch (err) {
+      /* unreadable session storage — fall through to the login screen */
+    }
+  </script>
 </head>
 <body>
 

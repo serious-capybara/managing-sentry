@@ -30,8 +30,8 @@ import { dashboardRows, sortProducts, dashTabHtml, setActiveProfitType } from ".
 import { productRows } from "../pages/products.js";
 import { stockRows } from "../pages/stocks.js";
 import { priceMatchRows, priceDirectoryRows } from "../pages/price-checker.js";
-import { transactionRows, renderHistoryPrintReport } from "../pages/transactions.js";
-import { renderSalesProfitReport, renderInventoryCapitalReport, renderInventoryCapitalPrintReport, renderSalesProfitPrintReport, activeReportTab, activeReportRange, setActiveReportTab, setActiveReportRange } from "../pages/reports.js";
+import { transactionRows, renderHistoryPrintReport, filterHistory, historyBanner } from "../pages/transactions.js";
+import { renderSalesProfitReport, renderInventoryCapitalReport, renderInventoryCapitalPrintReport, renderSalesProfitPrintReport, activeReportTab, activeReportRange, setActiveReportTab, setActiveReportRange, setActiveSalesView } from "../pages/reports.js";
 import { bindStyledSelects } from "../styled-select.js";
 import { openExpenseTotalsModal } from "../modals/expense-totals-modal.js";
 
@@ -153,6 +153,7 @@ export function bindPageEvents(page) {
   const pageContent = document.getElementById("pageContent");
   if (!pageContent) return;
   bindStyledSelects(pageContent);
+  initOrderHoverTooltip();
 
   pageContent.querySelectorAll("[data-go]").forEach(btn =>
     btn.addEventListener("click", () => {
@@ -230,15 +231,17 @@ export function bindPageEvents(page) {
     if (dashResizer && bottomSection) {
       const getMaxDashPanelHeight = () => {
         const container = bottomSection.parentElement;
-        const h = container ? container.getBoundingClientRect().height : 0;
-        const containerHeight = h > 300 ? h : (window.innerHeight || 800);
-        return Math.max(250, containerHeight - 380);
+        const containerHeight = (container && container.getBoundingClientRect().height > 300)
+          ? container.getBoundingClientRect().height
+          : (window.innerHeight || 800);
+        // Reserve 420px for stats + toolbar + upper table (showing ~4 rows)
+        return Math.max(180, containerHeight - 420);
       };
 
       const savedHeight = localStorage.getItem("sentryDashPanelHeight");
       const numHeight = Number(savedHeight);
       const maxAllowed = getMaxDashPanelHeight();
-      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 250)
+      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 180)
         ? Math.min(numHeight, maxAllowed)
         : Math.min(320, maxAllowed);
 
@@ -252,7 +255,7 @@ export function bindPageEvents(page) {
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const deltaY = startY - clientY;
         const maxAllowedHeight = getMaxDashPanelHeight();
-        const newHeight = Math.max(250, Math.min(maxAllowedHeight, startHeight + deltaY));
+        const newHeight = Math.max(180, Math.min(maxAllowedHeight, startHeight + deltaY));
         bottomSection.style.height = `${newHeight}px`;
         bottomSection.style.flex = "0 0 auto";
         dashResizer.classList.add("dragging");
@@ -267,7 +270,7 @@ export function bindPageEvents(page) {
         document.removeEventListener("touchmove", onMouseMove);
         document.removeEventListener("touchend", onMouseUp);
         const finalHeight = parseInt(bottomSection.style.height, 10);
-        if (finalHeight && finalHeight >= 250) {
+        if (finalHeight && finalHeight >= 180) {
           localStorage.setItem("sentryDashPanelHeight", finalHeight);
         }
       };
@@ -300,8 +303,8 @@ export function bindPageEvents(page) {
     };
     document.getElementById("productSort")?.addEventListener("change", updateProducts);
     updateProducts();
-    document.getElementById("addProductBtn")?.addEventListener("click", openAddProductModal);
-    document.getElementById("removeProductBtn")?.addEventListener("click", openRemoveProductModal);
+    document.getElementById("addProductBtn")?.addEventListener("click", () => openAddProductModal());
+    document.getElementById("removeProductBtn")?.addEventListener("click", () => openRemoveProductModal());
   }
 
   if (page === "stocks") {
@@ -332,15 +335,16 @@ export function bindPageEvents(page) {
     if (resizer && lowPanel) {
       const getMaxLowPanelHeight = () => {
         const container = lowPanel.closest(".stocks-overview") || lowPanel.parentElement;
-        const h = container ? container.getBoundingClientRect().height : 0;
-        const containerHeight = h > 300 ? h : (window.innerHeight || 800);
-        return Math.max(250, containerHeight - 280);
+        const containerHeight = (container && container.getBoundingClientRect().height > 300)
+          ? container.getBoundingClientRect().height
+          : (window.innerHeight || 800);
+        return Math.max(180, containerHeight - 150);
       };
 
       const savedHeight = localStorage.getItem("sentryStocksLowPanelHeight");
       const numHeight = Number(savedHeight);
       const maxAllowed = getMaxLowPanelHeight();
-      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 250)
+      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 180)
         ? Math.min(numHeight, maxAllowed)
         : Math.min(320, maxAllowed);
 
@@ -354,7 +358,7 @@ export function bindPageEvents(page) {
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const deltaY = startY - clientY;
         const maxAllowedHeight = getMaxLowPanelHeight();
-        const newHeight = Math.max(250, Math.min(maxAllowedHeight, startHeight + deltaY));
+        const newHeight = Math.max(180, Math.min(maxAllowedHeight, startHeight + deltaY));
         lowPanel.style.height = `${newHeight}px`;
         lowPanel.style.flex = "0 0 auto";
         resizer.classList.add("dragging");
@@ -490,32 +494,9 @@ export function bindPageEvents(page) {
     let activeFilteredTransactions = [...state.transactions];
 
     const updateHistory = () => {
-      const q = (document.getElementById("transactionSearch")?.value || "").toLowerCase();
-      const mode = document.getElementById("historySort")?.value || "date";
-
-      let list = [...state.transactions];
-
-      if (q) {
-        list = list.filter(t => `${t.name} ${t.type} ${t.date} ${t.notes || ""}`.toLowerCase().includes(q));
-      }
-
-      if (mode === "SALE") {
-        list = list.filter(t => t.type === "SALE" || t.type === "sale");
-        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      } else if (mode === "STOCK_IN" || mode === "STOCK IN") {
-        list = list.filter(t => t.type === "STOCK IN" || t.type === "STOCK_IN" || t.type === "stock_in");
-        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      } else if (mode === "STOCK_OUT" || mode === "STOCK OUT") {
-        list = list.filter(t => t.type === "STOCK OUT" || t.type === "STOCK_OUT" || t.type === "stock_out");
-        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      } else if (mode === "name") {
-        list.sort((a, b) => a.name.localeCompare(b.name));
-      } else if (mode === "sales") {
-        list.sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0));
-      } else {
-        // Default "date": Newest First
-        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      }
+      const query = document.getElementById("transactionSearch")?.value || "";
+      const mode = document.getElementById("historySort")?.value || "newest";
+      const list = filterHistory(state.transactions, mode, query);
 
       activeFilteredTransactions = list;
       const rowsEl = document.getElementById("transactionRows");
@@ -527,11 +508,24 @@ export function bindPageEvents(page) {
     document.getElementById("historySort")?.addEventListener("change", updateHistory);
     updateHistory();
 
+    // Always pull the latest sales + stock movements from the server when History opens
+    const refreshHistory = () => loadDashboardData().then(() => {
+      if (!document.getElementById("transactionRows")) return;
+      const banner = document.getElementById("historyBanner");
+      if (banner) {
+        banner.outerHTML = historyBanner();
+        document.getElementById("retryHistoryBtn")?.addEventListener("click", refreshHistory);
+      }
+      updateHistory();
+    }).catch(() => {});
+    document.getElementById("retryHistoryBtn")?.addEventListener("click", refreshHistory);
+    refreshHistory();
+
     document.getElementById("printHistoryBtn")?.addEventListener("click", () => {
       const area = document.getElementById("printArea");
       if (!area) return;
 
-      area.innerHTML = renderHistoryPrintReport(activeFilteredTransactions);
+      area.innerHTML = renderHistoryPrintReport(activeFilteredTransactions, document.getElementById("historySort")?.value || "newest");
 
       const cleanup = () => {
         document.body.classList.remove("printing-history");
@@ -560,6 +554,14 @@ export function bindPageEvents(page) {
         : renderInventoryCapitalReport(activeReportRange);
 
       if (printBtn) printBtn.dataset.reportPrint = activeReportTab;
+
+      // Detailed Breakdown / Price Changes buttons (Sales & Profit tab)
+      content.querySelectorAll("[data-sales-view]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          setActiveSalesView(btn.dataset.salesView);
+          updateReportView();
+        });
+      });
     };
 
     document.querySelectorAll("[data-report-tab]").forEach(btn => {
@@ -571,6 +573,11 @@ export function bindPageEvents(page) {
     });
 
     rangeSelect?.addEventListener("change", updateReportView);
+
+    // Reports always use the freshest sales / stock data from the server
+    loadDashboardData().then(() => {
+      if (document.getElementById("reportTabContent")) updateReportView();
+    }).catch(() => {});
 
     printBtn?.addEventListener("click", () => {
       const area = document.getElementById("printArea");

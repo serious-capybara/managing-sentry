@@ -49,6 +49,38 @@ input[type="number"] {
   display: none !important;
 }
 
+/* Hide scrollbars visually across all dropdown menus, listboxes, and picker lists while retaining full scroll functionality */
+.styled-select-menu,
+.category-picker-menu,
+.remove-product-list,
+.dropdown-menu,
+.custom-select-menu,
+.select-menu,
+.picker-menu,
+[role="listbox"] {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE & Edge */
+}
+
+.styled-select-menu::-webkit-scrollbar,
+.category-picker-menu::-webkit-scrollbar,
+.remove-product-list::-webkit-scrollbar,
+.dropdown-menu::-webkit-scrollbar,
+.custom-select-menu::-webkit-scrollbar,
+.select-menu::-webkit-scrollbar,
+.picker-menu::-webkit-scrollbar,
+[role="listbox"]::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Set on <html> before the app boots while a session is still valid, so a
+   reload does not briefly show the login form (see index.html <head>). */
+.session-active #loginScreen {
+  display: none;
+}
+
 .toast {
   position: fixed;
   right: 32px;

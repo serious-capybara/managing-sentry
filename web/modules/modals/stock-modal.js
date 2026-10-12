@@ -67,10 +67,6 @@ export function openStockInModal(targetProductId = null) {
               <input id="stockInQty" name="qty" type="number" min="1" value="1" required placeholder="1">
             </div>
             <div class="form-group">
-              <label for="stockInRef">Reference / Supplier</label>
-              <input id="stockInRef" name="ref" placeholder="Optional PO or Supplier Ref" autocomplete="off">
-            </div>
-            <div class="form-group">
               <label for="stockInHasExpiry">Expiry Date Available?</label>
               <select name="hasExpiry" id="stockInHasExpiry" class="compact-select styled-select-native" aria-label="Expiry Date Available?">
                 <option value="no">No Expiration</option>
@@ -165,7 +161,6 @@ export function openStockInModal(targetProductId = null) {
           product_id: product.id,
           quantity: Number(f.get("qty")),
           type: "STOCK IN",
-          reference: f.get("ref"),
           notes: f.get("notes"),
           expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : ""
         })
@@ -225,13 +220,9 @@ export function openStockOutModal(targetProductId = null) {
               </div>
               <input type="hidden" id="stockOutProduct" name="product" value="${defaultId}" required>
             </div>
-            <div class="form-group">
+            <div class="form-group full">
               <label for="stockOutQty">Quantity to Remove</label>
               <input id="stockOutQty" name="qty" type="number" min="1" value="1" required placeholder="1">
-            </div>
-            <div class="form-group">
-              <label for="stockOutRef">Reason / Reference</label>
-              <input id="stockOutRef" name="ref" placeholder="e.g. Damaged / Returned / Adjustment" autocomplete="off">
             </div>
             <div class="form-group full">
               <label for="stockOutNotes">Notes <small class="form-hint">(Max 50 words)</small></label>
@@ -318,7 +309,6 @@ export function openStockOutModal(targetProductId = null) {
           product_id: product.id,
           quantity: qty,
           type: "STOCK OUT",
-          reference: f.get("ref"),
           notes: f.get("notes")
         })
       });

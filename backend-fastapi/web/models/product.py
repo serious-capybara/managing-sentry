@@ -46,15 +46,17 @@ class ProductCreate(BaseModel):
 
 
 class StockMovement(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
+    model_config = ConfigDict(str_strip_whitespace=True, populate_by_name=True)
 
-    product_id: int = Field(gt=0)
-    quantity: int = Field(gt=0)
+    product_id: int = Field(gt=0, validation_alias=AliasChoices("product_id", "id"))
+    quantity: int = Field(gt=0, validation_alias=AliasChoices("quantity", "qty"))
     type: str = Field(pattern=r"^(STOCK IN|STOCK OUT)$")
     expiry: str | None = None
-    reference: str | None = None
+    reference: str | None = Field(default=None, validation_alias=AliasChoices("reference", "ref"))
     notes: str | None = None
 
 
 class ProductDelete(BaseModel):
-    product_id: int = Field(gt=0)
+    model_config = ConfigDict(populate_by_name=True)
+
+    product_id: int = Field(gt=0, validation_alias=AliasChoices("product_id", "id"))

@@ -555,58 +555,6 @@
 }
 
 @media (max-width: 767px) {
-  .checkout-overlay {
-    align-items: center;
-    justify-content: center;
-    padding: 12px;
-  }
-
-  .checkout-modal-success {
-    width: 94%;
-    max-width: 460px;
-    max-height: 85dvh;
-    border-radius: 18px;
-  }
-
-  .checkout-modal-success .checkout-actions {
-    flex-direction: row;
-    gap: 8px;
-    padding: 10px 14px;
-  }
-
-  .checkout-modal-success .checkout-actions .primary-btn,
-  .checkout-modal-success .checkout-actions .ghost-btn {
-    width: auto;
-    min-width: 0;
-    flex: 1;
-  }
-
-  .checkout-modal {
-    width: 94%;
-    max-width: 480px;
-    max-height: 85dvh;
-    border-radius: 18px;
-  }
-
-  .checkout-modal .modal-head {
-    padding: 12px 14px;
-  }
-
-  .checkout-modal .modal-body {
-    padding: 10px 12px;
-  }
-
-  .checkout-modal .checkout-actions {
-    flex-direction: row;
-    gap: 8px;
-    padding: 9px 12px;
-  }
-
-  .checkout-modal .checkout-actions .primary-btn,
-  .checkout-modal .checkout-actions .ghost-btn {
-    width: auto;
-    min-width: 0;
-    flex: 1;
-    height: 42px;
-  }
+  .checkout-modal .modal-body { padding: 16px; }
+  .checkout-receipt { padding: 18px 16px 16px; }
 }

@@ -9,8 +9,9 @@ import { apiRequest } from "../api.js";
 import { loadDashboardData } from "../data-loader.js";
 import { updateStats } from "../stock-logic.js";
 import { printReceipt } from "../print.js";
-import { renderReceipt } from "../receipt.js";
+import { renderReceipt, receiptDate } from "../receipt.js";
 import { renderPage, setActiveDashTab } from "../router.js";
+import { bindStyledSelects } from "../styled-select.js";
 
 const saleTotal = items => items.reduce(
   (sum, item) => sum + Math.round((item.price * item.qty + Number.EPSILON) * 100) / 100,
@@ -33,7 +34,7 @@ export function openCheckoutModal() {
   const total = saleTotal(state.cart);
   const session = getSession();
   const cashier = session?.fullName || session?.username || "Cashier";
-  const date = new Date().toLocaleString("en-PH");
+  const date = receiptDate();
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay checkout-overlay";
   overlay.id = "checkoutModal";
@@ -42,11 +43,11 @@ export function openCheckoutModal() {
       <div class="modal-head">
         <div>
           <h3 id="checkoutTitle">Checkout Confirmation</h3>
-          <p class="modal-caption">Review the receipt and confirm payment.</p>
+          <p class="modal-caption">Review the receipt, choose how the customer pays, then confirm.</p>
         </div>
         <button class="modal-close checkout-close" id="closeCheckout" type="button" aria-label="Close checkout">×</button>
       </div>
-      <form class="checkout-form-shell" id="checkoutForm">
+      <form class="checkout-form-shell" id="checkoutForm" novalidate>
         <div class="modal-body checkout-content" id="checkoutContent">
           ${renderReceipt({
             orderId: null,
@@ -58,36 +59,37 @@ export function openCheckoutModal() {
             received: 0,
             change: 0,
             method: "Cash"
-          }, true)}
-          <div class="checkout-payment-fields">
-            <div class="checkout-payment-method">
-              <span class="checkout-field-label">Payment Method</span>
-              <div class="payment-options">
+          }, true, true)}
+          <div class="form-grid checkout-payment-fields">
+            <div class="form-group full checkout-payment-method">
+              <label for="payMethod">Payment Method</label>
+              <select id="payMethod" name="payMethod" class="styled-select-native" aria-label="Payment Method">
                 ${PAYMENT_METHODS.map((method, index) => `
-                  <label class="pay-opt">
-                    <input type="radio" name="payMethod" value="${method.value}" data-online="${method.online}" ${index === 0 ? "checked" : ""}>
-                    <span>${method.value}</span>
-                  </label>`).join("")}
+                  <option value="${method.value}" ${index === 0 ? "selected" : ""} data-online="${method.online}">${method.value}</option>`).join("")}
+              </select>
+            </div>
+            <div class="form-group full checkout-cash-field">
+              <label for="amountReceived">Cash Received</label>
+              <div class="input-prefix">
+                <span aria-hidden="true">₱</span>
+                <input id="amountReceived" name="amount_received" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" value="">
               </div>
             </div>
-            <div class="form-group checkout-cash-field">
-              <label for="amountReceived">Cash Received (₱)</label>
-              <input id="amountReceived" name="amount_received" type="number" min="0" step="0.01" value="0" required inputmode="decimal">
+            <div class="form-group full checkout-change-field" id="changeField">
+              <label for="changeDue">Change Due</label>
+              <div class="input-prefix input-prefix--readonly">
+                <span aria-hidden="true">₱</span>
+                <output id="changeDue" for="amountReceived" aria-live="polite">0.00</output>
+              </div>
             </div>
-            <div class="form-group checkout-reference-field hidden" id="referenceField">
+            <div class="form-group full checkout-reference-field hidden" id="referenceField">
               <label for="refNumber">Reference Number</label>
               <input id="refNumber" name="reference" type="text" maxlength="120" placeholder="Enter payment reference number">
             </div>
-            <div class="checkout-payment-totals" aria-live="polite">
-              <div><span>Subtotal</span><strong>${money(total)}</strong></div>
-              <div class="checkout-grand-total"><span>Total</span><strong>${money(total)}</strong></div>
-              <div><span>Cash</span><strong id="checkoutCash">${money(0)}</strong></div>
-              <div><span>Change Due</span><strong id="changeAmount">${money(0)}</strong></div>
-            </div>
-            <p class="checkout-payment-error hidden" id="checkoutPaymentError" role="alert"></p>
-            <div class="form-group checkout-notes">
-              <label for="saleNotes">Notes (optional)</label>
-              <textarea id="saleNotes" name="notes" rows="2" maxlength="2000" placeholder="Add a note for this sale"></textarea>
+            <p class="form-group full checkout-payment-error hidden" id="checkoutPaymentError" role="alert"></p>
+            <div class="form-group full checkout-notes">
+              <label for="saleNotes">Notes <small class="form-hint">(optional)</small></label>
+              <textarea id="saleNotes" name="notes" rows="3" maxlength="2000" placeholder="Add a note for this sale"></textarea>
             </div>
           </div>
         </div>
@@ -103,41 +105,71 @@ export function openCheckoutModal() {
 
   const form = overlay.querySelector("#checkoutForm");
   const receivedInput = overlay.querySelector("#amountReceived");
-  const cashAmount = overlay.querySelector("#checkoutCash");
-  const changeAmount = overlay.querySelector("#changeAmount");
+  const receiptCash = overlay.querySelector("#receiptCash");
+  const receiptChange = overlay.querySelector("#receiptChange");
+  const receiptPayment = overlay.querySelector("#receiptPayment");
+  const changeField = overlay.querySelector("#changeField");
+  const changeDue = overlay.querySelector("#changeDue");
+  const cashField = overlay.querySelector(".checkout-cash-field");
   const referenceField = overlay.querySelector("#referenceField");
   const referenceInput = overlay.querySelector("#refNumber");
   const error = overlay.querySelector("#checkoutPaymentError");
   const confirmButton = overlay.querySelector("#confirmCheckout");
+  const methodSelect = overlay.querySelector("#payMethod");
   let saving = false;
 
-  const selectedMethod = () => overlay.querySelector('input[name="payMethod"]:checked');
+  const isOnline = () => methodSelect.options[methodSelect.selectedIndex]?.dataset.online === "true";
+  const cashValue = () => {
+    const n = Number(String(receivedInput.value).replace(/,/g, "").trim());
+    return Number.isFinite(n) && n > 0 ? n : 0;   // empty box = 0
+  };
+
   const refreshPayment = () => {
-    const online = selectedMethod()?.dataset.online === "true";
+    const online = isOnline();
     referenceField.classList.toggle("hidden", !online);
-    overlay.querySelector(".checkout-cash-field").classList.toggle("hidden", online);
+    cashField.classList.toggle("hidden", online);
+    changeField.classList.toggle("hidden", online);   // online payments are exact: no change
 
-    const received = online ? total : Number(receivedInput.value || 0);
+    const received = online ? total : cashValue();
     const cashIsShort = !online && received < total;
-    cashAmount.textContent = money(received);
-    changeAmount.textContent = money(Math.max(0, received - total));
-    changeAmount.classList.toggle("is-short", cashIsShort);
-
     const missingReference = online && !referenceInput.value.trim();
-    error.textContent = cashIsShort
+    const ref = referenceInput.value.trim();
+
+    receiptCash.textContent = money(received);
+    const change = Math.max(0, received - total);
+    receiptChange.textContent = money(change);
+    changeDue.textContent = change.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    changeField.classList.toggle("is-positive", change > 0);
+    receiptPayment.textContent = online && ref ? `${methodSelect.value} · ${ref}` : methodSelect.value;
+
+    // Only nag once the person has typed something; the empty box just keeps Confirm disabled.
+    const typed = receivedInput.value.trim() !== "";
+    const message = cashIsShort && typed
       ? "Cash received is less than the total."
-      : missingReference
+      : missingReference && referenceInput.dataset.touched
         ? "Enter the payment reference number to continue."
         : "";
-    error.classList.toggle("hidden", !cashIsShort && !missingReference);
+    error.textContent = message;
+    error.classList.toggle("hidden", !message);
     confirmButton.disabled = saving || cashIsShort || missingReference;
   };
 
-  receivedInput.addEventListener("input", refreshPayment);
-  referenceInput.addEventListener("input", refreshPayment);
-  overlay.querySelectorAll('input[name="payMethod"]').forEach(input => {
-    input.addEventListener("change", refreshPayment);
+  // Keep the cash box numeric (digits + one decimal point, max 2 decimals)
+  receivedInput.addEventListener("input", () => {
+    let v = receivedInput.value.replace(/[^\d.]/g, "");
+    const firstDot = v.indexOf(".");
+    if (firstDot !== -1) v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, "").slice(0, 2);
+    receivedInput.value = v;
+    refreshPayment();
   });
+  receivedInput.addEventListener("focus", () => receivedInput.select());
+  referenceInput.addEventListener("input", () => { referenceInput.dataset.touched = "1"; refreshPayment(); });
+  methodSelect.addEventListener("change", () => {
+    refreshPayment();
+    (isOnline() ? referenceInput : receivedInput).focus();
+  });
+
+  bindStyledSelects(overlay);
   refreshPayment();
 
   const close = () => {
@@ -155,32 +187,25 @@ export function openCheckoutModal() {
   overlay.addEventListener("click", event => {
     if (event.target === overlay) close();
   });
+
   form.addEventListener("submit", async event => {
     event.preventDefault();
     if (saving) return;
     refreshPayment();
     if (confirmButton.disabled) return;
 
-    const method = selectedMethod();
-    const online = method?.dataset.online === "true";
-    const received = online ? total : Number(receivedInput.value || 0);
+    const online = isOnline();
+    const received = online ? total : cashValue();
     const ref = referenceInput.value.trim();
     const notes = overlay.querySelector("#saleNotes").value.trim();
+    const methodName = methodSelect.value || "Cash";
     saving = true;
     confirmButton.disabled = true;
     confirmButton.textContent = "Saving…";
     error.classList.add("hidden");
 
     try {
-      const sale = await finalizeSale({
-        method: method?.value || "Cash",
-        online,
-        received,
-        ref,
-        notes,
-        cashier,
-        date
-      });
+      const sale = await finalizeSale({ method: methodName, online, received, ref, notes, cashier, date });
       saving = false;
       renderSuccessReceipt(overlay, {
         orderId: sale.order_id,
@@ -191,7 +216,7 @@ export function openCheckoutModal() {
         total: sale.total,
         received,
         change: Math.max(0, received - sale.total),
-        method: method?.value || "Cash",
+        method: methodName,
         ref: online ? ref : "",
         notes
       });
@@ -204,11 +229,10 @@ export function openCheckoutModal() {
     }
   });
 
-  setTimeout(() => receivedInput.focus(), 50);
+  setTimeout(() => receivedInput.focus({ preventScroll: true }), 50);
 }
 
 function renderSuccessReceipt(overlay, receipt) {
-  overlay.querySelector(".checkout-modal").classList.add("checkout-modal-success");
   overlay.querySelector(".modal-head").innerHTML = `
     <div>
       <h3 id="checkoutTitle">Sale Completed</h3>
@@ -217,16 +241,14 @@ function renderSuccessReceipt(overlay, receipt) {
     <button class="modal-close checkout-close" id="closeCheckout" type="button" aria-label="Close receipt">×</button>`;
   overlay.querySelector("#checkoutContent").innerHTML = `
     <div class="checkout-success-banner" role="status">Payment confirmed successfully.</div>
-    ${renderReceipt(receipt, false)}`;
+    <div class="checkout-receipt-box">
+      ${renderReceipt(receipt, false)}
+    </div>`;
   overlay.querySelector(".checkout-actions").innerHTML = `
-    <button class="ghost-btn" id="newSaleBtn" type="button">New Sale</button>
-    <button class="primary-btn" id="printReceiptBtn" type="button">Print Receipt</button>`;
+    <button class="ghost-btn" id="printReceiptBtn" type="button">Print Receipt</button>
+    <button class="primary-btn" id="doneCheckoutBtn" type="button">Done</button>`;
   overlay.querySelector("#closeCheckout").addEventListener("click", closeCheckoutModal);
-  overlay.querySelector("#newSaleBtn").addEventListener("click", () => {
-    closeCheckoutModal();
-    setActiveDashTab("sell");
-    renderPage("dashboard");
-  });
+  overlay.querySelector("#doneCheckoutBtn").addEventListener("click", closeCheckoutModal);
   overlay.querySelector("#printReceiptBtn").addEventListener("click", () => printReceipt(receipt));
 }
 
@@ -260,6 +282,22 @@ export async function finalizeSale({ method, online, received, ref, notes, cashi
     throw new Error("The server did not return a valid order ID and total.");
   }
 
+  const newTx = {
+    id: Number(result.order_id) || Date.now(),
+    type: "SALE",
+    name: saleItems.map(i => i.qty > 1 ? `${i.name} (x${i.qty})` : i.name).join(", "),
+    amount: saleTotal,
+    qty: saleItems.reduce((s, i) => s + i.qty, 0),
+    timestamp: Date.now(),
+    date: date || new Date().toISOString(),
+    items: saleItems,
+    notes: notes || ""
+  };
+  if (!state.transactions.some(t => Number(t.id) === Number(newTx.id))) {
+    state.transactions.unshift(newTx);
+  }
+
+  // The sale is saved: empty the cart now (so it is clean even if the modal is closed with X)
   state.cart = [];
   persist();
   try {
@@ -268,6 +306,10 @@ export async function finalizeSale({ method, online, received, ref, notes, cashi
   } catch (refreshError) {
     toast(`Sale saved, but dashboard refresh failed: ${refreshError.message}`);
   }
+  state.cart = [];          // loadDashboardData may re-read cached state — keep it empty
+  persist();
+  setActiveDashTab("sell");
+  renderPage("dashboard");  // repaints the Sell tab behind the modal: cart is empty, stock is updated
   toast("Sale completed successfully.");
   return {
     order_id: Number(result.order_id),

@@ -8,6 +8,8 @@ router = APIRouter(tags=["sales"])
 
 
 @router.post("/sales", response_model=SaleResponse)
+@router.post("/make_sale.php", response_model=SaleResponse, include_in_schema=False)
+@router.post("/api/sales", response_model=SaleResponse, include_in_schema=False)
 @router.post("/api/make_sale.php", response_model=SaleResponse, include_in_schema=False)
 async def make_sale(sale: SaleRequest, request: Request):
     user = require_web_access(request)
@@ -49,29 +51,60 @@ async def make_sale(sale: SaleRequest, request: Request):
                 received = max(sale.amount_received, total)
                 change = max(0.0, received - total)
 
-                order_id = await conn.fetchval(
-                    "INSERT INTO orders (user_id, transaction_timestamp, total_amount, amount_tendered, "
-                    "change_given, notes) VALUES ($1, NOW(), $2, $3, $4, $5) RETURNING order_id",
-                    user["user_id"], total, received, change, notes or None
-                )
+                # Every fallback runs inside a SAVEPOINT (nested transaction) so a failed INSERT
+                # does not abort the whole sale.
+                try:
+                    async with conn.transaction():
+                        order_id = await conn.fetchval(
+                            "INSERT INTO orders (user_id, transaction_timestamp, total_amount, amount_tendered, "
+                            "change_given, notes) VALUES ($1, NOW(), $2, $3, $4, $5) RETURNING order_id",
+                            user["user_id"], total, received, change, notes or None
+                        )
+                except asyncpg.PostgresError:
+                    order_id = await conn.fetchval("SELECT COALESCE(MAX(order_id), 0) + 1 FROM orders")
+                    await conn.execute(
+                        "INSERT INTO orders (order_id, user_id, transaction_timestamp, total_amount, "
+                        "amount_tendered, change_given, notes) VALUES ($1, $2, NOW(), $3, $4, $5, $6)",
+                        order_id, user["user_id"], total, received, change, notes or None
+                    )
 
                 for product, quantity, line_total in lines:
-                    await conn.execute(
-                        "INSERT INTO order_items (order_id, product_id, quantity, cost_snapshot, "
-                        "price_snapshot, line_subtotal) VALUES ($1, $2, $3, $4, $5, $6)",
-                        order_id, product["product_id"], quantity,
-                        float(product["base_cost"]), float(product["retail_price"]), line_total
-                    )
+                    # order_items keeps the cost/price SNAPSHOT of this sale (used by History + Reports)
+                    try:
+                        async with conn.transaction():
+                            await conn.execute(
+                                "INSERT INTO order_items (order_id, product_id, quantity, cost_snapshot, "
+                                "price_snapshot, line_subtotal) VALUES ($1, $2, $3, $4, $5, $6)",
+                                order_id, product["product_id"], quantity,
+                                float(product["base_cost"]), float(product["retail_price"]), line_total
+                            )
+                    except asyncpg.PostgresError:
+                        next_item_id = await conn.fetchval("SELECT COALESCE(MAX(order_item_id), 0) + 1 FROM order_items")
+                        await conn.execute(
+                            "INSERT INTO order_items (order_item_id, order_id, product_id, quantity, cost_snapshot, "
+                            "price_snapshot, line_subtotal) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                            next_item_id, order_id, product["product_id"], quantity,
+                            float(product["base_cost"]), float(product["retail_price"]), line_total
+                        )
+
                     await conn.execute(
                         "UPDATE products SET stock_quantity = stock_quantity - $1 WHERE product_id = $2",
                         quantity, product["product_id"]
                     )
 
-                await conn.execute(
-                    "INSERT INTO histories (order_id, status_timestamp, order_status) "
-                    "VALUES ($1, NOW(), 'COMPLETED')",
-                    order_id
-                )
+                # histories table (schema: history_id, order_id, status_timestamp, order_status)
+                for sql, args in (
+                    ("INSERT INTO histories (order_id, status_timestamp, order_status) "
+                     "VALUES ($1, NOW(), 'COMPLETED')", (order_id,)),
+                    ("INSERT INTO histories (history_id, order_id, status_timestamp, order_status) "
+                     "SELECT COALESCE(MAX(history_id), 0) + 1, $1, NOW(), 'COMPLETED' FROM histories", (order_id,)),
+                ):
+                    try:
+                        async with conn.transaction():
+                            await conn.execute(sql, *args)
+                        break
+                    except asyncpg.PostgresError:
+                        continue
 
                 config_id = await conn.fetchval(
                     "SELECT config_id FROM capital_configs ORDER BY config_id DESC LIMIT 1"
