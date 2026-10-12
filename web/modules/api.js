@@ -3,7 +3,7 @@
  * Multi-base fallback, CORS resilience, and session view management.
  * ============================================================ */
 
-import { isSessionValid } from "./state.js";
+import { clearSession } from "./state.js";
 
 export const API_BASE = "https://managing-sentry-web.vercel.app/api";
 
@@ -14,6 +14,7 @@ export function getCandidateBases() {
     (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
   if (isLocal) {
+    // Developer machine: try the local FastAPI first, then the hosted API.
     const host = window.location.hostname;
     return [
       `http://${host}:8003/api`,
@@ -22,21 +23,18 @@ export function getCandidateBases() {
       "http://localhost:8003",
       "http://127.0.0.1:8003/api",
       "http://127.0.0.1:8003",
-      "https://managing-sentry-web.vercel.app/api",
+      API_BASE,
       "./api",
       "/api"
     ];
   }
 
-  return [
-    "https://managing-sentry-web.vercel.app/api",
-    "http://localhost:8003/api",
-    "http://localhost:8003",
-    "http://127.0.0.1:8003/api",
-    "http://127.0.0.1:8003",
-    "./api",
-    "/api"
-  ];
+  // Deployed site. NEVER probe localhost / 127.0.0.1 here: it makes the browser ask
+  // "allow this site to access other apps and services on this device?".
+  //  1) /api            -> same-origin proxy (see vercel.json). Session cookie stays first-party,
+  //                        so it is not blocked as a third-party cookie.
+  //  2) API_BASE        -> direct call to the hosted API (fallback).
+  return ["/api", API_BASE];
 }
 
 /**
@@ -97,7 +95,7 @@ export async function apiRequest(endpoint, rawOptions = {}) {
         });
       }
 
-      if (response.status === 404 && i < candidateBases.length - 1) {
+      if ((response.status === 404 || response.status === 405) && i < candidateBases.length - 1) {
         if (base === detectedApiBase) detectedApiBase = null;
         continue;
       }
@@ -108,7 +106,7 @@ export async function apiRequest(endpoint, rawOptions = {}) {
       try {
         result = rawText ? JSON.parse(rawText) : {};
       } catch (jsonErr) {
-        if (response.status === 404 && i < candidateBases.length - 1) {
+        if ((response.status === 404 || response.status === 405) && i < candidateBases.length - 1) {
           if (base === detectedApiBase) detectedApiBase = null;
           continue;
         }
@@ -120,12 +118,17 @@ export async function apiRequest(endpoint, rawOptions = {}) {
       }
 
       if (response.status === 401) {
-        if (!isSessionValid()) setAuthView(false);
+        // The server does not recognise us (cookie missing/expired). Do not leave the user on
+        // empty pages: send them back to the login screen. (Wrong password on login stays on login.)
+        if (!/^login/.test(cleanEndpoint)) {
+          clearSession();
+          setAuthView(false);
+        }
         throw new Error(result.error || "Not signed in. Please log in again.");
       }
 
       if (!response.ok) {
-        if (response.status === 404 && i < candidateBases.length - 1) {
+        if ((response.status === 404 || response.status === 405) && i < candidateBases.length - 1) {
           if (base === detectedApiBase) detectedApiBase = null;
           continue;
         }

@@ -5,7 +5,9 @@
  * ============================================================ */
 
 @media print {
-  @page pro {
+  /* Unnamed on purpose: a named page ("page: pro") made some browsers fall back to a
+     different default page size from page 3 onward (bigger text, clipped columns). */
+  @page {
     size: A4 portrait;
     margin: 15mm 14mm 17mm;
     @bottom-left  { content: "Confidential"; font: 12px Arial, Helvetica, sans-serif; color: #777; }
@@ -15,7 +17,7 @@
   html:has(body.printing-history),
   html:has(body.printing-report) { overflow: visible !important; height: auto !important; }
   body.printing-history,
-  body.printing-report { page: pro; background: #fff !important; overflow: visible !important; height: auto !important; min-height: 0 !important; }
+  body.printing-report { background: #fff !important; overflow: visible !important; height: auto !important; min-height: 0 !important; }
 
   /* Print only the document: take the app out of the layout completely */
   body.printing-history > *:not(#printArea),
@@ -123,8 +125,8 @@
   .pro-tag { font-size: 12px; font-weight: 400; color: #333; }
   .pro-tag.stock-in, .pro-tag.stock-out { color: #333; }
 
-  /* Charts: no frames, greyscale */
-  .pro-report .report-chart-section { margin: 14px 0 0; break-inside: avoid; }
+  /* Charts: coloured bar graph (left) + ranked bars (right) */
+  .pro-report .report-chart-section { margin: 14px 0 0; break-inside: avoid; page-break-inside: avoid; }
   .pro-report .report-section-title {
     margin: 22px 0 8px;
     padding-bottom: 3px;
@@ -134,33 +136,26 @@
     letter-spacing: 0.5px;
     color: #111;
   }
-  .pro-report .report-chart-section { margin: 0; }
-  .pro-report .report-chart-container { display: block; padding: 0; border: 0; background: none; font-size: 0; }
-  .pro-report .report-chart-block {
-    display: inline-block;            /* atomic: moves to the next page as a whole */
-    vertical-align: top;
-    width: 48%;
-    margin: 0 4% 0 0;
+  .pro-report .report-chart-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 24px;
     padding: 0;
     border: 0;
-    font-size: 12px;
-    break-inside: avoid;
+    background: none;
   }
-  .pro-report .report-chart-block:last-child { margin-right: 0; }
-  .pro-report .chart-block-header { margin-bottom: 4px; }
+  .pro-report .report-chart-block { display: flex; flex-direction: column; min-width: 0; padding: 0; border: 0; break-inside: avoid; }
+  .pro-report .chart-block-header { margin-bottom: 6px; }
   .pro-report .chart-title { display: block; font-size: 12px; font-weight: 700; color: #111; text-transform: none; letter-spacing: 0; }
   .pro-report .chart-subtitle { display: block; font-size: 12px; color: #777; }
-  .pro-report .report-svg-chart { display: block; width: 100%; height: auto; }
-  .pro-report .report-svg-chart line { stroke: #bbb; }
-  .pro-report .report-svg-chart g.bar-group:nth-of-type(1) rect { fill: #222; }
-  .pro-report .report-svg-chart g.bar-group:nth-of-type(2) rect { fill: #777; }
-  .pro-report .report-svg-chart g.bar-group:nth-of-type(3) rect { fill: #bbb; }
-  .pro-report .top-product-info .val, .pro-report .top-product-info .rank { color: #111 !important; font-weight: 700; }
-  .pro-report .top-product-row { margin-bottom: 6px; }
+  .pro-report .report-svg-chart { display: block; width: 100%; height: auto; max-height: 230px; }
+  .pro-report .top-products-list { gap: 8px; }
+  .pro-report .top-product-row { margin-bottom: 2px; }
   .pro-report .top-product-info { display: flex; gap: 6px; font-size: 12px; }
   .pro-report .top-product-info .name { flex: 1; }
-  .pro-report .top-product-bar-track { height: 4px; background: #e3e3e3 !important; }
-  .pro-report .top-product-bar-fill { height: 100%; background: #333 !important; }
+  .pro-report .top-product-info .rank, .pro-report .top-product-info .val { font-weight: 700; }
+  .pro-report .top-product-bar-track { height: 6px; background: #e3e3e3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pro-report .top-product-bar-fill { height: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
   /* Signatures */
   .pro-signatures { display: flex; justify-content: space-between; gap: 48px; margin-top: 40px; break-inside: avoid; }
