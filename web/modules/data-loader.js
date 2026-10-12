@@ -6,7 +6,7 @@
 
 import { state, persist } from "./state.js";
 import { apiRequest }     from "./api.js";
-import { parseTimestamp, formatDateTime24 } from "./utils.js";
+import { parseTimestamp, formatDateTime24, toast } from "./utils.js";
 import { ensureStockBaseline, ensureExpiryBatches, earliestExpiry } from "./stock-logic.js";
 import { getProfitBreakdown, getSalesRevenue } from "./finance.js";
 
@@ -30,6 +30,15 @@ export async function loadDashboardData() {
       }),
       apiRequest("capital.php")
     ]);
+
+    // Make load failures VISIBLE (they used to be swallowed, leaving blank pages).
+    state.authFailed = [p, t, c].some(r => r.status === "rejected" && /sign(ed)? in|log in/i.test(r.reason?.message || ""));
+    const failed = [["products", p], ["history", t], ["capital", c]].filter(([, r]) => r.status === "rejected");
+    if (failed.length && !state.authFailed) {
+      const [what, r] = failed[0];
+      console.warn(`Could not load ${what}:`, r.reason);
+      toast(`Could not load ${what} from the server: ${r.reason?.message || "unknown error"}`);
+    }
 
     if (p.status === "fulfilled" && Array.isArray(p.value)) productsRes = p.value;
     if (t.status === "fulfilled" && Array.isArray(t.value)) {

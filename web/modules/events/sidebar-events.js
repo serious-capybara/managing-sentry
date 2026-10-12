@@ -88,16 +88,13 @@ export function bindSidebarEvents() {
 
       if (message) message.textContent = "Signing in…";
       try {
-        let user = null;
-        try {
-          user = await apiRequest("login.php", {
-            method: "POST",
-            body: JSON.stringify({ username, password })
-          });
-        } catch (apiErr) {
-          console.warn("Backend login API unreachable or CORS blocked, using session fallback:", apiErr);
-          user = { username: username || "admin", full_name: username || "Super Admin" };
-        }
+        // A real server login is required. (There used to be an "offline fallback" that let ANY
+        // password in when the server was unreachable - that hid the real problem and left every
+        // page empty because no server session existed.)
+        const user = await apiRequest("login.php", {
+          method: "POST",
+          body: JSON.stringify({ username, password })
+        });
 
         saveSession(username || "admin", user?.full_name || user?.username || username || "admin");
 
@@ -105,6 +102,11 @@ export function bindSidebarEvents() {
           await loadDashboardData();
         } catch (dataErr) {
           console.warn("Could not sync dashboard data during login:", dataErr);
+        }
+
+        if (state.authFailed) {
+          clearSession();
+          throw new Error("Signed in, but the browser did not keep the server session (cookie blocked). Please try again or contact the administrator.");
         }
 
         if (message) message.textContent = "";

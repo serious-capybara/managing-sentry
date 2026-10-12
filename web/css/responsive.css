@@ -11,9 +11,10 @@
     margin: 3mm;
   }
 
+  /* Default page for every printed document (reports/history). Only receipts use their own page. */
   @page {
-    margin: 10mm;
-    size: auto;
+    size: A4 portrait;
+    margin: 15mm 14mm 17mm;
   }
 
   body.printing-receipt { page: receipt; }
