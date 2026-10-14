@@ -5,10 +5,12 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 from core import config
+from core.docs_auth import add_protected_docs
 from database.connection import lifespan
 from routers import auth, test, products, history, sales, capital, reset, maintenance, sync
 
-app = FastAPI(title="Inventory & Sales API", lifespan=lifespan)
+# FastAPI's own open /docs pages are switched off; core/docs_auth.py adds password-protected ones.
+app = FastAPI(title="Inventory & Sales API", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 # Signed session cookie (replaces PHP sessions)
 app.add_middleware(
@@ -51,6 +53,7 @@ app.include_router(capital.router)
 app.include_router(reset.router)
 app.include_router(maintenance.router)
 app.include_router(sync.router)
+add_protected_docs(app)
 
 
 @app.get("/")

@@ -871,3 +871,17 @@
 .checkout-change-field.is-positive .input-prefix--readonly output {
   color: var(--success-green-hover);
 }
+
+
+/* Checkout pop-up: still scrolls with finger / mouse wheel, but without a visible scroll bar */
+.checkout-modal,
+.checkout-modal * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.checkout-modal::-webkit-scrollbar,
+.checkout-modal *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
