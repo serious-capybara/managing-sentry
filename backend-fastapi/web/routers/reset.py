@@ -34,7 +34,7 @@ async def reset_dashboard(request: Request):
                 else:
                     await conn.execute(
                         "INSERT INTO capital_configs (starting_capital, current_balance, last_updated_at) "
-                        "VALUES (20000, 20000, NOW())"
+                        "VALUES (0, 0, NOW())"
                     )
     except asyncpg.PostgresError as e:
         raise HTTPException(status_code=500, detail=f"Reset failed: {e}")
