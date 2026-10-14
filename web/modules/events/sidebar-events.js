@@ -8,6 +8,8 @@ import { state, saveSession, clearSession } from "../state.js";
 import { toast } from "../utils.js";
 import { apiRequest, setAuthView } from "../api.js";
 import { loadDashboardData } from "../data-loader.js";
+import { startLiveSync } from "../live-sync.js";
+import { kickSaleQueue } from "../sale-queue.js";
 import { updateStats } from "../stock-logic.js";
 import { renderPage } from "../router.js";
 import { openSetCapitalModal } from "../modals/capital-modal.js";
@@ -113,6 +115,8 @@ export function bindSidebarEvents() {
 
         setAuthView(true);
         renderPage("dashboard");
+        kickSaleQueue();
+        startLiveSync();
       } catch (error) {
         if (message) message.textContent = error.message;
       }

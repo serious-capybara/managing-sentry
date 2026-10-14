@@ -26,7 +26,7 @@ export function renderReceipt(receipt, pending = false, live = false) {
       </header>
       <div class="receipt-divider"></div>
       <dl class="receipt-info">
-        <div><dt>Order ID</dt><dd>${pending ? "Will be assigned" : escapeHtml(receipt.orderId)}</dd></div>
+        <div><dt>Order ID</dt><dd data-receipt-order>${pending || receipt.orderId == null ? "Will be assigned" : escapeHtml(receipt.orderId)}</dd></div>
         <div><dt>Date</dt><dd>${escapeHtml(receipt.date)}</dd></div>
         <div><dt>Cashier</dt><dd>${escapeHtml(receipt.cashier)}</dd></div>
       </dl>

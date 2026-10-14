@@ -57,6 +57,13 @@ export function setAuthView(loggedIn) {
   if (!loggedIn) document.getElementById("loginForm")?.reset();
 }
 
+/** An Error that also remembers the HTTP status, so callers can tell "rejected" from "offline". */
+function statusError(message, status) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
 /**
  * Fetch a backend endpoint with candidate base fallback and CORS resilience.
  *
@@ -65,11 +72,13 @@ export function setAuthView(loggedIn) {
  * @returns {Promise<any>}   Parsed JSON response body
  */
 export async function apiRequest(endpoint, rawOptions = {}) {
-  const { onResponse, ...options } = rawOptions;   // onResponse(response) lets a caller read headers
+  const { onResponse, onlyDetectedBase, ...options } = rawOptions;   // onResponse(response) lets a caller read headers
   const cleanEndpoint = endpoint.replace(/^\/+/, "");
   const baseList = getCandidateBases();
+  // onlyDetectedBase: never repeat this request on another address (used for saving a sale, so
+  // a connection that drops after the server saved it cannot make a second copy elsewhere).
   const candidateBases = detectedApiBase
-    ? [detectedApiBase, ...baseList.filter(b => b !== detectedApiBase)]
+    ? (onlyDetectedBase ? [detectedApiBase] : [detectedApiBase, ...baseList.filter(b => b !== detectedApiBase)])
     : baseList;
 
   let lastError = null;
@@ -112,7 +121,7 @@ export async function apiRequest(endpoint, rawOptions = {}) {
         }
         if (!response.ok) {
           if (base === detectedApiBase) detectedApiBase = null;
-          throw new Error(`Server returned status ${response.status} (${response.statusText})`);
+          throw statusError(`Server returned status ${response.status} (${response.statusText})`, response.status);
         }
         throw new Error("Invalid response from server (expected JSON).");
       }
@@ -124,7 +133,7 @@ export async function apiRequest(endpoint, rawOptions = {}) {
           clearSession();
           setAuthView(false);
         }
-        throw new Error(result.error || "Not signed in. Please log in again.");
+        throw statusError(result.error || "Not signed in. Please log in again.", 401);
       }
 
       if (!response.ok) {
@@ -132,7 +141,7 @@ export async function apiRequest(endpoint, rawOptions = {}) {
           if (base === detectedApiBase) detectedApiBase = null;
           continue;
         }
-        throw new Error(result.error || `Server error (${response.status})`);
+        throw statusError(result.error || `Server error (${response.status})`, response.status);
       }
 
       detectedApiBase = base;
@@ -140,6 +149,9 @@ export async function apiRequest(endpoint, rawOptions = {}) {
       return result;
     } catch (err) {
       lastError = err;
+      // The server answered and said no (wrong password, not enough stock, ...): that answer is
+      // final. Only "not found" and connection problems mean "try the next address".
+      if (err.status && err.status !== 404 && err.status !== 405) throw err;
       if (base === detectedApiBase) detectedApiBase = null;
       if (
         i < candidateBases.length - 1 &&

@@ -6,6 +6,8 @@
 
 import { state, persist, isSessionValid, getActivePage, clearSession } from "./modules/state.js";
 import { loadDashboardData } from "./modules/data-loader.js";
+import { startLiveSync } from "./modules/live-sync.js";
+import { kickSaleQueue } from "./modules/sale-queue.js";
 import {
   ensureStockBaseline,
   ensureExpiryBatches,
@@ -37,6 +39,8 @@ async function initSession() {
 
     // Restore the user's active page view (or default to dashboard)
     renderPage(getActivePage());
+    kickSaleQueue();      // send any sale that was still waiting when the page closed
+    startLiveSync();
   } else {
     // Session expired (>= 1 hour) or never signed in
     clearSession();
