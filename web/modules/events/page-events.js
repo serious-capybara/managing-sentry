@@ -224,9 +224,10 @@ export function bindPageEvents(page) {
           if (dashSheet.isOpen() && previousTab === btn.dataset.tab) {
             dashSheet.close();
           } else {
-            renderActiveTab();
             dashBody.classList.toggle("is-sell", btn.dataset.tab === "sell");
             dashSheet.open({ locked: btn.dataset.tab === "sell" });
+            // build the tab content on the next frame so the sheet starts opening right away
+            requestAnimationFrame(() => setTimeout(renderActiveTab, 0));
           }
           paintDashTabs(pageContent);
           return;
@@ -241,7 +242,9 @@ export function bindPageEvents(page) {
           localStorage.setItem("sentryDashSectionCollapsed", "false");
         }
 
-        renderActiveTab();
+        // Highlight the tab straight away, then swap the content on the next frame
+        paintDashTabs(pageContent);
+        requestAnimationFrame(() => setTimeout(renderActiveTab, 0));
       });
     });
 
@@ -281,7 +284,8 @@ export function bindPageEvents(page) {
 
       const savedHeight = localStorage.getItem("sentryDashPanelHeight");
       const numHeight = Number(savedHeight);
-      const maxAllowed = getMaxDashPanelHeight();
+      // estimate (no layout read) — the exact limit is only needed while dragging
+      const maxAllowed = Math.max(180, (window.innerHeight || 800) - 64 - 420);
       const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 180)
         ? Math.min(numHeight, maxAllowed)
         : Math.min(320, maxAllowed);
@@ -400,7 +404,7 @@ export function bindPageEvents(page) {
 
       const savedHeight = localStorage.getItem("sentryStocksLowPanelHeight");
       const numHeight = Number(savedHeight);
-      const maxAllowed = getMaxLowPanelHeight();
+      const maxAllowed = Math.max(180, (window.innerHeight || 800) - 64 - 150);
       const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 180)
         ? Math.min(numHeight, maxAllowed)
         : Math.min(320, maxAllowed);

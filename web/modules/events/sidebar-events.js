@@ -133,8 +133,14 @@ export function bindSidebarEvents() {
   // Primary navigation items
   document.querySelectorAll(".nav-item[data-page]").forEach(btn => {
     btn.addEventListener("click", () => {
-      renderPage(btn.dataset.page);
+      // Show the click right away (highlight + close the drawer), then build the page
+      // on the next frame so the screen never waits for the page to be drawn.
+      const page = btn.dataset.page;
+      document.querySelectorAll(".nav-item, .nav-sub").forEach(item => {
+        item.classList.toggle("active", item.dataset.page === page);
+      });
       if (window.innerWidth <= 1024) closeMobileSidebar();
+      requestAnimationFrame(() => setTimeout(() => renderPage(page), 0));
     });
   });
 

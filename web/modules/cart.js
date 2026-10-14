@@ -242,4 +242,15 @@ export function sellCartRows() {
 
 let _renderActiveTab;
 export function registerRenderActiveTab(fn) { _renderActiveTab = fn; }
-function renderActiveTab() { if (_renderActiveTab) _renderActiveTab(); }
+
+// Redraw the Sell tab on the next frame (and only once, even after several quick taps),
+// so the tap itself is answered right away.
+let _sellRedrawQueued = false;
+function renderActiveTab() {
+  if (_sellRedrawQueued) return;
+  _sellRedrawQueued = true;
+  requestAnimationFrame(() => setTimeout(() => {
+    _sellRedrawQueued = false;
+    if (_renderActiveTab) _renderActiveTab();
+  }, 0));
+}

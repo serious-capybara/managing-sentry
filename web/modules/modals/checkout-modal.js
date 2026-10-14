@@ -4,7 +4,7 @@
  * ============================================================ */
 
 import { state, getSession, persist } from "../state.js";
-import { money, toast } from "../utils.js";
+import { money, amount2, toast } from "../utils.js";
 import { apiRequest } from "../api.js";
 import { loadDashboardData } from "../data-loader.js";
 import { updateStats } from "../stock-logic.js";
@@ -138,7 +138,7 @@ export function openCheckoutModal() {
     receiptCash.textContent = money(received);
     const change = Math.max(0, received - total);
     receiptChange.textContent = money(change);
-    changeDue.textContent = change.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    changeDue.textContent = amount2(change);
     changeField.classList.toggle("is-positive", change > 0);
     receiptPayment.textContent = online && ref ? `${methodSelect.value} · ${ref}` : methodSelect.value;
 

@@ -2,18 +2,48 @@
  * utils.js — Pure helper utilities (no DOM side-effects).
  * ============================================================ */
 
+// Intl formatters are expensive to build, so they are created once and reused.
+const pesoFormatter = new Intl.NumberFormat("en-PH", {
+  style: "currency",
+  currency: "PHP",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
+const amountFormatter = new Intl.NumberFormat("en-PH", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
+const manilaFormatters = {};   // keyed by "with seconds" / "without seconds"
+
+function getManilaFormatter(includeSeconds) {
+  const key = includeSeconds ? "s" : "m";
+  if (!manilaFormatters[key]) {
+    manilaFormatters[key] = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      ...(includeSeconds ? { second: "2-digit" } : {}),
+      hour12: false
+    });
+  }
+  return manilaFormatters[key];
+}
+
 /**
  * Format a numeric value as Philippine Peso currency string.
  * @param {number|string} value
  * @returns {string}  e.g. "₱1,234.00"
  */
 export function money(value) {
-  return Number(value || 0).toLocaleString("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  return pesoFormatter.format(Number(value || 0));
+}
+
+/** Plain number with 2 decimals and thousands separators, e.g. "1,234.50" (no currency sign). */
+export function amount2(value) {
+  return amountFormatter.format(Number(value || 0));
 }
 
 /**
@@ -85,17 +115,7 @@ export function formatAsiaManila(raw, includeSeconds = true) {
   if (Number.isNaN(d.getTime())) return "—";
 
   try {
-    const options = {
-      timeZone: "Asia/Manila",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      ...(includeSeconds ? { second: "2-digit" } : {}),
-      hour12: false
-    };
-    const formatter = new Intl.DateTimeFormat("en-CA", options);
+    const formatter = getManilaFormatter(includeSeconds);
     const parts = formatter.formatToParts(d);
     const map = {};
     for (const part of parts) {
