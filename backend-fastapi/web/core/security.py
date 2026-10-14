@@ -1,7 +1,7 @@
 import bcrypt
 from fastapi import HTTPException, Request
 
-ALLOWED_ROLES = ("admin", "manager", "developer")
+ALLOWED_ROLES = ("admin", "manager")
 
 
 def hash_password(plain_password: str) -> str:

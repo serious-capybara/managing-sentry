@@ -40,7 +40,7 @@ async def login(
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     if normalize_role(row["role"]) not in ALLOWED_ROLES:
-        raise HTTPException(status_code=403, detail="The web portal is only available to Admin, Manager, and Developer accounts")
+        raise HTTPException(status_code=403, detail="The web portal is only available to Admin and Manager accounts")
 
     user = dict(row)
     del user["password_hash"]
