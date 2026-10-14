@@ -22,7 +22,7 @@ const savedState = JSON.parse(localStorage.getItem("inventorySuperAdmin") || "nu
 export const state = { ...structuredClone(defaultState), ...(savedState || {}) };
 
 /** Persist cart, products, transactions and financial settings to localStorage so they survive page reloads. */
-export function persist() {
+function writeStateToStorage() {
   localStorage.setItem("inventorySuperAdmin", JSON.stringify({
     cart: state.cart,
     products: state.products,
@@ -34,6 +34,34 @@ export function persist() {
     taxes: state.taxes
   }));
 }
+
+let persistTimer = null;
+
+/**
+ * Save the app data to the browser. Turning every product and history row into text is
+ * slow, so the save is batched: many quick changes (like tapping "Add" several times)
+ * cause one save a moment later instead of one save per tap.
+ */
+export function persist() {
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    writeStateToStorage();
+  }, 300);
+}
+
+/** Write any waiting save right now (used when the page is closed or hidden). */
+export function flushPersist() {
+  if (!persistTimer) return;
+  clearTimeout(persistTimer);
+  persistTimer = null;
+  writeStateToStorage();
+}
+
+window.addEventListener("pagehide", flushPersist);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flushPersist();
+});
 
 /* ============================================================
  * SESSION & ROUTE PERSISTENCE (1-HOUR EXPIRATION)
