@@ -5,9 +5,8 @@
 
 import { state, getSession, persist } from "../state.js";
 import { money, amount2, toast } from "../utils.js";
-import { apiRequest } from "../api.js";
-import { loadDashboardData } from "../data-loader.js";
-import { updateStats } from "../stock-logic.js";
+import { updateStats, consumeExpiryBatches } from "../stock-logic.js";
+import { enqueueSale, watchSale } from "../sale-queue.js";
 import { printReceipt } from "../print.js";
 import { renderReceipt, receiptDate } from "../receipt.js";
 import { renderPage, setActiveDashTab } from "../router.js";
@@ -205,10 +204,11 @@ export function openCheckoutModal() {
     error.classList.add("hidden");
 
     try {
-      const sale = await finalizeSale({ method: methodName, online, received, ref, notes, cashier, date });
+      // The sale is recorded on screen at once and sent to the server in the background.
+      const sale = finalizeSale({ method: methodName, online, received, ref, notes, cashier, date });
       saving = false;
-      renderSuccessReceipt(overlay, {
-        orderId: sale.order_id,
+      const receipt = {
+        orderId: null,
         date,
         cashier,
         items: sale.items,
@@ -219,6 +219,26 @@ export function openCheckoutModal() {
         method: methodName,
         ref: online ? ref : "",
         notes
+      };
+      renderSuccessReceipt(overlay, receipt);
+      watchSale(sale.token, {
+        saved(orderId) {
+          receipt.orderId = orderId;
+          const idCell = document.querySelector("[data-receipt-order]");
+          if (idCell && document.getElementById("checkoutModal")) idCell.textContent = String(orderId);
+          const caption = document.getElementById("checkoutCaption");
+          if (caption) caption.textContent = "Saved to the server.";
+        },
+        failed(message) {
+          const banner = document.querySelector("#checkoutModal .checkout-success-banner");
+          if (banner) {
+            banner.textContent = `This sale could not be saved (${message}) and was cancelled.`;
+            banner.style.background = "#FEE2E2";
+            banner.style.color = "#B91C1C";
+          }
+          const caption = document.getElementById("checkoutCaption");
+          if (caption) caption.textContent = "Sale cancelled.";
+        }
       });
     } catch (saveError) {
       saving = false;
@@ -236,11 +256,11 @@ function renderSuccessReceipt(overlay, receipt) {
   overlay.querySelector(".modal-head").innerHTML = `
     <div>
       <h3 id="checkoutTitle">Sale Completed</h3>
-      <p class="modal-caption">Payment was saved successfully.</p>
+      <p class="modal-caption" id="checkoutCaption">Saving to the server in the background — you can start the next sale.</p>
     </div>
     <button class="modal-close checkout-close" id="closeCheckout" type="button" aria-label="Close receipt">×</button>`;
   overlay.querySelector("#checkoutContent").innerHTML = `
-    <div class="checkout-success-banner" role="status">Payment confirmed successfully.</div>
+    <div class="checkout-success-banner" role="status">Payment recorded.</div>
     <div class="checkout-receipt-box">
       ${renderReceipt(receipt, false)}
     </div>`;
@@ -265,57 +285,71 @@ export function closeCheckoutModal() {
   }
 }
 
-export async function finalizeSale({ method, online, received, ref, notes, cashier, date }) {
+/**
+ * Record the sale on screen right now and hand it to the background queue.
+ * Nothing here waits for the network, so the next sale can start immediately.
+ */
+export function finalizeSale({ method, online, received, ref, notes, cashier, date }) {
   const saleItems = state.cart.map(item => ({ ...item }));
-  const result = await apiRequest("make_sale.php", {
-    method: "POST",
-    body: JSON.stringify({
-      items: saleItems.map(item => ({ product_id: item.id, quantity: item.qty })),
-      method,
-      reference: online ? ref : "",
-      notes,
-      amount_received: received
-    })
-  });
-  const saleTotal = Number(result.total_amount);
-  if (!Number.isFinite(saleTotal) || !Number.isInteger(Number(result.order_id))) {
-    throw new Error("The server did not return a valid order ID and total.");
-  }
+  const roundMoney = value => Math.round(value * 100) / 100;
+  const total = roundMoney(saleItems.reduce((sum, item) => sum + roundMoney(Number(item.price) * item.qty), 0));
+
+  // A short reference stored with the sale lets the queue make sure it is never saved twice.
+  const token = `web-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const serverNotes = `${notes ? `${notes} ` : ""}[${token}]`;
+
+  // Expected order number (replaced by the real one as soon as the server confirms)
+  const lastOrderId = state.transactions
+    .filter(t => t.type === "SALE")
+    .reduce((max, t) => Math.max(max, Number(t.order_id ?? t.id) || 0), 0);
 
   const newTx = {
-    id: Number(result.order_id) || Date.now(),
+    id: lastOrderId + 1,
+    order_id: lastOrderId + 1,
     type: "SALE",
     name: saleItems.map(i => i.qty > 1 ? `${i.name} (x${i.qty})` : i.name).join(", "),
-    amount: saleTotal,
+    amount: total,
     qty: saleItems.reduce((s, i) => s + i.qty, 0),
     timestamp: Date.now(),
     date: date || new Date().toISOString(),
     items: saleItems,
-    notes: notes || ""
+    notes: notes || "",
+    saleToken: token,
+    pending: true
   };
-  if (!state.transactions.some(t => Number(t.id) === Number(newTx.id))) {
-    state.transactions.unshift(newTx);
-  }
+  state.transactions.unshift(newTx);
 
-  // The sale is saved: empty the cart now (so it is clean even if the modal is closed with X)
+  // Update stock, sold counts and capital on screen
+  saleItems.forEach(item => {
+    const product = state.products.find(p => p.id === Number(item.id));
+    if (!product) return;
+    product.stock = Math.max(0, Number(product.stock || 0) - item.qty);
+    product.sold = Number(product.sold || 0) + item.qty;
+    if (product.soldRevenue != null) product.soldRevenue = Number(product.soldRevenue) + Number(item.price) * item.qty;
+    if (product.soldCogs != null) product.soldCogs = Number(product.soldCogs) + Number(item.cost || product.cost || 0) * item.qty;
+    consumeExpiryBatches(product, item.qty);
+  });
+  state.capital = Number(state.capital || 0) + total;
+
   state.cart = [];
   persist();
-  try {
-    await loadDashboardData();
-    updateStats();
-  } catch (refreshError) {
-    toast(`Sale saved, but dashboard refresh failed: ${refreshError.message}`);
-  }
-  state.cart = [];          // loadDashboardData may re-read cached state — keep it empty
-  persist();
   setActiveDashTab("sell");
-  renderPage("dashboard");  // repaints the Sell tab behind the modal: cart is empty, stock is updated
-  toast("Sale completed successfully.");
-  return {
-    order_id: Number(result.order_id),
-    total: saleTotal,
-    items: saleItems,
-    cashier,
-    date
-  };
+  updateStats();
+
+  enqueueSale({
+    token,
+    total,
+    body: {
+      items: saleItems.map(item => ({ product_id: item.id, quantity: item.qty })),
+      method,
+      reference: online ? ref : "",
+      notes: serverNotes,
+      amount_received: received
+    }
+  });
+
+  // Repaint the Sell tab behind the pop-up (empty cart, new stock) after the receipt shows.
+  requestAnimationFrame(() => setTimeout(() => renderPage("dashboard"), 0));
+  toast("Sale recorded.");
+  return { order_id: null, token, total, items: saleItems, cashier, date };
 }

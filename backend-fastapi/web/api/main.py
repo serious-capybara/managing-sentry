@@ -6,7 +6,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 from core import config
 from database.connection import lifespan
-from routers import auth, test, products, history, sales, capital, reset, maintenance
+from routers import auth, test, products, history, sales, capital, reset, maintenance, sync
 
 app = FastAPI(title="Inventory & Sales API", lifespan=lifespan)
 
@@ -50,6 +50,7 @@ app.include_router(sales.router)
 app.include_router(capital.router)
 app.include_router(reset.router)
 app.include_router(maintenance.router)
+app.include_router(sync.router)
 
 
 @app.get("/")
