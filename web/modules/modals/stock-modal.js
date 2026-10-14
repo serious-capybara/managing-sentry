@@ -1,8 +1,4 @@
-/* ============================================================
- * modals/stock-modal.js — Stock In & Stock Out floating modals.
- * Allows adding or removing stock quantities for products via
- * floating dialog modals with searchable product picker.
- * ============================================================ */
+// add stock / remove stock pop-ups
 
 import { state } from "../state.js";
 import { escapeHtml, money, toast } from "../utils.js";
@@ -21,10 +17,7 @@ function stockProductOptions(products = state.products, selectedId = null) {
     .join("");
 }
 
-/**
- * Open Stock In (Add Stock) floating modal dialog.
- * @param {number|null} targetProductId - Optional pre-selected product ID
- */
+// add stock pop-up
 export function openStockInModal(targetProductId = null) {
   const existing = document.getElementById("stockInModal");
   if (existing) existing.remove();
@@ -179,10 +172,7 @@ export function openStockInModal(targetProductId = null) {
   setTimeout(() => searchInput?.focus(), 50);
 }
 
-/**
- * Open Stock Out (Remove Stock) floating modal dialog.
- * @param {number|null} targetProductId - Optional pre-selected product ID
- */
+// remove stock pop-up
 export function openStockOutModal(targetProductId = null) {
   const existing = document.getElementById("stockOutModal");
   if (existing) existing.remove();

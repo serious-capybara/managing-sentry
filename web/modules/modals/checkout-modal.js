@@ -1,7 +1,4 @@
-/* ============================================================
- * modals/checkout-modal.js — Payment & Checkout modal.
- * Captures payment, records the sale, and presents its receipt.
- * ============================================================ */
+// checkout pop-up: takes the payment, saves the sale and shows the receipt
 
 import { state, getSession, persist } from "../state.js";
 import { money, amount2, toast } from "../utils.js";
@@ -285,10 +282,7 @@ export function closeCheckoutModal() {
   }
 }
 
-/**
- * Record the sale on screen right now and hand it to the background queue.
- * Nothing here waits for the network, so the next sale can start immediately.
- */
+// record the sale on screen right now and hand it to the background queue
 export function finalizeSale({ method, online, received, ref, notes, cashier, date }) {
   const saleItems = state.cart.map(item => ({ ...item }));
   const roundMoney = value => Math.round(value * 100) / 100;

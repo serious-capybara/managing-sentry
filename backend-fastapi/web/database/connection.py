@@ -19,8 +19,6 @@ DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NA
 
 
 async def init_connection(conn: asyncpg.Connection):
-    # Dates/times come back as plain strings ("2026-01-31", "2026-01-31 10:00:00.123456"),
-    # which is the format the web frontend reads.
     for pg_type in ("date", "time", "timetz", "timestamp", "timestamptz", "interval"):
         await conn.set_type_codec(pg_type, encoder=str, decoder=str, schema="pg_catalog", format="text")
 

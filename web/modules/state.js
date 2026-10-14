@@ -1,7 +1,4 @@
-/* ============================================================
- * state.js — Application state, default values, persistence, and session management.
- * Handles 1-hour session persistence across browser refreshes and reloads.
- * ============================================================ */
+// app state, saving to the browser and the one-hour login session
 
 export const defaultState = {
   capital: 0,
@@ -18,10 +15,10 @@ export const defaultState = {
 
 const savedState = JSON.parse(localStorage.getItem("inventorySuperAdmin") || "null");
 
-/** Shared reactive state object used across all modules. */
+// the shared app state
 export const state = { ...structuredClone(defaultState), ...(savedState || {}) };
 
-/** Persist cart, products, transactions and financial settings to localStorage so they survive page reloads. */
+// saves the app data in the browser so a refresh keeps it
 function writeStateToStorage() {
   localStorage.setItem("inventorySuperAdmin", JSON.stringify({
     cart: state.cart,
@@ -37,11 +34,7 @@ function writeStateToStorage() {
 
 let persistTimer = null;
 
-/**
- * Save the app data to the browser. Turning every product and history row into text is
- * slow, so the save is batched: many quick changes (like tapping "Add" several times)
- * cause one save a moment later instead of one save per tap.
- */
+// batched save: quick changes (like tapping Add a few times) cause one save
 export function persist() {
   if (persistTimer) return;
   persistTimer = setTimeout(() => {
@@ -50,7 +43,7 @@ export function persist() {
   }, 300);
 }
 
-/** Write any waiting save right now (used when the page is closed or hidden). */
+// save now (used when the page closes or hides)
 export function flushPersist() {
   if (!persistTimer) return;
   clearTimeout(persistTimer);
@@ -63,18 +56,12 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") flushPersist();
 });
 
-/* ============================================================
- * SESSION & ROUTE PERSISTENCE (1-HOUR EXPIRATION)
- * ============================================================ */
+// login session (valid for 1 hour) and last page
 const SESSION_KEY = "sentrySession";
 const ACTIVE_PAGE_KEY = "sentryActivePage";
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
-/**
- * Save logged-in user session; it is valid for one hour from this login.
- * @param {string} username
- * @param {string} fullName
- */
+// stores the login, valid for one hour
 export function saveSession(username = "admin", fullName = username) {
   localStorage.setItem(SESSION_KEY, JSON.stringify({
     username,
@@ -83,10 +70,7 @@ export function saveSession(username = "admin", fullName = username) {
   }));
 }
 
-/**
- * Get saved session if it is less than an hour old, else clear it and return null.
- * @returns {object|null}
- */
+// the saved login, or null once it is over an hour old
 export function getSession() {
   try {
     const data = localStorage.getItem(SESSION_KEY);
@@ -103,27 +87,24 @@ export function getSession() {
   }
 }
 
-/** Clear session from localStorage on logout or expiration. */
+// forget the login
 export function clearSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
-/**
- * Check if active session exists and is within the 1-hour window.
- * @returns {boolean}
- */
+// true while the login is still valid
 export function isSessionValid() {
   return getSession() !== null;
 }
 
-/** Save currently active page view for stateful page reloads. */
+// remember the current page for refreshes
 export function saveActivePage(page) {
   if (page && page !== "add-product") {
     localStorage.setItem(ACTIVE_PAGE_KEY, page);
   }
 }
 
-/** Get saved active page or default to 'dashboard'. */
+// last page, dashboard by default
 export function getActivePage() {
   return localStorage.getItem(ACTIVE_PAGE_KEY) || "dashboard";
 }

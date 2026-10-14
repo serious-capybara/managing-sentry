@@ -1,6 +1,4 @@
-/* ============================================================
- * css/base.css — Global resets, typography, and utility classes
- * ============================================================ */
+/* resets, body defaults and small utilities */
 
 * {
   box-sizing: border-box;
@@ -33,7 +31,7 @@ button {
   background: none;
 }
 
-/* Hide native browser top/bottom spinner arrows on number inputs */
+/* no up/down arrows on number inputs */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -49,7 +47,7 @@ input[type="number"] {
   display: none !important;
 }
 
-/* Hide scrollbars visually across all dropdown menus, listboxes, and picker lists while retaining full scroll functionality */
+/* dropdown lists still scroll, just without a visible scrollbar */
 .styled-select-menu,
 .category-picker-menu,
 .remove-product-list,
@@ -58,8 +56,8 @@ input[type="number"] {
 .select-menu,
 .picker-menu,
 [role="listbox"] {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE & Edge */
+  scrollbar-width: none !important; /* firefox */
+  -ms-overflow-style: none !important; /* old edge */
 }
 
 .styled-select-menu::-webkit-scrollbar,
@@ -70,7 +68,7 @@ input[type="number"] {
 .select-menu::-webkit-scrollbar,
 .picker-menu::-webkit-scrollbar,
 [role="listbox"]::-webkit-scrollbar {
-  display: none !important; /* Chrome, Safari, Opera */
+  display: none !important; /* chrome, safari */
   width: 0 !important;
   height: 0 !important;
 }

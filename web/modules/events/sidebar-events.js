@@ -1,8 +1,4 @@
-/* ============================================================
- * events/sidebar-events.js — Sidebar, navigation, mobile drawer, and auth events.
- * Binds login form, navigation buttons, logout confirmation, set capital modal,
- * mobile menu toggle, collapse toggle, and database reset confirmation actions.
- * ============================================================ */
+// login, menu, drawer, logout and set capital events
 
 import { state, saveSession, clearSession } from "../state.js";
 import { toast } from "../utils.js";
@@ -16,7 +12,7 @@ import { openSetCapitalModal } from "../modals/capital-modal.js";
 import { askYesNo } from "../modals/dialogs.js";
 
 export function bindSidebarEvents() {
-  // Mobile navigation drawer controls
+  // phone / tablet menu drawer
   const mobileMenuToggle = document.getElementById("mobileMenuToggle");
   const sidebar = document.getElementById("sidebar") || document.querySelector(".sidebar");
   const sidebarBackdrop = document.getElementById("sidebarBackdrop");
@@ -50,7 +46,7 @@ export function bindSidebarEvents() {
     mobileViewport.addListener(onViewportChange);
   }
 
-  // Desktop sidebar collapse/expand toggle
+  // desktop menu collapse
   const sidebarBrandToggle = document.getElementById("sidebarBrandToggle");
   const sidebarCollapseBtn = document.getElementById("sidebarCollapseBtn");
 
@@ -61,23 +57,23 @@ export function bindSidebarEvents() {
     localStorage.setItem("sentrySidebarCollapsed", isCollapsed ? "true" : "false");
   };
 
-  // In full view, ONLY the collapse button (dashboard-left icon) collapses the menu
+  // open menu: only the collapse button closes it
   sidebarCollapseBtn?.addEventListener("click", toggleSidebarCollapse);
 
-  // In collapsed view ONLY, clicking the logo container expands the menu back
+  // collapsed menu: the logo opens it again
   sidebarBrandToggle?.addEventListener("click", (e) => {
     if (sidebar?.classList.contains("collapsed")) {
       toggleSidebarCollapse(e);
     }
   });
 
-  // Restore sidebar collapse state from localStorage on load
+  // remember the collapsed state
   if (localStorage.getItem("sentrySidebarCollapsed") === "true") {
     sidebar?.classList.add("collapsed");
     mainContent?.classList.add("collapsed-sidebar");
   }
 
-  // Login form submit
+  // login
   const loginForm = document.getElementById("loginForm");
   if (loginForm) {
     loginForm.addEventListener("submit", async e => {
@@ -123,7 +119,7 @@ export function bindSidebarEvents() {
     });
   }
 
-  // Password visibility toggle
+  // show / hide password
   const showPassword = document.getElementById("showPassword");
   if (showPassword) {
     showPassword.addEventListener("click", e => {
@@ -134,7 +130,7 @@ export function bindSidebarEvents() {
     });
   }
 
-  // Primary navigation items
+  // menu items
   document.querySelectorAll(".nav-item[data-page]").forEach(btn => {
     btn.addEventListener("click", () => {
       // Show the click right away (highlight + close the drawer), then build the page
@@ -148,7 +144,7 @@ export function bindSidebarEvents() {
     });
   });
 
-  // Logout action with confirmation dialog modal
+  // logout (asks first)
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
@@ -173,7 +169,7 @@ export function bindSidebarEvents() {
     });
   }
 
-  // Set capital button (opens set capital modal)
+  // set capital button
   const setCapitalBtn = document.getElementById("setCapitalBtn");
   if (setCapitalBtn) {
     setCapitalBtn.addEventListener("click", () => {

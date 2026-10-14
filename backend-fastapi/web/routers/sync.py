@@ -6,9 +6,6 @@ from core.security import require_web_access
 
 router = APIRouter(tags=["sync"])
 
-# One small query that "fingerprints" everything the web pages show: sales, stock movements,
-# products (name, prices, stock, expiry) and the capital balance. If any of it changes, the
-# fingerprint changes, and the web app knows it should reload.
 SYNC_SQL = """
 SELECT
   (SELECT COALESCE(MAX(order_id), 0) FROM orders) AS max_order,

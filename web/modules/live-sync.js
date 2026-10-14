@@ -1,13 +1,7 @@
-/* ============================================================
- * live-sync.js — Keeps the screen up to date with the server.
- *
- * Every few seconds it asks the server one tiny question ("did anything
- * change?"). If something did (a sale from the Android app, a stock
- * change on another device, ...) the data is reloaded and the page
- * redraws itself, keeping your scroll position, search text and sorting.
- * It waits while you are typing, have a pop-up open, or sales are still
- * being saved, and it pauses when the tab is hidden.
- * ============================================================ */
+// keeps the screen up to date with the server.
+// Every few seconds it asks if anything changed and, if so, reloads the data
+// and redraws the page without losing scroll, search text or sorting.
+// It waits while you type, while a pop-up is open or while sales are still saving.
 
 import { apiRequest } from "./api.js";
 import { loadDashboardData } from "./data-loader.js";
@@ -46,7 +40,7 @@ async function readFingerprint() {
   return `capital:${capital.capital ?? capital.current_balance}:${capital.last_updated_at || ""}`;
 }
 
-/** True when redrawing the page now would get in the user's way. */
+// true if redrawing now would interrupt the user
 function userIsBusy() {
   if (document.querySelector(".modal-overlay")) return true;
   if (document.body.classList.contains("m-sheet-open")) return true;
@@ -55,7 +49,7 @@ function userIsBusy() {
     (active.tagName === "INPUT" && !["button", "checkbox", "radio", "submit"].includes(active.type)));
 }
 
-/** Redraw the current page but keep scroll positions, search text and sort choices. */
+// redraw the page but keep scroll, search text and sorting
 function redrawKeepingPlace() {
   const root = document.getElementById("pageContent");
   const scrolls = [...(root?.querySelectorAll(SCROLL_AREAS) || [])].map(el => [el.scrollTop, el.scrollLeft]);
@@ -85,7 +79,7 @@ function redrawKeepingPlace() {
   });
 }
 
-/** Reload everything from the server and redraw. */
+// reload from the server and redraw
 export async function refreshFromServer() {
   const fingerprint = await readFingerprint().catch(() => null);
   await loadDashboardData();
@@ -128,7 +122,7 @@ function schedule() {
   }, CHECK_EVERY_MS);
 }
 
-/** Start watching for changes (safe to call more than once). */
+// start watching (safe to call twice)
 export function startLiveSync() {
   if (started) return;
   started = true;

@@ -1,8 +1,4 @@
-/* ============================================================
- * css/print-report.css — Printed reports (History, Inventory & Capital,
- * Sales & Profit). Plain black / grey on white, minimal lines.
- * Sizes: title 18px, everything else 12px.
- * ============================================================ */
+/* printed reports */
 
 @media print {
   /* Unnamed on purpose: a named page ("page: pro") made some browsers fall back to a

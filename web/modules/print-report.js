@@ -1,9 +1,4 @@
-/* ============================================================
- * print-report.js — Shared layout for every printed report
- * (History, Inventory & Capital, Sales & Profit).
- * Letterhead, document details, summary block, signatures.
- * Page numbers / footer come from the @page rules in css/print-report.css.
- * ============================================================ */
+// shared layout for printed reports
 
 import { escapeHtml, formatAsiaManila } from "./utils.js";
 import { getSession } from "./state.js";
@@ -19,15 +14,12 @@ export function docNumber(prefix) {
   return `${prefix}-${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}`;
 }
 
-/** A section heading inside the printed document. */
+// section heading
 export function proHeading(title, note = "") {
   return `<h3 class="pro-heading"><span>${title}</span>${note ? `<small>${note}</small>` : ""}</h3>`;
 }
 
-/**
- * Summary block: [{label, value, note?, tone?: "good"|"bad"}]
- * Printed as a bordered grid of figures, 4 per row.
- */
+// summary figures, 4 per row: [{label, value, note?, tone?: "good"|"bad"}]
 export function proSummary(items) {
   return `<div class="pro-summary">${items.map(i => `
     <div class="pro-figure ${i.tone ? `is-${i.tone}` : ""}">
@@ -37,10 +29,7 @@ export function proSummary(items) {
     </div>`).join("")}</div>`;
 }
 
-/**
- * Full document: letterhead + title + details + body + signatures.
- * @param {{prefix:string,title:string,subtitle?:string,details:Array<[string,string]>,body:string}} o
- */
+// whole document: letterhead, title, details, body, signatures
 export function proDocument({ prefix, title, subtitle = "", details = [], body }) {
   const session = getSession();
   const preparedBy = session?.fullName || session?.username || "—";

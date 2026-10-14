@@ -1,6 +1,4 @@
-/* ============================================================
- * css/sidebar.css — Sidebar Navigation & Drawer Styling
- * ============================================================ */
+/* side menu */
 
 .app {
   min-height: 100vh;
@@ -38,7 +36,7 @@
   transition: transform 0.3s ease, width 0.3s ease, padding 0.3s ease;
 }
 
-/* Sidebar Brand & Logo Toggle Container */
+/* brand and logo */
 .sidebar-brand {
   display: flex;
   align-items: center;
@@ -46,7 +44,7 @@
   padding: 0 8px 20px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.12);
   user-select: none;
-  cursor: default; /* In full view, text and header are NOT clickable */
+  cursor: default; /* text and header are not clickable when the menu is open */
 }
 
 .brand-text {
@@ -86,7 +84,7 @@
   transform: scale(0.85);
 }
 
-/* In Expanded Mode: hide toggle-img inside logo container */
+/* open menu: hide the toggle icon in the logo */
 .sidebar:not(.collapsed) .sidebar-logo-container .toggle-img {
   display: none !important;
 }
@@ -104,11 +102,11 @@
   margin-top: 2px;
 }
 
-/* Sidebar Collapse / Expand Toggle Button (Clickable in full view) */
+/* collapse button */
 .sidebar-collapse-btn {
   background: transparent;
   border: 0;
-  cursor: pointer; /* ONLY dashboard-left icon is clickable in full view */
+  cursor: pointer; /* only this icon collapses the open menu */
   padding: 6px;
   border-radius: var(--radius-button);
   display: flex;
@@ -199,7 +197,7 @@
   50%, 100% { opacity: 0.3; transform: scale(0.85); }
 }
 
-/* Sidebar Bottom Action Buttons */
+/* bottom buttons */
 .sidebar-bottom {
   padding-top: 18px;
   border-top: 1px solid rgba(226, 232, 240, 0.12);
@@ -257,9 +255,7 @@
   box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
 }
 
-/* ============================================================
- * COLLAPSED SIDEBAR MODE (Width: 72px)
- * ============================================================ */
+/* collapsed menu (72px wide) */
 .sidebar.collapsed {
   width: 72px;
   padding: 24px 12px 20px;
@@ -267,7 +263,7 @@
 
 .sidebar.collapsed .sidebar-brand,
 .sidebar.collapsed .sidebar-logo-container {
-  cursor: pointer; /* Clickable in collapsed view to expand menu */
+  cursor: pointer; /* clicking the logo opens the menu again */
 }
 
 .sidebar.collapsed .sidebar-brand {
@@ -281,7 +277,7 @@
   display: none !important;
 }
 
-/* Hovering over logo in collapsed mode for 1s swaps logo to dashboard-left icon */
+/* after 1s of hovering the logo in the collapsed menu, it swaps to the open icon */
 .sidebar.collapsed .sidebar-logo-container:hover .logo-img {
   opacity: 0;
   transform: scale(0.8);

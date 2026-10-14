@@ -1,8 +1,4 @@
-/* ============================================================
- * pages/price-checker.js — Price Checker page renderer.
- * Shows an alphabetical/category product directory and an
- * instant-search panel with a highlighted price result.
- * ============================================================ */
+// Price Checker page
 
 import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";

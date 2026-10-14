@@ -1,7 +1,4 @@
-/* ============================================================
- * modals/remove-product-modal.js — Remove Product modal dialog.
- * Allows searching and selecting a product to remove from inventory.
- * ============================================================ */
+// remove product pop-up
 
 import { state } from "../state.js";
 import { escapeHtml, money, toast } from "../utils.js";

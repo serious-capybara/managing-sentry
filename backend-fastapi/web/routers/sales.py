@@ -14,7 +14,6 @@ router = APIRouter(tags=["sales"])
 async def make_sale(sale: SaleRequest, request: Request):
     user = require_web_access(request)
 
-    # merge duplicate products, keeping the order they were sent in
     requested: dict[int, int] = {}
     for item in sale.items:
         requested[item.product_id] = requested.get(item.product_id, 0) + item.quantity
@@ -51,8 +50,6 @@ async def make_sale(sale: SaleRequest, request: Request):
                 received = max(sale.amount_received, total)
                 change = max(0.0, received - total)
 
-                # Every fallback runs inside a SAVEPOINT (nested transaction) so a failed INSERT
-                # does not abort the whole sale.
                 try:
                     async with conn.transaction():
                         order_id = await conn.fetchval(
@@ -69,7 +66,6 @@ async def make_sale(sale: SaleRequest, request: Request):
                     )
 
                 for product, quantity, line_total in lines:
-                    # order_items keeps the cost/price SNAPSHOT of this sale (used by History + Reports)
                     try:
                         async with conn.transaction():
                             await conn.execute(
@@ -92,7 +88,6 @@ async def make_sale(sale: SaleRequest, request: Request):
                         quantity, product["product_id"]
                     )
 
-                # histories table (schema: history_id, order_id, status_timestamp, order_status)
                 for sql, args in (
                     ("INSERT INTO histories (order_id, status_timestamp, order_status) "
                      "VALUES ($1, NOW(), 'COMPLETED')", (order_id,)),

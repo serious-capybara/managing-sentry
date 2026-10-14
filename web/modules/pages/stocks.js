@@ -1,16 +1,11 @@
-/* ============================================================
- * pages/stocks.js — Stocks overview, Stock In, Stock Out, and
- * Low Stock Alert page renderers.
- * ============================================================ */
+// Stocks page, stock forms and the low stock page
 
 import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";
 import { sheetHandleHtml } from "../mobile-sheet.js";
 import { isLowStock, lowStockLabel, expiryDateCell, expiryStatusCell } from "../stock-logic.js";
 
-// ---------------------------------------------------------------------------
-// Stocks overview page
-// ---------------------------------------------------------------------------
+// stocks page
 
 export function renderStocks() {
   const low = state.products.filter(isLowStock);
@@ -81,9 +76,7 @@ export function stockRows(products = state.products) {
   </tr>`).join("");
 }
 
-// ---------------------------------------------------------------------------
-// Low Stock Alert page
-// ---------------------------------------------------------------------------
+// low stock page
 
 export function renderLowStock() {
   const low = state.products.filter(isLowStock);
@@ -103,9 +96,7 @@ export function renderLowStock() {
     </div>`;
 }
 
-// ---------------------------------------------------------------------------
-// Stock In / Stock Out shared form
-// ---------------------------------------------------------------------------
+// stock in / out form
 
 export function stockForm(type) {
   const isIn = type === "In";
