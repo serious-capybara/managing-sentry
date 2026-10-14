@@ -150,6 +150,7 @@
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 .nav-icon {
@@ -308,6 +309,13 @@
 
 .sidebar.collapsed .nav-item span {
   display: none !important;
+}
+
+.sidebar.collapsed .alert-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  margin-left: 0;
 }
 
 .sidebar.collapsed .side-action,

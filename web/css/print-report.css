@@ -121,6 +121,12 @@
   .pro-table tfoot td { padding: 6px; border-top: 1px solid #111; border-bottom: 1px solid #111; font-weight: 700; }
   .pro-table tfoot .label { text-align: right; }
 
+  /* Long names never run into the next column: one line, cut with "..." */
+  .pro-table td.clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+  .pro-clip-row { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
+  .pro-clip-name { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pro-clip-more { flex: 0 0 auto; white-space: nowrap; font-weight: 700; }
+
   /* Type labels: plain text */
   .pro-tag { font-size: 12px; font-weight: 400; color: #333; }
   .pro-tag.stock-in, .pro-tag.stock-out { color: #333; }

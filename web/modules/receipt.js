@@ -1,12 +1,12 @@
-import { money, escapeHtml } from "./utils.js";
+import { money, escapeHtml, formatAsiaManila } from "./utils.js";
 
 export const STORE_NAME = "Alekos' Corner General Merchandise";
 export const STORE_ADDRESS = "Cebu, Philippines";
 export const STORE_TEL = "+63 9123456789";
 
-/** "10/12/2026, 3:50:44 PM" — the date format used on the receipt. */
+/** Asia/Manila 24-hour timestamp format used on the receipt. */
 export function receiptDate(value = new Date()) {
-  return new Date(value).toLocaleString("en-US");
+  return formatAsiaManila(value, true);
 }
 
 /**

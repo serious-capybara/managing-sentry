@@ -5,6 +5,7 @@
 
 import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";
+import { sheetHandleHtml } from "../mobile-sheet.js";
 import { isLowStock, lowStockLabel, expiryDateCell, expiryStatusCell } from "../stock-logic.js";
 
 // ---------------------------------------------------------------------------
@@ -47,7 +48,7 @@ export function renderStocks() {
         </div>
         <div class="dashboard-tabs-header stocks-low-header">
           <div class="dashboard-tabs">
-            <button class="tab-btn active" type="button" tabindex="-1">
+            <button class="tab-btn active" type="button" id="stocksLowTab">
               <img class="tab-icon" src="src/icon/white/low-stock-alert.svg" alt=""> Low On Stock ${low.length ? `<span class="alert-dot"></span>` : ""}
             </button>
           </div>
@@ -56,6 +57,7 @@ export function renderStocks() {
           </button>
         </div>
         <div class="stocks-low-body" id="stocksLowBody">
+          ${sheetHandleHtml("stocksSheetHandle", false)}
           <div class="wire-table-wrap stocks-low-table-wrap">
             <table class="stocks-low-table">
               <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th><th>Status</th></tr></thead>

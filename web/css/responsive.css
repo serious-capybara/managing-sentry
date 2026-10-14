@@ -1,5 +1,5 @@
 /* ============================================================
- * css/responsive.css — Phone, tablet, desktop + print
+ * css/responsive.css — Phone, tablet, desktop + print (single responsive file)
  * Desktop:  ≥ 1025px
  * Tablet:   768px–1024px
  * Phone:    ≤ 767px
@@ -558,4 +558,982 @@
 @media (max-width: 767px) {
   .checkout-modal .modal-body { padding: 16px; }
   .checkout-receipt { padding: 18px 16px 16px; }
+}
+
+
+/* ============================================================
+ * RESPONSIVE TABLES + EXTRA FIXES (all screen sizes)
+ * Tables keep a readable minimum width and scroll sideways inside
+ * their card instead of squashing every column (which made words
+ * overlap and wrap one-per-line on phones / small windows).
+ * ============================================================ */
+@media (max-width: 1100px) {
+  .dashboard-inventory-table,
+  .products-inventory-table,
+  .stocks-inventory-table,
+  .stocks-low-table,
+  .low-stock-inventory-table,
+  .transactions-inventory-table { min-width: 760px; }
+
+  .report-paper .report-table { min-width: 720px; }
+
+  .dash-expiring-table-wrap,
+  .stocks-low-table-wrap,
+  .report-table-wrap,
+  .price-directory { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+
+  /* an empty table ("No products yet") must not force a sideways scroll */
+  table:has(.table-empty) { min-width: 0 !important; }
+
+  .products-table-scroll,
+  .stocks-table-scroll,
+  .low-stock-table-scroll,
+  .transactions-table-scroll,
+  .dashboard-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* keep dates / money on one line */
+  td { white-space: nowrap; }
+  td.name-cell, .products-inventory-table td:nth-child(2), .stocks-inventory-table td:nth-child(2),
+  .dashboard-inventory-table td:nth-child(2), .stocks-low-table td:nth-child(2),
+  .low-stock-inventory-table td:nth-child(2) { white-space: normal; min-width: 180px; }
+}
+
+/* Never let anything push the page sideways */
+html, body { max-width: 100%; overflow-x: hidden; }
+.main, .content, #pageContent { min-width: 0; max-width: 100%; }
+img, svg, video { max-width: 100%; }
+
+@media (max-width: 767px) {
+  /* stat cards grow with their content (the Net Profit card has a dropdown) */
+  .dashboard-only-stats .stat-card { height: auto; min-height: 96px; }
+
+  th, td { padding: 9px 10px; }
+  .modal-body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .report-chart-container { grid-template-columns: 1fr; }
+  .report-paper .report-chart-container { grid-template-columns: 1fr; }
+}
+
+/* Full width stretching with small edge gap */
+.content { max-width: none; }
+
+/* Phones / tablets: the dashboard grows with its content and the page scrolls (no clipped cards) */
+@media (max-width: 1024px) {
+  .dashboard-overview,
+  .dashboard-top-dock,
+  .dashboard-bottom-section { height: auto; min-height: 0; overflow: visible; flex: 0 0 auto; }
+  .toolbar-label { flex: 0 0 auto; white-space: nowrap; }
+}
+
+
+/* ============================================================
+ * RESPONSIVE PASS (v9) — fixes found by testing every page at
+ * 320 / 360 / 414 / 600 / 768 / 900 / 1024 / 1280 / 1920 px.
+ * ============================================================ */
+
+/* Phone: "Sort: [dropdown]" / "Show:" / "Range:" rows used to push the dropdown past the screen edge */
+@media (max-width: 767px) {
+  .toolbar-sort-wrap { width: 100%; min-width: 0; gap: 8px; }
+  .toolbar-sort-wrap .styled-select,
+  .toolbar-sort-wrap .compact-select { flex: 1 1 0; width: auto; min-width: 0; }
+  .toolbar-left > .toolbar-sort-wrap { flex: 1 1 100%; }
+  .styled-select-trigger { min-width: 0; }
+}
+
+/* Form grids: columns may shrink below their content (a wide search box in "Add Stock" used to stretch
+   the whole modal past the screen and clip its text on the left). */
+.form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-grid > * { min-width: 0; }
+.remove-search-wrap input,
+.form-group input,
+.form-group select,
+.form-group textarea { min-width: 0; max-width: 100%; }
+@media (max-width: 767px) {
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+  /* Popup buttons: in a column, "flex: 1" collapsed them to thin bars. Give them a real height. */
+  .modal-foot .primary-btn,
+  .modal-foot .ghost-btn { flex: 0 0 auto; width: 100%; min-height: 46px; height: 46px; }
+  .modal-foot { flex-shrink: 0; }
+}
+
+/* Tables that scroll sideways on small screens: soft edge shadows hint that there is more to swipe */
+@media (max-width: 1100px) {
+  .products-table-scroll,
+  .stocks-table-scroll,
+  .low-stock-table-scroll,
+  .transactions-table-scroll,
+  .dashboard-table-scroll,
+  .stocks-low-table-wrap,
+  .dash-expiring-table-wrap,
+  .report-table-wrap {
+    background:
+      linear-gradient(to right, #fff 30%, rgba(255,255,255,0)) left center / 28px 100% no-repeat local,
+      linear-gradient(to left,  #fff 30%, rgba(255,255,255,0)) right center / 28px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%,  rgba(15,23,42,.14), rgba(15,23,42,0)) left center / 10px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(15,23,42,.14), rgba(15,23,42,0)) right center / 10px 100% no-repeat scroll;
+  }
+}
+
+/* Mobile menu drawer: title and subtitle were forced side by side and overlapped */
+@media (max-width: 1024px) {
+  .sidebar .brand-text { flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0; }
+  .sidebar .brand-text h1,
+  .sidebar .brand-text p { white-space: nowrap; margin: 0; }
+}
+@media (max-width: 1024px) {
+  .sidebar .brand-text { flex: 1 1 auto; overflow: hidden; }
+  .sidebar .brand-text h1 { font-size: 16px; overflow: hidden; text-overflow: ellipsis; }
+  .sidebar .sidebar-collapse-btn { flex: 0 0 auto; margin-left: 8px; }
+}
+/* The drawer closes by tapping outside it, so the collapse button is not needed (it squeezed the title) */
+@media (max-width: 1024px) {
+  .sidebar .sidebar-collapse-btn { display: none !important; }
+  .sidebar .brand-text h1 { font-size: 18px; }
+}
+
+
+/* ============================================================
+ * TABLET + PHONE LAYOUT
+ * Every page is locked to the screen height. Only the table rows
+ * (and the phone bottom sheets) scroll — never the whole page.
+ * Tablet: 768px – 1024px     Phone: ≤ 767px
+ * (This section comes last on purpose so it wins over the older
+ *  rules above.)
+ * ============================================================ */
+:root {
+  --screen-height: 100vh;
+  --topbar-height: 64px;
+  --page-pad-top: 16px;
+  --page-pad-bottom: 16px;
+  /* height of the area under the top bar that the page may use */
+  --page-height: calc(var(--screen-height) - var(--topbar-height) - var(--page-pad-top) - var(--page-pad-bottom));
+}
+@supports (height: 100dvh) {
+  :root { --screen-height: 100dvh; }
+}
+
+/* The phone-only sheet pieces are invisible everywhere else */
+.m-sheet-handle,
+.m-sheet-backdrop { display: none; }
+.btn-icon-phone { display: none; }
+
+/* inner area of the dashboard bottom panel (all screen sizes) */
+.dashboard-tab-content {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+
+/* ============================================================
+ * TABLET + PHONE  (≤ 1024px): docked, no page scrolling
+ * ============================================================ */
+@media (max-width: 1024px) {
+  .topbar { height: var(--topbar-height); }
+
+  .main.dashboard-view-mode,
+  .main.products-view-mode,
+  .main.stocks-view-mode,
+  .main.low-stock-view-mode,
+  .main.price-checker-view-mode,
+  .main.transactions-view-mode,
+  .main.reports-view-mode,
+  .main.sell-view-mode {
+    height: var(--screen-height);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .main.dashboard-view-mode .content,
+  .main.products-view-mode .content,
+  .main.stocks-view-mode .content,
+  .main.low-stock-view-mode .content,
+  .main.price-checker-view-mode .content,
+  .main.transactions-view-mode .content,
+  .main.reports-view-mode .content,
+  .main.sell-view-mode .content {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
+    padding: var(--page-pad-top) 20px var(--page-pad-bottom);
+  }
+
+  .main.dashboard-view-mode #pageContent,
+  .main.products-view-mode #pageContent,
+  .main.stocks-view-mode #pageContent,
+  .main.low-stock-view-mode #pageContent,
+  .main.price-checker-view-mode #pageContent,
+  .main.transactions-view-mode #pageContent,
+  .main.reports-view-mode #pageContent,
+  .main.sell-view-mode #pageContent {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
+  }
+
+  .dashboard-overview,
+  .products-overview,
+  .stocks-overview,
+  .low-stock-overview,
+  .price-checker-new,
+  .transactions-overview,
+  .reports-overview,
+  .report-tab-content,
+  .report-section,
+  .report-paper {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* The table box fills whatever height the screen has left */
+  .dashboard-table-card,
+  .products-table-card,
+  .stocks-table-card,
+  .low-stock-table-card,
+  .transactions-table-card {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+  }
+
+  .dashboard-table-scroll,
+  .products-table-scroll,
+  .stocks-table-scroll,
+  .low-stock-table-scroll,
+  .transactions-table-scroll,
+  .stocks-low-table-wrap,
+  .dash-expiring-table-wrap {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .price-directory,
+  .price-match-list {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    overscroll-behavior: contain;
+  }
+
+  .report-table-wrap {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Never show the browser's own scroll bars on tables / lists */
+  .dashboard-table-scroll,
+  .products-table-scroll,
+  .stocks-table-scroll,
+  .low-stock-table-scroll,
+  .transactions-table-scroll,
+  .stocks-low-table-wrap,
+  .dash-expiring-table-wrap,
+  .report-table-wrap,
+  .price-directory,
+  .price-match-list,
+  .sell-table-scroll,
+  .sell-cart-scroll,
+  .m-sheet {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .dashboard-table-scroll::-webkit-scrollbar,
+  .products-table-scroll::-webkit-scrollbar,
+  .stocks-table-scroll::-webkit-scrollbar,
+  .low-stock-table-scroll::-webkit-scrollbar,
+  .transactions-table-scroll::-webkit-scrollbar,
+  .stocks-low-table-wrap::-webkit-scrollbar,
+  .dash-expiring-table-wrap::-webkit-scrollbar,
+  .report-table-wrap::-webkit-scrollbar,
+  .price-directory::-webkit-scrollbar,
+  .price-match-list::-webkit-scrollbar,
+  .sell-table-scroll::-webkit-scrollbar,
+  .sell-cart-scroll::-webkit-scrollbar,
+  .m-sheet::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+  /* Tables: header stays put, rows scroll, sideways swipe when columns do not fit */
+  .products-inventory-table thead th,
+  .stocks-inventory-table thead th,
+  .stocks-low-table thead th,
+  .transactions-inventory-table thead th,
+  .low-stock-inventory-table thead th,
+  .dashboard-inventory-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+
+  /* the small "scroll hint" shadows are not needed once scroll bars are hidden */
+  .products-table-scroll, .stocks-table-scroll, .low-stock-table-scroll, .transactions-table-scroll,
+  .dashboard-table-scroll, .stocks-low-table-wrap, .dash-expiring-table-wrap, .report-table-wrap {
+    background: none;
+  }
+
+  /* ---- toolbars ---- */
+  .dashboard-toolbar,
+  .page-toolbar { flex: 0 0 auto; margin-bottom: 12px; }
+
+  /* ---- Dashboard ---- */
+  .dashboard-overview { margin-bottom: 10px; }
+  .dashboard-top-dock { flex: 0 0 auto; }
+
+  .dashboard-only-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .dashboard-overview .dashboard-only-stats .stat-card {
+    height: 100%;
+    min-height: 0;
+    padding: 8px 10px;
+    gap: 8px;
+    border-radius: 16px;
+  }
+  .dashboard-only-stats .stat-icon { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 10px; }
+  .dashboard-only-stats .stat-svg { width: 20px; height: 20px; }
+  .dashboard-only-stats .stat-card > div:not(.stat-icon) { flex: 1 1 auto; min-width: 0; }
+  .dashboard-only-stats .stat-card span { font-size: 9.5px; letter-spacing: 0.3px; line-height: 1.15; }
+  .dashboard-only-stats .stat-card strong {
+    font-size: clamp(14px, 2.2vw, 21px);
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+  .dashboard-only-stats .profit-type-control .styled-select-trigger {
+    min-height: 0;
+    padding: 0 18px 0 0;
+    font-size: 9.5px;
+    line-height: 1.15;
+  }
+  .dashboard-only-stats .profit-type-control .styled-select-trigger::after { right: 4px; }
+  .dashboard-only-stats .profit-type-control .styled-select { min-width: 0; }
+
+  .dashboard-bottom-section { min-height: 0; }
+  .dashboard-tab-body {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .dashboard-tab-content {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .dashboard-bottom-section .dashboard-tab-body { height: auto; max-height: none; overflow: hidden; }
+  .dashboard-bottom-section .dashboard-tab-content { overflow: hidden; }
+  .dash-expiring-table-wrap { overflow-x: auto !important; }
+  .stocks-low-table-wrap { overflow-x: auto !important; }
+
+  /* Stocks bottom panel + dashboard bottom panel share one look */
+  .stocks-low-section,
+  .stocks-low-panel,
+  .dashboard-bottom-section {
+    flex: 0 0 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .stocks-low-section,
+  .stocks-low-panel { height: calc(var(--page-height) * 0.30); }
+  .stocks-low-body { flex: 1 1 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .stocks-low-panel { max-height: none; }
+  .stocks-overview { gap: 0; }
+
+  /* ---- Price checker ---- */
+  .price-checker-new { width: 100%; }
+  .price-search-result { flex: 1 1 0; min-height: 0; overflow: hidden; }
+  .price-match-container { flex: 1 1 0; min-height: 0; }
+
+  /* ---- Reports ---- */
+  .report-paper {
+    padding: 16px 18px;
+    overflow: hidden;
+  }
+  .report-header-banner { margin-bottom: 12px; padding-bottom: 12px; }
+  .report-kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .report-kpi-card { padding: 12px 14px; gap: 4px; border-radius: 16px; }
+  .kpi-label { font-size: 10px; gap: 5px; line-height: 1.2; }
+  .kpi-value { font-size: clamp(15px, 2.4vw, 20px); }
+  .kpi-sub { font-size: 10px; }
+  .report-pills-row { gap: 8px; margin-bottom: 12px; }
+  .report-pill { padding: 5px 12px; font-size: 11px; gap: 6px; }
+  .report-subtabs { margin: 0 0 12px; gap: 8px; }
+  .report-subtab { height: 34px; padding: 0 12px; font-size: 12px; }
+  .report-divider-title { margin-bottom: 10px; }
+  .report-table-wrap + .report-divider-title { margin-top: 16px; }
+  .report-tabs { margin-bottom: 0; }
+  .report-paper .report-table { min-width: 720px; }
+  .report-paper .sales-report-table { min-width: 900px; }
+  .transactions-overview .transactions-inventory-table { min-width: 860px; }
+
+  /* ---- Tablet sell workspace (opened from "Pick Items to Sell") ---- */
+  .dashboard-sell-mode:not(:has(.collapsed-section)) .dashboard-bottom-section {
+    height: 100% !important;
+  }
+  .sell-workspace {
+    flex: 1 1 0;
+    min-height: 0;
+    margin-top: 8px;
+    gap: 12px;
+    overflow: hidden;
+  }
+  .sell-panel,
+  .sell-cart-panel { margin-top: 0; min-height: 0; }
+  .sell-table-scroll,
+  .sell-cart-scroll { max-height: none; flex: 1 1 0; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+  .sell-panel-header, .sell-cart-header { padding: 12px 16px; }
+  .sell-toolbar { padding: 10px 16px; }
+  .sell-summary { flex: 0 0 auto; }
+}
+
+
+/* ============================================================
+ * TABLET ONLY (768px – 1024px)
+ * 20% stat cards · 50% table · 30% bottom panel
+ * ============================================================ */
+@media (min-width: 768px) and (max-width: 1024px) {
+  :root { --topbar-height: 64px; --page-pad-top: 16px; --page-pad-bottom: 16px; }
+
+  .dashboard-only-stats { height: calc(var(--page-height) * 0.20); }
+
+  .dashboard-bottom-section { height: calc(var(--page-height) * 0.30); }
+  .dashboard-tabs { margin-top: 0; margin-bottom: 0; }
+  .dashboard-tabs-header { flex-wrap: nowrap; }
+  .tab-btn { padding: 9px 14px; font-size: 13px; flex: 0 0 auto; }
+
+  .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  .dashboard-toolbar { flex-wrap: nowrap; }
+  .toolbar-left { flex: 0 0 auto; }
+  .toolbar-right { flex: 1 1 auto; justify-content: flex-end; flex-wrap: nowrap; }
+  .toolbar-right .compact-input { flex: 0 1 240px; min-width: 0; }
+
+  /* tablet sell workspace: portrait stacks (table on top, cart under), landscape sits side by side */
+  .sell-workspace { flex-direction: column; overflow: hidden; }
+  .sell-panel { flex: 1 1 56%; width: 100%; }
+  .sell-cart-panel { flex: 1 1 44%; width: 100%; min-width: 0; max-width: none; }
+  .sell-panel-subheading, .sell-cart-subheading { display: none; }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  :root { --topbar-height: 60px; --page-pad-top: 12px; --page-pad-bottom: 12px; }
+  .sell-workspace { flex-direction: row; }
+  .sell-panel { flex: 1 1 0; width: auto; }
+  .sell-cart-panel { flex: 0 0 38%; min-width: 300px; width: auto; }
+  .dashboard-only-stats .stat-card strong { font-size: clamp(14px, 1.9vw, 19px); }
+}
+
+
+/* ============================================================
+ * PHONE ONLY (≤ 767px)
+ * 25% stat cards · ~60% table · 15% bottom bar → sheets
+ * ============================================================ */
+@media (max-width: 767px) {
+  :root { --topbar-height: 56px; --page-pad-top: 10px; --page-pad-bottom: 10px; }
+
+  .main.dashboard-view-mode .content,
+  .main.products-view-mode .content,
+  .main.stocks-view-mode .content,
+  .main.low-stock-view-mode .content,
+  .main.price-checker-view-mode .content,
+  .main.transactions-view-mode .content,
+  .main.reports-view-mode .content,
+  .main.sell-view-mode .content { padding: var(--page-pad-top) 10px var(--page-pad-bottom); }
+
+  /* ---- toolbars: one tidy row ---- */
+  .dashboard-toolbar,
+  .page-toolbar {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .toolbar-left,
+  .toolbar-right {
+    width: auto;
+    flex-wrap: nowrap;
+    gap: 8px;
+    min-width: 0;
+  }
+  .toolbar-left { flex: 0 0 auto; }
+  .toolbar-right { flex: 1 1 0; justify-content: flex-end; }
+  .toolbar-left > *,
+  .toolbar-right > * { flex: 0 1 auto; }
+  .toolbar-sort-wrap { width: auto; gap: 6px; flex: 0 0 auto; }
+  .toolbar-right .dashboard-profit-controls { flex: 0 0 auto; width: auto; min-width: 0; margin: 0; gap: 0; }
+  .toolbar-label { flex: 0 0 auto; }
+  .toolbar-left > .toolbar-sort-wrap { flex: 0 0 auto; }
+  .toolbar-label { font-size: 12px; gap: 4px; }
+  .toolbar-label .inline-icon { width: 16px; height: 16px; }
+
+  /* compact sort drop-down (was stretching across the whole row) */
+  .toolbar-sort-wrap .styled-select,
+  .toolbar-sort-wrap .compact-select { flex: 0 0 auto; width: 112px; min-width: 0; }
+  .compact-select,
+  .compact-input,
+  .styled-select-trigger,
+  .wire-btn { height: 40px; }
+  .styled-select-trigger { padding: 0 28px 0 10px; font-size: 13px; border-radius: 10px; }
+  .styled-select-trigger::after { right: 10px; width: 10px; height: 10px; }
+  .compact-input { flex: 1 1 0; width: auto; min-width: 0; font-size: 13px; padding: 0 12px; border-radius: 10px; }
+  input, select, textarea { font-size: 16px; }
+  .compact-input { font-size: 14px; }
+  .wire-btn { min-width: 0; padding: 0 10px; font-size: 12px; border-radius: 10px; flex: 0 0 auto; }
+
+  /* Icon-only buttons */
+  .dashboard-toolbar .wire-btn,
+  .transactions-overview .wire-btn#printHistoryBtn {
+    width: 42px;
+    height: 40px;
+    padding: 0;
+    flex: 0 0 42px;
+    gap: 0;
+  }
+  .dashboard-toolbar .wire-btn .btn-text,
+  .transactions-overview #printHistoryBtn .btn-text { display: none; }
+  .btn-icon-phone { display: inline-block; width: 18px; height: 18px; }
+
+  /* Products / Stocks: sort + two buttons share one row (sort shows only its icon) */
+  .products-overview .toolbar-label,
+  .stocks-overview .toolbar-label { font-size: 0; gap: 0; }
+  .products-overview .toolbar-sort-wrap .styled-select,
+  .stocks-overview .toolbar-sort-wrap .styled-select { width: 104px; }
+  .products-overview .toolbar-right,
+  .stocks-overview .toolbar-right { gap: 8px; margin-left: 4px; }
+  .products-overview .toolbar-right .wire-btn,
+  .stocks-overview .toolbar-right .wire-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 6px;
+    font-size: 11.5px;
+    line-height: 1.1;
+    text-align: center;
+    white-space: normal;
+  }
+
+  /* Price checker: sort + search in one row */
+  .price-checker-toolbar .toolbar-label { font-size: 0; gap: 0; }
+  .price-checker-toolbar .toolbar-sort-wrap .styled-select { width: 138px; }
+
+  /* History: show + search + print icon */
+  .transactions-overview .toolbar-sort-wrap .styled-select { width: 98px; }
+
+  /* Reports: tabs on the first row, range + print on the second */
+  .reports-toolbar { flex-wrap: wrap; row-gap: 8px; }
+  .reports-toolbar .toolbar-left { flex: 1 1 100%; }
+  .reports-toolbar .toolbar-right { flex: 1 1 100%; justify-content: space-between; }
+  .reports-toolbar .report-tabs { width: 100%; gap: 8px; }
+  .report-tab { height: 40px; padding: 0 10px; font-size: 13px; flex: 1 1 0; }
+  .reports-toolbar .toolbar-sort-wrap { flex: 1 1 auto; }
+  .reports-toolbar .toolbar-sort-wrap .styled-select { flex: 1 1 auto; width: auto; }
+  .reports-toolbar .report-print-btn { flex: 0 0 auto; padding: 0 12px; }
+  .reports-toolbar .report-print-btn .btn-icon { width: 16px; height: 16px; }
+
+  /* ---- Dashboard stat cards: 2 × 2 (≈ 25% of the screen) ---- */
+  .dashboard-only-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    height: calc(var(--page-height) * 0.25);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .dashboard-overview .dashboard-only-stats .stat-card { padding: 6px 8px; gap: 8px; border-radius: 14px; }
+  .dashboard-only-stats .stat-icon { width: 32px; height: 32px; flex: 0 0 32px; }
+  .dashboard-only-stats .stat-svg { width: 18px; height: 18px; }
+  .dashboard-only-stats .stat-card span { font-size: 8.5px; }
+  .dashboard-only-stats .stat-card strong { font-size: clamp(14px, 4.4vw, 18px); }
+  .dashboard-only-stats .profit-type-control .styled-select-trigger { font-size: 8.5px; min-height: 0; height: auto; }
+
+  /* Tables a little tighter so more rows fit */
+  th, td { padding: 8px 10px; font-size: 12px; }
+  th { font-size: 10.5px; }
+  .dashboard-table-card,
+  .products-table-card,
+  .stocks-table-card,
+  .transactions-table-card,
+  .low-stock-table-card { border-radius: 16px; }
+
+  /* Price list */
+  .price-directory { max-height: none; border-radius: 16px; }
+  .price-group-header { padding: 8px 16px; font-size: 12px; }
+  .price-directory-item { padding: 10px 16px; min-height: 46px; }
+  .price-product-name { font-size: 13px; }
+  .price-product-price { font-size: 14px; }
+  .price-result { padding: 14px 18px; }
+  .price-result h2 { font-size: 18px; margin-top: 4px; }
+  .price-result .price { font-size: 28px; margin-top: 6px; }
+
+  /* ---- Bottom bar (just the buttons) + the sheets ---- */
+  .dashboard-bottom-section,
+  #pageContent.dashboard-sell-mode .dashboard-bottom-section,
+  .stocks-low-section,
+  .stocks-low-panel {
+    flex: 0 0 auto !important;
+    height: 60px !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center;
+    overflow: visible;
+  }
+  #pageContent.dashboard-sell-mode:not(:has(.collapsed-section)) .dashboard-overview { display: flex !important; }
+  .dashboard-bottom-section.collapsed-section,
+  .stocks-low-section.stocks-collapsed { height: 60px !important; }
+
+  .dashboard-resizer-bar,
+  .stocks-resizer-bar,
+  .dashboard-toggle-btn { display: none !important; }
+
+  .dashboard-tabs-header,
+  .stocks-low-header { margin: 0; flex-wrap: nowrap; justify-content: stretch; }
+  .dashboard-tabs-header .dashboard-tabs,
+  .stocks-low-header .dashboard-tabs { width: 100%; margin: 0; gap: 8px; flex-wrap: nowrap; }
+  .dashboard-bottom-section .tab-btn,
+  .stocks-low-section .tab-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 46px;
+    padding: 0 10px;
+    justify-content: center;
+    font-size: 13px;
+    border-radius: 12px;
+    white-space: nowrap;
+  }
+  .stocks-low-section .tab-btn { flex: 1 1 100%; }
+
+  /* the body of each bottom panel turns into a floating sheet */
+  .m-sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+  }
+  body.m-sheet-open .m-sheet-backdrop { opacity: 1; pointer-events: auto; }
+
+  .dashboard-bottom-section .dashboard-tab-body.m-sheet,
+  .stocks-low-section .stocks-low-body.m-sheet,
+  .dashboard-bottom-section.collapsed-section .dashboard-tab-body.m-sheet,
+  .stocks-low-section.stocks-collapsed .stocks-low-body.m-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 60;
+    display: flex !important;
+    flex-direction: column;
+    height: var(--sheet-h, 50dvh);
+    max-height: 90dvh;
+    margin: 0;
+    padding: 0 10px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg-page);
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.25);
+    overflow: hidden;
+    transform: translateY(105%);
+    visibility: hidden;
+    transition: transform 0.26s ease, height 0.22s ease, visibility 0s linear 0.26s;
+  }
+  .sheet-open .m-sheet,
+  .dashboard-bottom-section.sheet-open .dashboard-tab-body.m-sheet,
+  .stocks-low-section.sheet-open .stocks-low-body.m-sheet {
+    transform: translateY(0);
+    visibility: visible;
+    transition: transform 0.26s ease, height 0.22s ease, visibility 0s;
+  }
+  /* beat the desktop "sell mode" !important sizing so the sheet keeps its own height */
+  #pageContent .dashboard-bottom-section .dashboard-tab-body.m-sheet,
+  #pageContent .stocks-low-section .stocks-low-body.m-sheet {
+    flex: none !important;
+    height: var(--sheet-h, 50dvh) !important;
+    max-height: 90dvh !important;
+    min-height: 0 !important;
+  }
+  .m-sheet.dragging { transition: none !important; }
+
+  .m-sheet-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex: 0 0 auto;
+    height: 30px;
+    margin: 0 -10px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .m-sheet.is-locked .m-sheet-handle { cursor: default; }
+  .m-sheet-grip {
+    width: 44px;
+    height: 5px;
+    border-radius: 3px;
+    background: #94A3B8;
+  }
+  .m-sheet.is-locked .m-sheet-grip { opacity: 0.45; }
+
+  /* collapse button — only the Pick Items to Sell sheet has it */
+  .m-sheet-collapse { display: none; }
+  .m-sheet.is-sell .m-sheet-collapse {
+    display: inline-flex;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 26px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #E2E8F0;
+  }
+  .m-sheet-collapse .btn-icon { width: 16px; height: 16px; }
+
+  /* sheet contents */
+  .dashboard-tab-content,
+  .stocks-low-body.m-sheet .stocks-low-table-wrap { flex: 1 1 0; min-height: 0; }
+  .dashboard-bottom-section .dashboard-tab-content { overflow: hidden; }
+  .stocks-low-body.m-sheet { margin-top: 0; }
+  .stocks-low-table-wrap,
+  .dash-expiring-table-wrap { border-radius: 16px; }
+  .dashboard-overview .dashboard-inventory-table { min-width: 820px; }
+  .dash-expiring-table-wrap .dashboard-inventory-table,
+  .stocks-low-table { min-width: 700px; }
+  .products-overview .products-inventory-table { min-width: 620px; }
+  .stocks-overview .stocks-inventory-table { min-width: 800px; }
+  .transactions-overview .transactions-inventory-table { min-width: 860px; }
+
+  /* ---- Pick Items to Sell (90% sheet) ---- */
+  .sell-workspace { flex-direction: column; gap: 8px; margin-top: 0; overflow: hidden; }
+  .sell-panel { flex: 1 1 52%; min-height: 0; }
+  .sell-cart-panel { flex: 1 1 48%; min-height: 0; width: 100%; min-width: 0; max-width: none; }
+  .sell-panel-header,
+  .sell-cart-header { padding: 8px 12px; gap: 8px; }
+  .sell-header-icon-badge { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 8px; }
+  .sell-panel-heading, .sell-cart-heading { font-size: 14px; }
+  .sell-panel-subheading, .sell-cart-subheading { display: none; }
+  .sell-badge-pill { font-size: 10px; padding: 3px 8px; }
+  .sell-cart-panel .cart-pill { padding: 3px 9px; font-size: 11px; }
+
+  .sell-toolbar {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .sell-toolbar .toolbar-left { flex: 0 0 auto; width: auto; }
+  .sell-toolbar .toolbar-right { flex: 1 1 0; width: auto; min-width: 0; }
+  .sell-toolbar .toolbar-label { font-size: 0; gap: 0; }
+  .sell-toolbar .toolbar-sort-wrap .styled-select { width: 132px; }
+  .sell-toolbar .styled-select-trigger { height: 36px; font-size: 12px; padding: 0 26px 0 10px; }
+  .sell-search-wrap { flex: 1 1 0; min-width: 0; width: 100%; }
+  .sell-search-input { height: 36px !important; width: 100% !important; font-size: 14px !important; }
+
+  .sell-table th, .sell-table td { padding: 8px 6px; font-size: 12px; }
+  .sell-table th { font-size: 10px; }
+  .sell-table th:nth-child(1), .sell-table td:nth-child(1) { width: 46%; padding-left: 12px; }
+  .sell-table th:nth-child(2), .sell-table td:nth-child(2) { width: 20%; }
+  .sell-table th:nth-child(3), .sell-table td:nth-child(3) { width: 12%; }
+  .sell-table th:nth-child(4), .sell-table td:nth-child(4) { width: 22%; padding-right: 10px; }
+  .sell-prod-name { font-size: 12px; }
+  .sell-prod-cat { font-size: 10px; }
+  .sell-prod-srp { font-size: 12px; }
+  .sell-add-btn { height: 30px; padding: 0 8px; font-size: 11px; }
+
+  .sell-cart-table th, .sell-cart-table td { padding: 7px 6px; font-size: 12px; }
+  .sell-cart-table th:first-child, .sell-cart-table td:first-child { padding-left: 12px; }
+  .sell-cart-table th:last-child, .sell-cart-table td:last-child { padding-right: 12px; }
+  .sell-cart-item-name { font-size: 12px; }
+  .sell-cart-item-unit { font-size: 10px; }
+  .sell-cart-line-total { font-size: 12px; }
+
+  .sell-summary { padding: 8px 12px; gap: 10px; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: space-between; }
+  .sell-summary-left { display: flex; flex-direction: column; gap: 0; flex: 0 0 auto; }
+  .sell-summary-label { font-size: 11px; }
+  .sell-total-amount { font-size: 17px; line-height: 1.15; }
+  .sell-summary-items-count { font-size: 10px; }
+  .sell-summary-actions { flex-direction: row; flex: 1 1 auto; width: auto; gap: 6px; }
+  .sell-checkout-btn, .sell-clear-btn {
+    height: 40px; width: auto; flex: 1 1 0; min-width: 0; padding: 0 6px;
+    font-size: 12px; border-radius: 12px; white-space: nowrap; gap: 4px;
+  }
+  .sell-checkout-btn .btn-icon, .sell-clear-btn .btn-icon { width: 14px; height: 14px; }
+  .sell-cart-empty-cell { padding: 8px !important; }
+  .sell-empty-icon-wrap { width: 36px; height: 36px; margin-bottom: 6px; }
+  .sell-empty-icon-wrap img { width: 18px; height: 18px; }
+  .sell-empty-title { font-size: 13px; margin-bottom: 2px; }
+  .sell-empty-text { font-size: 11px; max-width: none; }
+
+  /* ---- Reports on phone ---- */
+  .report-paper { padding: 10px 10px; border-radius: 16px; }
+  .report-header-banner { flex-wrap: wrap; gap: 6px; margin-bottom: 8px; padding-bottom: 8px; border-bottom-width: 1px; }
+  .report-title-main { font-size: 12.5px; letter-spacing: 0.2px; line-height: 1.25; }
+  .report-subtitle-date { font-size: 10px; margin-top: 2px; }
+  .report-header-badge { font-size: 8px; padding: 3px 8px; letter-spacing: 0.6px; }
+  .report-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+  .report-kpi-card { padding: 7px 9px; gap: 2px; border-radius: 12px; }
+  .kpi-label { font-size: 8.5px; gap: 4px; letter-spacing: 0.2px; }
+  .kpi-label .inline-icon { width: 12px; height: 12px; }
+  .kpi-value { font-size: 14px; }
+  .kpi-sub { font-size: 8.5px; }
+  .report-pills-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    margin-bottom: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .report-pills-row::-webkit-scrollbar { display: none; }
+  .report-pill { flex: 0 0 auto; padding: 3px 9px; font-size: 10px; gap: 5px; border-radius: 14px; white-space: nowrap; }
+  .report-subtabs { margin: 0 0 8px; gap: 6px; flex-wrap: nowrap; }
+  .report-subtab { height: 30px; padding: 0 9px; font-size: 11px; gap: 5px; flex: 1 1 0; justify-content: center; min-width: 0; }
+  .report-subtab-count { min-width: 18px; padding: 0 5px; font-size: 10px; }
+  .report-divider-title { font-size: 10.5px; padding-bottom: 5px; margin-bottom: 6px; border-bottom-width: 1px; flex-wrap: wrap; gap: 4px; }
+  .report-divider-title small { font-size: 9px; }
+  .report-table-wrap { border-radius: 12px; }
+  .report-paper .report-table thead th { font-size: 9.5px; height: 32px; padding: 0 8px; }
+  .report-paper .report-table tbody td { font-size: 11px; height: 36px; padding: 0 8px; }
+  .report-subtab { white-space: nowrap; }
+  .report-divider-title small { display: none; }
+  .report-table-wrap + .report-divider-title { margin-top: 10px; }
+}
+
+@media (max-width: 767px) and (orientation: landscape) {
+  :root { --topbar-height: 52px; --page-pad-top: 8px; --page-pad-bottom: 8px; }
+}
+
+
+/* ============================================================
+ * PHONE POP-UPS — flush bottom sheets (no gap at the bottom, left or right)
+ * ============================================================ */
+@media (max-width: 767px) {
+  .modal-overlay,
+  .modal-overlay.checkout-overlay {
+    padding: 0 !important;
+    align-items: flex-end;
+    justify-content: stretch;
+  }
+  .modal,
+  .modal.checkout-modal,
+  .modal.modal-sm {
+    width: 100%;
+    max-width: none;
+    max-height: 92dvh;
+    margin: 0;
+    padding: 0 0 env(safe-area-inset-bottom, 0px);
+    border-radius: 22px 22px 0 0;
+    animation: sheetSlideUp 0.26s ease;
+  }
+  @keyframes sheetSlideUp { from { transform: translateY(100%); } to { transform: none; } }
+
+  .modal-head { padding: 14px 16px; }
+  .modal-head h3 { font-size: 17px; }
+  .modal-close { width: 32px; height: 32px; font-size: 18px; }
+  .modal-body,
+  .checkout-modal .modal-body { padding: 14px 16px; }
+  .modal-foot { padding: 12px 16px; gap: 10px; }
+  .modal-foot .primary-btn,
+  .modal-foot .ghost-btn { height: 44px; font-size: 14px; }
+  .checkout-modal .modal-head { border-radius: 22px 22px 0 0; }
+  .checkout-modal .modal-foot { border-radius: 0; }
+  .checkout-modal .form-grid { margin-top: 12px; gap: 12px; grid-template-columns: 1fr; }
+  .checkout-modal .form-group label { font-size: 12px; }
+  .checkout-modal .form-group input,
+  .checkout-modal .form-group select,
+  .input-prefix { height: 44px; }
+  .checkout-modal .checkout-notes textarea { height: 64px !important; min-height: 64px !important; }
+
+  /* smaller receipt so the payment fields are reachable without long scrolling */
+  .checkout-modal .checkout-receipt { padding: 10px 14px; font-size: 12px; border-radius: 14px; }
+  .checkout-modal .receipt-header h4 { font-size: 14px; margin-bottom: 2px; }
+  .checkout-modal .receipt-header p { font-size: 10.5px; margin-bottom: 0; }
+  .checkout-modal .receipt-divider { margin: 6px 0; }
+  .checkout-modal .receipt-footer { display: none; }
+  .checkout-modal .checkout-receipt-box { margin: 0; }
+  .checkout-modal .checkout-receipt > div { line-height: 1.25; }
+  .checkout-modal .checkout-receipt .receipt-info > *,
+  .checkout-modal .checkout-receipt .receipt-totals > *,
+  .checkout-modal .checkout-receipt .receipt-item { padding-top: 1px; padding-bottom: 1px; margin-top: 0; margin-bottom: 0; }
+  .checkout-modal .receipt-total { font-size: 14px; }
+}
+
+/* Checkout pop-up on tablet: a little tighter so it never needs the whole screen */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .checkout-modal { width: min(520px, 100%); }
+  .checkout-modal .modal-body { padding: 18px 20px; }
+}
+
+
+/* ============================================================
+ * TABLET + PHONE MENU
+ * The menu is a slide-in drawer here, so the "collapsed icons only"
+ * mode (a desktop feature) is ignored: the drawer always shows its
+ * full width with labels, and never scrolls sideways.
+ * ============================================================ */
+@media (max-width: 1024px) {
+  .sidebar,
+  .sidebar.collapsed {
+    width: min(280px, 100vw);
+    padding: 24px 20px 20px !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .sidebar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+  .sidebar.collapsed .sidebar-brand { padding: 0 8px 20px; justify-content: flex-start; }
+  .sidebar.collapsed .brand-text { display: flex !important; }
+  .sidebar.collapsed .sidebar-collapse-btn,
+  .sidebar .sidebar-collapse-btn { display: none !important; }
+  .sidebar.collapsed .sidebar-logo-container { cursor: default; }
+
+  .sidebar.collapsed .nav-item,
+  .sidebar.collapsed .side-action,
+  .sidebar.collapsed .logout-btn {
+    justify-content: flex-start;
+    width: 100%;
+    height: 44px;
+  }
+  .sidebar.collapsed .nav-item { padding: 0 14px; margin: 0 0 6px; }
+  .sidebar.collapsed .side-action,
+  .sidebar.collapsed .logout-btn { padding: 0 16px; margin: 0; }
+  .sidebar.collapsed .nav-icon { margin-right: 12px; }
+  .sidebar.collapsed .side-action .action-icon,
+  .sidebar.collapsed .logout-btn .action-icon { margin-right: 12px; }
+  .sidebar.collapsed .nav-item span,
+  .sidebar.collapsed .side-action span,
+  .sidebar.collapsed .logout-btn span { display: flex !important; }
+  .sidebar.collapsed .alert-dot { position: static; margin-left: auto; }
 }

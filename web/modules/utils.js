@@ -73,10 +73,60 @@ export function parseTimestamp(raw) {
   return Date.UTC(+y, +mo - 1, +d, +h, +mi, +sec, ms) - offsetMin * 60000;
 }
 
-/** "2026-10-12 15:50:44" in the browser's local time. */
-export function formatDateTime24(ts) {
+/**
+ * Format any date or timestamp into Asia/Manila timezone using 24-hour format.
+ * @param {number|string|Date} raw
+ * @param {boolean} includeSeconds
+ * @returns {string} e.g. "2026-10-13 16:15:00"
+ */
+export function formatAsiaManila(raw, includeSeconds = true) {
+  const ts = parseTimestamp(raw) ?? (raw ? new Date(raw).getTime() : Date.now());
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return "—";
-  const p2 = n => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
+
+  try {
+    const options = {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      ...(includeSeconds ? { second: "2-digit" } : {}),
+      hour12: false
+    };
+    const formatter = new Intl.DateTimeFormat("en-CA", options);
+    const parts = formatter.formatToParts(d);
+    const map = {};
+    for (const part of parts) {
+      map[part.type] = part.value;
+    }
+    const yr = map.year || d.getFullYear();
+    const mo = map.month || String(d.getMonth() + 1).padStart(2, "0");
+    const da = map.day || String(d.getDate()).padStart(2, "0");
+    let hr = map.hour || String(d.getHours()).padStart(2, "0");
+    if (hr === "24") hr = "00";
+    const mi = map.minute || String(d.getMinutes()).padStart(2, "0");
+    const se = map.second || String(d.getSeconds()).padStart(2, "0");
+
+    return includeSeconds
+      ? `${yr}-${mo}-${da} ${hr}:${mi}:${se}`
+      : `${yr}-${mo}-${da} ${hr}:${mi}`;
+  } catch (e) {
+    const p2 = n => String(n).padStart(2, "0");
+    const yr = d.getFullYear();
+    const mo = p2(d.getMonth() + 1);
+    const da = p2(d.getDate());
+    const hr = p2(d.getHours());
+    const mi = p2(d.getMinutes());
+    const se = p2(d.getSeconds());
+    return includeSeconds
+      ? `${yr}-${mo}-${da} ${hr}:${mi}:${se}`
+      : `${yr}-${mo}-${da} ${hr}:${mi}`;
+  }
+}
+
+/** "2026-10-12 15:50:44" in Asia/Manila 24-hour format. */
+export function formatDateTime24(ts) {
+  return formatAsiaManila(ts, true);
 }
