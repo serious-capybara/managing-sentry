@@ -5,7 +5,7 @@ from core.security import require_web_access
 
 router = APIRouter(tags=["capital"])
 
-DEFAULT_CAPITAL = 20000.0
+DEFAULT_CAPITAL = 0.0
 
 
 @router.get("/capital", response_model=CapitalResponse)

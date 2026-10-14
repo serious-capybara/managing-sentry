@@ -113,8 +113,8 @@ async def make_sale(sale: SaleRequest, request: Request):
                 else:
                     await conn.execute(
                         "INSERT INTO capital_configs (starting_capital, current_balance, last_updated_at) "
-                        "VALUES (20000, $1, NOW())",
-                        20000 + total
+                        "VALUES (0, $1, NOW())",
+                        total
                     )
     except asyncpg.PostgresError as e:
         raise HTTPException(status_code=500, detail=f"Transaction failed: {e}")
