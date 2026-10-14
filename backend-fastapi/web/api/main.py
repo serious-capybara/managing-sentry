@@ -9,10 +9,8 @@ from core.docs_auth import add_protected_docs
 from database.connection import lifespan
 from routers import auth, test, products, history, sales, capital, reset, maintenance, sync
 
-# FastAPI's own open /docs pages are switched off; core/docs_auth.py adds password-protected ones.
 app = FastAPI(title="Inventory & Sales API", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
-# Signed session cookie (replaces PHP sessions)
 app.add_middleware(
     SessionMiddleware,
     secret_key=config.SECRET_KEY,
@@ -33,7 +31,6 @@ app.add_middleware(
 )
 
 
-# The web frontend reads {"error": "..."} (the old PHP format), so errors are returned that way.
 @app.exception_handler(StarletteHTTPException)
 async def http_error(request, exc):
     return JSONResponse({"error": str(exc.detail)}, status_code=exc.status_code)
@@ -59,5 +56,3 @@ add_protected_docs(app)
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
-
-# reload trigger

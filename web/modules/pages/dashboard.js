@@ -1,8 +1,4 @@
-/* ============================================================
- * pages/dashboard.js — Dashboard overview page renderer.
- * Renders stat cards, inventory table, and expiring/low-stock
- * panels as well as the sell tab container.
- * ============================================================ */
+// Dashboard page: KPI cards, main table and the bottom panel
 
 import { state } from "../state.js";
 import { money, escapeHtml } from "../utils.js";
@@ -28,7 +24,7 @@ export function setActiveProfitType(type) {
   try { localStorage.setItem("sentryDashboardProfitDisplay", type); } catch (e) { }
 }
 
-/* ── stat cards (shown only on the dashboard) ─────────────── */
+// KPI cards
 export function dashboardStats() {
   const profit = getProfitBreakdown();
   const isNetProfit = activeProfitType === "net";
@@ -62,7 +58,7 @@ export function dashboardStats() {
     </div>`;
 }
 
-/* ── main inventory table ──────────────────────────────────── */
+// main table
 export function dashboardRows(products = state.products) {
   if (!products.length) {
     return `<tr><td colspan="9" class="table-empty">No products yet. Add a product from the Products menu.</td></tr>`;
@@ -99,7 +95,7 @@ export function expiringRows(list) {
   }).join("");
 }
 
-/* ── expiring-soon panel ───────────────────────────────────── */
+// expiring soon panel
 export function expiringPanel() {
   const now = new Date();
   const soon = state.products.filter(p => {
@@ -119,7 +115,7 @@ export function expiringPanel() {
     </div>`;
 }
 
-/* ── dashboard tab content ─────────────────────────────────── */
+// bottom panel tabs
 export function cartCount() {
   return state.cart.reduce((s, i) => s + i.qty, 0);
 }
@@ -131,7 +127,7 @@ export function dashTabHtml(tab) {
   return expiringPanel();
 }
 
-/* ── full dashboard page ───────────────────────────────────── */
+// the whole page
 export function renderDashboard() {
   return `
     <div class="dashboard-overview">
@@ -193,7 +189,7 @@ export function renderDashboard() {
   `;
 }
 
-/** Sort a product list by the chosen mode. */
+// sorts products by the chosen option
 export function sortProducts(list, mode) {
   const copy = [...list];
   if (mode === "name") {

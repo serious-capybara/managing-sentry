@@ -1,8 +1,6 @@
-/* ============================================================
- * css/pos.css — Point of Sale (POS) Workspace & Cart Styling
- * ============================================================ */
+/* Pick Items to Sell and the cart */
 
-/* In Sell mode: hide dashboard overview ONLY when POS workspace is EXPANDED (not collapsed) */
+/* sell mode hides the dashboard overview, but only while the sell panel is open */
 .dashboard-sell-mode:not(:has(.collapsed-section)) .dashboard-overview {
   display: none !important;
 }
@@ -28,7 +26,7 @@
   flex-direction: column !important;
 }
 
-/* POS Dual-Panel Workspace */
+/* catalog + cart side by side */
 .sell-workspace {
   display: flex;
   flex: 1;
@@ -37,7 +35,7 @@
   margin-top: 10px;
 }
 
-/* Left Panel: Product Picking Catalog */
+/* left: product catalog */
 .sell-panel {
   flex: 1;
   min-width: 0;
@@ -50,7 +48,7 @@
   overflow: hidden;
 }
 
-/* Right Panel: Shopping Cart */
+/* right: cart */
 .sell-cart-panel {
   flex: 0 0 420px;
   min-width: 360px;
@@ -64,7 +62,7 @@
   overflow: hidden;
 }
 
-/* Card Header Titles */
+/* panel headers */
 .sell-panel-header,
 .sell-cart-header,
 .sell-panel .panel-title,
@@ -144,7 +142,7 @@
   white-space: nowrap;
 }
 
-/* Sell Workspace Toolbar */
+/* sell toolbar */
 .sell-toolbar {
   flex: 0 0 auto;
   display: flex;
@@ -210,7 +208,7 @@
   box-shadow: 0 0 0 3px rgba(17, 24, 68, 0.08) !important;
 }
 
-/* Table Scroll Containers */
+/* scroll areas */
 .sell-table-scroll,
 .sell-cart-scroll {
   flex: 1;
@@ -228,7 +226,7 @@
   border-collapse: collapse;
 }
 
-/* Sticky Headers with Design System Palette */
+/* sticky table headers */
 .sell-table thead th {
   position: sticky;
   top: 0;
@@ -261,7 +259,7 @@
   line-height: 1.2;
 }
 
-/* Symmetrical Cell Padding & Clean Alignment */
+/* cell padding */
 .sell-table td {
   padding: 10px 14px;
   vertical-align: middle;
@@ -290,7 +288,7 @@
   border-bottom: 0;
 }
 
-/* Pick Items to Sell Table Columns */
+/* catalog column widths */
 .sell-table th:nth-child(1), .sell-table td:nth-child(1) {
   width: 48%;
   padding-left: 20px;
@@ -312,7 +310,7 @@
   padding-right: 20px;
 }
 
-/* Product Info Cell */
+/* product name cell */
 .sell-prod-cell {
   display: flex;
   flex-direction: column;
@@ -344,7 +342,7 @@
   white-space: nowrap;
 }
 
-/* Stock Status Badges */
+/* stock badges */
 .sell-stock-tag {
   display: inline-flex;
   align-items: center;
@@ -372,7 +370,7 @@
   border: 1px solid #FECACA;
 }
 
-/* Modern Add to Cart Button */
+/* add to cart button */
 .sell-add-btn {
   height: 32px;
   padding: 0 12px;
@@ -409,7 +407,7 @@
   transform: none;
 }
 
-/* Cart Table Columns: Name 46%, Qty 28%, Total 26% */
+/* cart column widths: name 46%, qty 28%, total 26% */
 .sell-cart-table th:nth-child(1), .sell-cart-table td:nth-child(1) {
   width: 46%;
   padding-left: 16px;
@@ -428,7 +426,7 @@
   padding-right: 16px;
 }
 
-/* Cart Item Row Details */
+/* cart rows */
 .sell-cart-item-info {
   display: flex;
   flex-direction: column;
@@ -458,7 +456,7 @@
   white-space: nowrap;
 }
 
-/* Quantity Stepper Capsule */
+/* quantity - / + control */
 .sell-cart-qty {
   display: inline-flex;
   align-items: center;
@@ -514,7 +512,7 @@
   padding: 0;
 }
 
-/* Clean Remove Item Action */
+/* remove item button */
 .remove-btn {
   height: 26px;
   padding: 0 8px;
@@ -544,7 +542,7 @@
   flex-shrink: 0;
 }
 
-/* Empty Cart State */
+/* empty cart */
 .sell-cart-empty-cell {
   padding: 16px !important;
   text-align: center !important;
@@ -592,7 +590,7 @@
   line-height: 1.4;
 }
 
-/* Cart Summary & Checkout Footer */
+/* cart total and buttons */
 .sell-summary {
   flex: 0 0 auto;
   padding: 16px 20px;
@@ -638,7 +636,7 @@
   flex: 0 0 150px;
 }
 
-/* Green Checkout Pill Button (matching app design) */
+/* checkout button */
 .sell-checkout-btn {
   height: 40px;
   width: 100%;
@@ -663,7 +661,7 @@
   box-shadow: 0 4px 10px rgba(97, 135, 100, 0.35);
 }
 
-/* Red Clean Cart Pill Button (matching app design) */
+/* clean cart button */
 .sell-clear-btn {
   height: 40px;
   width: 100%;

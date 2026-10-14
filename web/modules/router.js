@@ -1,7 +1,4 @@
-/* ============================================================
- * router.js — SPA page routing and layout switching.
- * Coordinates rendering the selected page and binding its handlers.
- * ============================================================ */
+// switches pages and sets up the layout for each one
 
 import { saveActivePage } from "./state.js";
 import { updateStats } from "./stock-logic.js";

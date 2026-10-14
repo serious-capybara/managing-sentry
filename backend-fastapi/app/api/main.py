@@ -3,7 +3,6 @@ from core.docs_auth import add_protected_docs
 from database.connection import lifespan
 from routers import auth, test, products, history, sales
 
-# FastAPI's own open /docs pages are switched off; core/docs_auth.py adds password-protected ones.
 app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 app.include_router(auth.router)

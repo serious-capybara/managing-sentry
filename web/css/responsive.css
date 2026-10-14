@@ -1,9 +1,5 @@
-/* ============================================================
- * css/responsive.css — Phone, tablet, desktop + print (single responsive file)
- * Desktop:  ≥ 1025px
- * Tablet:   768px–1024px
- * Phone:    ≤ 767px
- * ============================================================ */
+/* tablet and phone layouts.
+   desktop >= 1025px, tablet 768-1024px, phone <= 767px */
 
 @media print {
   @page receipt {
@@ -126,7 +122,7 @@
 }
 
 
-/* Desktop / laptop */
+/* desktop */
 @media (min-width: 1025px) {
   .login-screen {
     grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
@@ -151,7 +147,7 @@
 }
 
 
-/* Tablet + phone: off-canvas sidebar */
+/* tablet + phone: menu slides in from the left */
 @media (max-width: 1024px) {
   .sidebar {
     width: 280px;
@@ -266,7 +262,7 @@
 }
 
 
-/* Tablet */
+/* tablet */
 @media (min-width: 768px) and (max-width: 1024px) {
   .login-screen {
     grid-template-columns: 1fr 1fr;
@@ -335,7 +331,7 @@
 }
 
 
-/* Phone */
+/* phone */
 @media (max-width: 767px) {
   .login-screen { grid-template-columns: 1fr; }
   .login-visual { display: none; }
@@ -526,7 +522,7 @@
 }
 
 
-/* Narrow phones */
+/* very narrow phones */
 @media (max-width: 480px) {
   .stats-grid { gap: 8px; }
   .sidebar { width: min(260px, 100vw); }
@@ -561,12 +557,7 @@
 }
 
 
-/* ============================================================
- * RESPONSIVE TABLES + EXTRA FIXES (all screen sizes)
- * Tables keep a readable minimum width and scroll sideways inside
- * their card instead of squashing every column (which made words
- * overlap and wrap one-per-line on phones / small windows).
- * ============================================================ */
+/* tables keep a readable width and scroll sideways inside their box instead of squeezing the columns */
 @media (max-width: 1100px) {
   .dashboard-inventory-table,
   .products-inventory-table,
@@ -598,13 +589,13 @@
   .low-stock-inventory-table td:nth-child(2) { white-space: normal; min-width: 180px; }
 }
 
-/* Never let anything push the page sideways */
+/* nothing may push the page sideways */
 html, body { max-width: 100%; overflow-x: hidden; }
 .main, .content, #pageContent { min-width: 0; max-width: 100%; }
 img, svg, video { max-width: 100%; }
 
 @media (max-width: 767px) {
-  /* stat cards grow with their content (the Net Profit card has a dropdown) */
+  /* KPI cards grow with their content (Net Profit has a dropdown) */
   .dashboard-only-stats .stat-card { height: auto; min-height: 96px; }
 
   th, td { padding: 9px 10px; }
@@ -613,10 +604,10 @@ img, svg, video { max-width: 100%; }
   .report-paper .report-chart-container { grid-template-columns: 1fr; }
 }
 
-/* Full width stretching with small edge gap */
+/* content uses the full width */
 .content { max-width: none; }
 
-/* Phones / tablets: the dashboard grows with its content and the page scrolls (no clipped cards) */
+/* older rule: dashboard grows with its content (replaced by the docked layout below) */
 @media (max-width: 1024px) {
   .dashboard-overview,
   .dashboard-top-dock,
@@ -625,12 +616,7 @@ img, svg, video { max-width: 100%; }
 }
 
 
-/* ============================================================
- * RESPONSIVE PASS (v9) — fixes found by testing every page at
- * 320 / 360 / 414 / 600 / 768 / 900 / 1024 / 1280 / 1920 px.
- * ============================================================ */
-
-/* Phone: "Sort: [dropdown]" / "Show:" / "Range:" rows used to push the dropdown past the screen edge */
+/* phone: Sort / Show / Range dropdowns must stay inside the screen */
 @media (max-width: 767px) {
   .toolbar-sort-wrap { width: 100%; min-width: 0; gap: 8px; }
   .toolbar-sort-wrap .styled-select,
@@ -673,7 +659,7 @@ img, svg, video { max-width: 100%; }
   }
 }
 
-/* Mobile menu drawer: title and subtitle were forced side by side and overlapped */
+/* menu drawer: title and subtitle sat side by side and overlapped */
 @media (max-width: 1024px) {
   .sidebar .brand-text { flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0; }
   .sidebar .brand-text h1,
@@ -691,32 +677,25 @@ img, svg, video { max-width: 100%; }
 }
 
 
-/* ============================================================
- * TABLET + PHONE LAYOUT
- * Every page is locked to the screen height. Only the table rows
- * (and the phone bottom sheets) scroll — never the whole page.
- * Tablet: 768px – 1024px     Phone: ≤ 767px
- * (This section comes last on purpose so it wins over the older
- *  rules above.)
- * ============================================================ */
+/* tablet + phone sizing */
 :root {
   --screen-height: 100vh;
   --topbar-height: 64px;
   --page-pad-top: 16px;
   --page-pad-bottom: 16px;
-  /* height of the area under the top bar that the page may use */
+  /* height left under the top bar */
   --page-height: calc(var(--screen-height) - var(--topbar-height) - var(--page-pad-top) - var(--page-pad-bottom));
 }
 @supports (height: 100dvh) {
   :root { --screen-height: 100dvh; }
 }
 
-/* The phone-only sheet pieces are invisible everywhere else */
+/* sheet pieces only exist on phone */
 .m-sheet-handle,
 .m-sheet-backdrop { display: none; }
 .btn-icon-phone { display: none; }
 
-/* inner area of the dashboard bottom panel (all screen sizes) */
+/* inside of the dashboard bottom panel */
 .dashboard-tab-content {
   flex: 1 1 0;
   min-height: 0;
@@ -726,9 +705,7 @@ img, svg, video { max-width: 100%; }
 }
 
 
-/* ============================================================
- * TABLET + PHONE  (≤ 1024px): docked, no page scrolling
- * ============================================================ */
+/* tablet + phone (<= 1024px): the page fits the screen and does not scroll, only the tables do */
 @media (max-width: 1024px) {
   .topbar { height: var(--topbar-height); }
 
@@ -887,11 +864,11 @@ img, svg, video { max-width: 100%; }
     background: none;
   }
 
-  /* ---- toolbars ---- */
+  /* toolbars */
   .dashboard-toolbar,
   .page-toolbar { flex: 0 0 auto; margin-bottom: 12px; }
 
-  /* ---- Dashboard ---- */
+  /* Dashboard */
   .dashboard-overview { margin-bottom: 10px; }
   .dashboard-top-dock { flex: 0 0 auto; }
 
@@ -960,12 +937,12 @@ img, svg, video { max-width: 100%; }
   .stocks-low-panel { max-height: none; }
   .stocks-overview { gap: 0; }
 
-  /* ---- Price checker ---- */
+  /* Price checker */
   .price-checker-new { width: 100%; }
   .price-search-result { flex: 1 1 0; min-height: 0; overflow: hidden; }
   .price-match-container { flex: 1 1 0; min-height: 0; }
 
-  /* ---- Reports ---- */
+  /* Reports */
   .report-paper {
     padding: 16px 18px;
     overflow: hidden;
@@ -987,7 +964,7 @@ img, svg, video { max-width: 100%; }
   .report-paper .sales-report-table { min-width: 900px; }
   .transactions-overview .transactions-inventory-table { min-width: 860px; }
 
-  /* ---- Tablet sell workspace (opened from "Pick Items to Sell") ---- */
+  /* Tablet sell workspace (opened from "Pick Items to Sell") */
   .dashboard-sell-mode:not(:has(.collapsed-section)) .dashboard-bottom-section {
     height: 100% !important;
   }
@@ -1008,10 +985,7 @@ img, svg, video { max-width: 100%; }
 }
 
 
-/* ============================================================
- * TABLET ONLY (768px – 1024px)
- * 20% stat cards · 50% table · 30% bottom panel
- * ============================================================ */
+/* tablet only (768-1024px): KPI cards 20%, table 50%, bottom panel 30% */
 @media (min-width: 768px) and (max-width: 1024px) {
   :root { --topbar-height: 64px; --page-pad-top: 16px; --page-pad-bottom: 16px; }
 
@@ -1045,10 +1019,7 @@ img, svg, video { max-width: 100%; }
 }
 
 
-/* ============================================================
- * PHONE ONLY (≤ 767px)
- * 25% stat cards · ~60% table · 15% bottom bar → sheets
- * ============================================================ */
+/* phone only (<= 767px): KPI cards 25%, table about 60%, bottom bar 15% */
 @media (max-width: 767px) {
   :root { --topbar-height: 56px; --page-pad-top: 10px; --page-pad-bottom: 10px; }
 
@@ -1061,7 +1032,7 @@ img, svg, video { max-width: 100%; }
   .main.reports-view-mode .content,
   .main.sell-view-mode .content { padding: var(--page-pad-top) 10px var(--page-pad-bottom); }
 
-  /* ---- toolbars: one tidy row ---- */
+  /* toolbars: one tidy row */
   .dashboard-toolbar,
   .page-toolbar {
     flex-direction: row;
@@ -1151,7 +1122,7 @@ img, svg, video { max-width: 100%; }
   .reports-toolbar .report-print-btn { flex: 0 0 auto; padding: 0 12px; }
   .reports-toolbar .report-print-btn .btn-icon { width: 16px; height: 16px; }
 
-  /* ---- Dashboard stat cards: 2 × 2 (≈ 25% of the screen) ---- */
+  /* Dashboard stat cards: 2 × 2 (≈ 25% of the screen) */
   .dashboard-only-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: repeat(2, minmax(0, 1fr));
@@ -1185,7 +1156,7 @@ img, svg, video { max-width: 100%; }
   .price-result h2 { font-size: 18px; margin-top: 4px; }
   .price-result .price { font-size: 28px; margin-top: 6px; }
 
-  /* ---- Bottom bar (just the buttons) + the sheets ---- */
+  /* Bottom bar (just the buttons) + the sheets */
   .dashboard-bottom-section,
   #pageContent.dashboard-sell-mode .dashboard-bottom-section,
   .stocks-low-section,
@@ -1332,7 +1303,7 @@ img, svg, video { max-width: 100%; }
   .stocks-overview .stocks-inventory-table { min-width: 800px; }
   .transactions-overview .transactions-inventory-table { min-width: 860px; }
 
-  /* ---- Pick Items to Sell (90% sheet) ---- */
+  /* Pick Items to Sell (90% sheet) */
   .sell-workspace { flex-direction: column; gap: 8px; margin-top: 0; overflow: hidden; }
   .sell-panel { flex: 1 1 52%; min-height: 0; }
   .sell-cart-panel { flex: 1 1 48%; min-height: 0; width: 100%; min-width: 0; max-width: none; }
@@ -1394,7 +1365,7 @@ img, svg, video { max-width: 100%; }
   .sell-empty-title { font-size: 13px; margin-bottom: 2px; }
   .sell-empty-text { font-size: 11px; max-width: none; }
 
-  /* ---- Reports on phone ---- */
+  /* Reports on phone */
   .report-paper { padding: 10px 10px; border-radius: 16px; }
   .report-header-banner { flex-wrap: wrap; gap: 6px; margin-bottom: 8px; padding-bottom: 8px; border-bottom-width: 1px; }
   .report-title-main { font-size: 12.5px; letter-spacing: 0.2px; line-height: 1.25; }
@@ -1434,9 +1405,7 @@ img, svg, video { max-width: 100%; }
 }
 
 
-/* ============================================================
- * PHONE POP-UPS — flush bottom sheets (no gap at the bottom, left or right)
- * ============================================================ */
+/* phone pop-ups slide up from the bottom as sheets */
 @media (max-width: 767px) {
   .modal-overlay,
   .modal-overlay.checkout-overlay {
@@ -1488,19 +1457,14 @@ img, svg, video { max-width: 100%; }
   .checkout-modal .receipt-total { font-size: 14px; }
 }
 
-/* Checkout pop-up on tablet: a little tighter so it never needs the whole screen */
+/* checkout pop-up on tablet: a bit tighter */
 @media (min-width: 768px) and (max-width: 1024px) {
   .checkout-modal { width: min(520px, 100%); }
   .checkout-modal .modal-body { padding: 18px 20px; }
 }
 
 
-/* ============================================================
- * TABLET + PHONE MENU
- * The menu is a slide-in drawer here, so the "collapsed icons only"
- * mode (a desktop feature) is ignored: the drawer always shows its
- * full width with labels, and never scrolls sideways.
- * ============================================================ */
+/* tablet + phone menu: always a slide-in drawer with full labels, never scrolls sideways */
 @media (max-width: 1024px) {
   .sidebar,
   .sidebar.collapsed {
@@ -1536,4 +1500,88 @@ img, svg, video { max-width: 100%; }
   .sidebar.collapsed .side-action span,
   .sidebar.collapsed .logout-btn span { display: flex !important; }
   .sidebar.collapsed .alert-dot { position: static; margin-left: auto; }
+}
+
+
+/* Tablet: the KPI row keeps a fixed, compact height so tall screens
+   give the extra space to the table instead of stretching the cards. */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .dashboard-only-stats { height: min(calc(var(--page-height) * 0.20), 118px); }
+}
+
+/* Phone: same idea for the 2 x 2 KPI grid. */
+@media (max-width: 767px) {
+  .dashboard-only-stats { height: min(calc(var(--page-height) * 0.25), 150px); }
+}
+
+
+/* Phone type scale: smaller text everywhere so the screen is not crowded.
+   Tablet and desktop sizes are left alone. */
+@media (max-width: 767px) {
+  body { font-size: 13px; }
+  button, input, select, textarea { font-size: 13px; }
+  input, select, textarea { font-size: 14px; }
+
+  .topbar h2 { font-size: 15px; }
+  .sidebar .brand-text h1 { font-size: 16px; }
+  .sidebar .nav-item,
+  .sidebar .side-action,
+  .sidebar .logout-btn { font-size: 13px; }
+
+  .login-heading h2 { font-size: 22px; }
+  .login-heading p, .demo-hint { font-size: 12px; }
+  .login-btn { font-size: 14px; }
+
+  /* KPI cards */
+  .dashboard-only-stats .stat-card span { font-size: 8px; }
+  .dashboard-only-stats .stat-card strong { font-size: clamp(13px, 3.9vw, 16px); }
+  .dashboard-only-stats .profit-type-control .styled-select-trigger { font-size: 8px; }
+
+  /* Table headers and cells (these beat the generic th/td rule above, so they are listed one by one) */
+  .dashboard-overview .dashboard-inventory-table thead th,
+  .dash-expiring-table-wrap .dashboard-inventory-table thead th,
+  .products-overview .products-inventory-table thead th,
+  .stocks-overview .stocks-inventory-table thead th,
+  .stocks-low-table-wrap .stocks-low-table thead th,
+  .low-stock-overview .low-stock-inventory-table thead th,
+  .transactions-overview .transactions-inventory-table thead th {
+    font-size: 10px;
+    height: 34px;
+    padding: 0 10px;
+  }
+  .dashboard-overview .dashboard-inventory-table tbody td,
+  .dash-expiring-table-wrap .dashboard-inventory-table tbody td,
+  .products-overview .products-inventory-table tbody td,
+  .stocks-overview .stocks-inventory-table tbody td,
+  .stocks-low-table-wrap .stocks-low-table tbody td,
+  .low-stock-overview .low-stock-inventory-table tbody td,
+  .transactions-overview .transactions-inventory-table tbody td {
+    font-size: 11.5px;
+    height: 38px;
+    padding: 0 10px;
+  }
+
+  .badge, .notes-btn, .order-extra-badge { font-size: 10px; }
+  .tab-btn { font-size: 12px; }
+  .wire-btn, .action-btn { font-size: 12px; }
+  .toast { font-size: 12.5px; }
+
+  /* Pop-ups */
+  .modal-head h3 { font-size: 15px; }
+  .modal-caption, .modal-head p { font-size: 11px; }
+  .form-group label, .checkout-modal .form-group label { font-size: 11.5px; }
+  .modal input, .modal select, .modal textarea { font-size: 14px; }
+  .modal-foot .primary-btn,
+  .modal-foot .ghost-btn { font-size: 13px; }
+  .yn-msg, .info-msg { font-size: 13px; }
+
+  /* Price checker */
+  .price-product-name { font-size: 12px; }
+  .price-product-price { font-size: 13px; }
+  .price-result h2 { font-size: 16px; }
+  .price-result .price { font-size: 24px; }
+
+  /* Reports */
+  .report-tab { font-size: 12px; }
+  .report-title-main { font-size: 12px; }
 }

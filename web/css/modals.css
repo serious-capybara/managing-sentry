@@ -1,6 +1,4 @@
-/* ============================================================
- * css/modals.css — Floating Modal Dialogs System
- * ============================================================ */
+/* pop-ups */
 
 .modal-overlay {
   position: fixed;
@@ -127,7 +125,7 @@
   color: var(--danger-red-dark);
 }
 
-/* Form Controls & Fixed Height Textarea (Fits 50 words without scrolling) */
+/* form fields; the textarea has a fixed height (about 50 words) */
 .form-group textarea {
   resize: none !important;
   height: 120px !important;
@@ -155,9 +153,7 @@
   margin-left: 4px;
 }
 
-/* ============================================================
- * Checkout modal — same shell as Add / Edit Product (.modal + head/body/foot + form-grid)
- * ============================================================ */
+/* checkout modal uses the same shell as Add / Edit Product */
 .checkout-modal {
   width: min(560px, 100%);
 }
@@ -263,9 +259,7 @@
   text-align: center;
 }
 
-/* ============================================================
- * Receipt card (screen + success state). Print rules live in responsive.css
- * ============================================================ */
+/* Receipt card (screen + success state). Print rules live in responsive.css */
 .checkout-receipt {
   width: 100%;
   max-width: 420px;
@@ -407,9 +401,7 @@
 }
 
 
-/* ============================================================
- * Styled Select (from styled-select.js integration)
- * ============================================================ */
+/* custom select (see styled-select.js) */
 
 .styled-select-native {
   appearance: none;
@@ -430,16 +422,14 @@
   font-size: 13px;
 }
 
-/* Payment options custom styling */
+/* payment options */
 .payment-options {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
 }
 
-/* ============================================================
- * Expiration Modal & Buttons
- * ============================================================ */
+/* expiration pop-up */
 
 .expiry-btn {
   border: 0;
@@ -501,7 +491,7 @@
   background: #F8FAFC;
 }
 
-/* Remove Product & Product Picker Component */
+/* remove product and product picker */
 .remove-product-modal {
   width: min(560px, 100%);
 }
@@ -551,12 +541,12 @@
   border: 1px solid var(--border-light);
   border-radius: var(--radius-input);
   background: #F8FAFC;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE & Edge */
+  scrollbar-width: none; /* firefox */
+  -ms-overflow-style: none; /* old edge */
 }
 
 .remove-product-list::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none; /* chrome, safari */
   width: 0;
   height: 0;
 }
@@ -693,7 +683,7 @@
   font-weight: 500;
 }
 
-/* Stock In / Stock Out Modals */
+/* stock in / out pop-ups */
 .stock-modal {
   width: min(600px, 100%);
   border-radius: var(--radius-card);
@@ -704,7 +694,7 @@
   padding: 20px 24px;
 }
 
-/* Category Single-Row Input & Filter Icon Dropdown Menu in Add Product Modal */
+/* add product: category field and its dropdown */
 .category-input-row {
   display: flex;
   align-items: center;
@@ -748,7 +738,7 @@
   height: 18px;
 }
 
-/* Product Name Single-Row Input & Edit Product Icon Button */
+/* add product: name field and edit button */
 .product-name-input-row {
   display: flex;
   align-items: center;
@@ -822,9 +812,7 @@
   border-bottom-right-radius: var(--radius-card);
 }
 
-/* ============================================================
- * New: Payment method select dropdown styles
- * ============================================================ */
+/* payment method dropdown */
 
 .payment-select-wrapper {
   position: relative;
@@ -846,7 +834,7 @@
   pointer-events: none;
 }
 
-/* Reduce height for native select in modal */
+/* shorter select inside pop-ups */
 .checkout-modal .form-group input[type="number"],
 .checkout-modal .form-group select {
   height: 42px;

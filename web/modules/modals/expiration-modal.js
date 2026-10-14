@@ -1,7 +1,4 @@
-/* ============================================================
- * modals/expiration-modal.js — Expiration details popup modal.
- * Shows detailed batch breakdown for any product.
- * ============================================================ */
+// pop-up that lists the expiry batches of one product
 
 import { state } from "../state.js";
 import { escapeHtml } from "../utils.js";

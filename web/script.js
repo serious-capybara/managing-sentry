@@ -1,8 +1,4 @@
-/* ============================================================
- * script.js — Main application orchestrator for Managing Sentry.
- * Coordinates the 1-hour session: restores it on reload and signs
- * the user out once an hour has passed since the last login.
- * ============================================================ */
+// app start: restores the saved session and shows the first page
 
 import { state, persist, isSessionValid, getActivePage, clearSession } from "./modules/state.js";
 import { loadDashboardData } from "./modules/data-loader.js";
@@ -19,14 +15,10 @@ import { renderPage } from "./modules/router.js";
 import { setAuthView } from "./modules/api.js";
 import { toast } from "./modules/utils.js";
 
-// Initialize application event listeners (login, nav, actions)
+// login, menu and button events
 bindSidebarEvents();
 
-/**
- * Initialize application session state on startup / page refresh.
- * Keeps the signed-in user in the app while the session is inside its
- * 1-hour window, and only shows the login screen once it lapses.
- */
+// on start or refresh: restore the session
 async function initSession() {
   if (isSessionValid()) {
     setAuthView(true);
@@ -37,17 +29,17 @@ async function initSession() {
       console.warn("Could not sync backend data on reload:", err);
     }
 
-    // Restore the user's active page view (or default to dashboard)
+    // go back to the last page
     renderPage(getActivePage());
     kickSaleQueue();      // send any sale that was still waiting when the page closed
     startLiveSync();
   } else {
-    // Session expired (>= 1 hour) or never signed in
+    // session over (1 hour) or never signed in
     clearSession();
     setAuthView(false);
   }
 
-  // Stock baseline & batch integrity check
+  // stock baseline and expiry batch check
   if (Array.isArray(state.products)) {
     state.products.forEach(p => {
       ensureStockBaseline(p);
@@ -62,10 +54,7 @@ async function initSession() {
   watchSessionExpiry();
 }
 
-/**
- * Sign the user out when the saved session passes 1 hour after login,
- * even if the tab is left open.
- */
+// sign out after 1 hour even if the tab stays open
 function watchSessionExpiry() {
   setInterval(() => {
     if (isSessionValid()) return;

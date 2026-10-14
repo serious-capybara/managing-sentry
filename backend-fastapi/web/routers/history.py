@@ -5,7 +5,6 @@ from core.utils import iso_ts, parse_ts
 
 router = APIRouter(tags=["history"])
 
-# Sales lines (order_items) with the product name. Snapshots are what was true at sale time.
 ITEMS_SQL = """
     SELECT oi.order_id, oi.product_id, oi.quantity, oi.cost_snapshot, oi.price_snapshot,
            oi.line_subtotal, p.name
@@ -30,7 +29,6 @@ def _num(value, default=0.0):
 
 
 async def load_sales(conn) -> list[dict]:
-    # SELECT * so the query keeps working whether or not optional columns (e.g. notes) exist.
     orders = await conn.fetch("SELECT *, transaction_timestamp::text AS ts_text FROM orders")
     item_rows = await conn.fetch(ITEMS_SQL)
 
@@ -123,11 +121,10 @@ async def get_history(request: Request, response: Response):
     errors: list[str] = []
 
     async with request.app.state.pool.acquire() as conn:
-        # Each part is loaded on its own, so a problem in one table never hides the other.
         for label, loader in (("sales", load_sales), ("stock movements", load_adjustments)):
             try:
                 entries.extend(await loader(conn))
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 print(f"History: could not load {label}: {err}")
                 errors.append(f"{label}: {err}")
 
@@ -140,8 +137,6 @@ async def get_history(request: Request, response: Response):
 
     entries.sort(key=sort_key, reverse=True)
 
-    # One half failed (e.g. stock_adjustments) but the other loaded: still return what we have,
-    # and tell the web app so it can show a visible warning instead of silently hiding rows.
     if errors:
         warning = " | ".join(errors).encode("ascii", "replace").decode("ascii")[:400]
         response.headers["X-History-Warnings"] = " ".join(warning.split())

@@ -10,9 +10,6 @@ IS_VERCEL = bool(os.getenv("VERCEL"))
 
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 if not SECRET_KEY or SECRET_KEY == "change_me":
-    # A random key is different in every serverless instance, so a cookie signed by one instance is
-    # rejected by the next one (-> 401 and empty pages). Derive a STABLE key from the database
-    # password instead. Still best: set SECRET_KEY explicitly in the Vercel project settings.
     _seed = os.getenv("DB_PASSWORD", "")
     if _seed:
         import hashlib, hmac
@@ -22,7 +19,6 @@ if not SECRET_KEY or SECRET_KEY == "change_me":
         SECRET_KEY = secrets.token_urlsafe(48)
         log.warning("SECRET_KEY is not set - using a random key. Sessions are lost on restart. Set SECRET_KEY in your env.")
 
-# Vercel is always HTTPS and the web app lives on another *.vercel.app site, so the cookie must be Secure + SameSite=None.
 SESSION_HTTPS_ONLY = os.getenv("SESSION_HTTPS_ONLY", "true" if IS_VERCEL else "false").lower() in ("1", "true", "yes", "on")
 SESSION_SAME_SITE = os.getenv("SESSION_SAME_SITE", "none" if SESSION_HTTPS_ONLY else "lax")
 
@@ -45,4 +41,3 @@ if env_cors:
     CORS_ORIGINS = list(dict.fromkeys(DEFAULT_CORS_ORIGINS + extra_origins))
 else:
     CORS_ORIGINS = DEFAULT_CORS_ORIGINS
-

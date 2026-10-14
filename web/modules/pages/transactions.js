@@ -1,7 +1,4 @@
-/* ============================================================
- * pages/transactions.js — Transaction history (sales + stock
- * movements) page renderer, row builder, and executive print report.
- * ============================================================ */
+// History page: table, filters and the printable report
 
 import { state }             from "../state.js";
 import { money, escapeHtml, formatAsiaManila } from "../utils.js";
@@ -38,7 +35,7 @@ export function renderTransactions() {
   </div>`;
 }
 
-/** Red notice above the table whenever the server history failed (fully or partly). */
+// red notice above the table when history could not be loaded
 export function historyBanner() {
   if (!state.historyError) return `<div id="historyBanner" class="history-banner hidden" role="alert"></div>`;
   const where = state.historySource ? ` <small>(server: ${escapeHtml(state.historySource)})</small>` : "";
@@ -48,11 +45,11 @@ export function historyBanner() {
   </div>`;
 }
 
-/** Type helpers shared by the filter, the table and the reports. */
+// type checks used by the filter, table and reports
 export const isSaleType  = t => String(t?.type || "").trim().toUpperCase() === "SALE";
 export const isStockType = t => /^STOCK[ _]?(IN|OUT)$/.test(String(t?.type || "").trim().toUpperCase());
 
-/** The real database number: orders.order_id for sales, stock_adjustments.adjustment_id for stock. */
+// database id: order_id for sales, adjustment_id for stock
 export function dbIdOf(t) {
   if (isStockType(t)) {
     const id = Number(t.id ?? t.entry_id ?? 0);
@@ -61,7 +58,7 @@ export function dbIdOf(t) {
   return Number(t.order_id ?? t.id ?? 0);
 }
 
-/** Format database ID with proper prefix (ORD- for sales, STK- for stock movements). */
+// id with prefix: ORD- for sales, STK- for stock
 export function formatTransactionId(t) {
   const dbId = dbIdOf(t);
   if (isSaleType(t))  return `ORD-${dbId}`;
@@ -69,27 +66,18 @@ export function formatTransactionId(t) {
   return `ID-${dbId}`;
 }
 
-/** Oldest → newest comparison used to give every record a stable running number. */
+// oldest first, so every record keeps the same running number
 const chronoCmp = (a, b) =>
   (a.timestamp || 0) - (b.timestamp || 0) || (a.id || 0) - (b.id || 0);
 
-/**
- * Running number of every record across ALL history (oldest = 1, newest = total).
- * Built from the full list so the number never changes when you search or filter.
- */
+// running number across all history (oldest = 1)
 export function historyNumbers(list = state.transactions) {
   const map = new Map();
   [...list].sort(chronoCmp).forEach((t, i) => map.set(t, i + 1));
   return map;
 }
 
-/**
- * Filter + order the history list.
- *  newest → everything, newest first (highest running number on top)
- *  oldest → everything, oldest first (running number 1 on top)
- *  sales  → sales only, highest ORD-id on top
- *  stock  → stock in/out only, highest STK-id on top
- */
+// filters and sorts the history list
 export function filterHistory(list = state.transactions, mode = "newest", query = "") {
   const q = String(query || "").trim().toLowerCase();
   let out = [...list];
@@ -176,12 +164,7 @@ export function transactionRows(list = state.transactions, mode = "newest") {
   }).join("");
 }
 
-/**
- * Generate a vector SVG bar chart comparing Sales vs Stock In vs Stock Out,
- * plus top item breakdowns for the printable history audit report.
- * @param {Array} list - Filtered transaction history list
- * @returns {string} SVG HTML string
- */
+// SVG charts for the printed history: sales vs stock in vs stock out, plus top items
 export function generateHistoryChartSvg(list = []) {
   const salesList = list.filter(t => (t.type || "").toUpperCase() === "SALE");
   const stockInList = list.filter(t => (t.type || "").toUpperCase() === "STOCK IN" || (t.type || "").toUpperCase() === "STOCK_IN");
@@ -195,7 +178,7 @@ export function generateHistoryChartSvg(list = []) {
   const stockInQty = stockInList.reduce((s, t) => s + Math.abs(Number(t.qty || 0)), 0);
   const stockOutQty = stockOutList.reduce((s, t) => s + Math.abs(Number(t.qty || 0)), 0);
 
-  // Top 5 products by sales volume/value
+  // top 5 products by sales
   const productMap = {};
   salesList.forEach(t => {
     const items = parseOrderItems(t.name, t);
@@ -293,7 +276,7 @@ export function generateHistoryChartSvg(list = []) {
   `;
 }
 
-/** First product name (no "(xN)"), then "+N" for the remaining products; long names end in "...". */
+// first product name, then "+N" for the rest; long names are cut with "..."
 function printOrderCell(items) {
   if (!items.length) return "—";
   const first = String(items[0]).replace(/\s*\(x\d+\)\s*$/i, "").trim() || "Item";
@@ -301,11 +284,7 @@ function printOrderCell(items) {
   return `<div class="pro-clip-row"><span class="pro-clip-name" title="${escapeHtml(items.join(", "))}">${escapeHtml(first)}</span>${more > 0 ? `<span class="pro-clip-more">+${more}</span>` : ""}</div>`;
 }
 
-/**
- * Printable transaction-history report (professional layout, see css/print-report.css).
- * @param {Array} list  the rows currently shown on screen
- * @param {string} mode "newest" | "sales" | "stock" — printed as the filter used
- */
+// printed history report (styles in css/print-report.css)
 export function renderHistoryPrintReport(list = state.transactions, mode = "newest") {
   const typeOf = t => String(t.type || "").toUpperCase().replace(/_/g, " ");
   const sales = list.filter(isSaleType);

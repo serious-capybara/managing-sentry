@@ -1,8 +1,6 @@
-/* ============================================================
- * css/components.css — Cards, Toolbars, Tables, Badges & Views
- * ============================================================ */
+/* cards, toolbars, tables, badges and page layouts */
 
-/* Dashboard Stats Grid & Cards */
+/* KPI cards */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -288,7 +286,7 @@
   color: var(--accent-blue);
 }
 
-/* Toolbars, Inputs & Buttons */
+/* toolbars, inputs, buttons */
 .dashboard-toolbar, .page-toolbar {
   display: flex;
   align-items: center;
@@ -520,7 +518,7 @@
   vertical-align: middle;
 }
 
-/* Base HTML Table Standards */
+/* base table look */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -572,7 +570,7 @@ tbody tr:hover td {
   background: #F8FAFC;
 }
 
-/* Universal Table Empty State - Perfectly Centered Across All Columns */
+/* empty table message, centered */
 .table-empty,
 .sell-cart-empty {
   text-align: center !important;
@@ -612,7 +610,7 @@ tbody tr:hover td {
   color: var(--warning-amber);
 }
 
-/* Full Viewport Docked Layout Mode for Pages */
+/* pages fill the screen height; only the tables scroll */
 .main.dashboard-view-mode,
 .main.products-view-mode,
 .main.stocks-view-mode,
@@ -710,7 +708,7 @@ tbody tr:hover td {
   background: #FFFFFF;
 }
 
-/* Dynamic Vertical & Horizontal Centering for Empty Tables */
+/* lets the empty message sit in the middle of the table box */
 .dashboard-table-scroll,
 .dash-expiring-table-wrap,
 .products-table-scroll,
@@ -755,11 +753,9 @@ table:has(.table-empty) tbody tr {
   box-sizing: border-box !important;
 }
 
-/* ============================================================
- * SECTION SCOPED TABLE STYLES
- * ============================================================ */
+/* table styles, one block per page */
 
-/* 1. Dashboard Main Table */
+/* dashboard main table */
 .dashboard-overview .dashboard-inventory-table {
   width: 100%;
   border-collapse: collapse;
@@ -812,7 +808,7 @@ table:has(.table-empty) tbody tr {
 .dashboard-overview .dashboard-inventory-table th:nth-child(9),
 .dashboard-overview .dashboard-inventory-table td:not(.table-empty):nth-child(9) { width: 14%; }
 
-/* 2. Dashboard Expiring Soon Table */
+/* dashboard expiring soon table */
 .dash-expiring-table-wrap .dashboard-inventory-table {
   width: 100%;
   border-collapse: collapse;
@@ -861,7 +857,7 @@ table:has(.table-empty) tbody tr {
 .dash-expiring-table-wrap .dashboard-inventory-table th:nth-child(7),
 .dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(7) { width: 12%; }
 
-/* 3. Products Page Table */
+/* products table */
 .products-overview .products-inventory-table {
   width: 100%;
   border-collapse: collapse;
@@ -908,7 +904,7 @@ table:has(.table-empty) tbody tr {
 .products-overview .products-inventory-table th:nth-child(6),
 .products-overview .products-inventory-table td:not(.table-empty):nth-child(6) { width: 14%; }
 
-/* 4. Stocks Main Table */
+/* stocks main table */
 .stocks-overview .stocks-inventory-table {
   width: 100%;
   border-collapse: collapse;
@@ -959,7 +955,7 @@ table:has(.table-empty) tbody tr {
 .stocks-overview .stocks-inventory-table th:nth-child(8),
 .stocks-overview .stocks-inventory-table td:not(.table-empty):nth-child(8) { width: 14%; }
 
-/* 5. Stocks Low Panel Table */
+/* stocks low-stock table */
 .stocks-low-table-wrap .stocks-low-table {
   width: 100%;
   border-collapse: collapse;
@@ -1010,7 +1006,7 @@ table:has(.table-empty) tbody tr {
 .stocks-low-table-wrap .stocks-low-table th:nth-child(8),
 .stocks-low-table-wrap .stocks-low-table td:not(.table-empty):nth-child(8) { width: 14%; }
 
-/* 6. Low Stock Page Table */
+/* low stock page table */
 .low-stock-overview .low-stock-inventory-table {
   width: 100%;
   border-collapse: collapse;
@@ -1055,7 +1051,7 @@ table:has(.table-empty) tbody tr {
 .low-stock-overview .low-stock-inventory-table th:nth-child(5),
 .low-stock-overview .low-stock-inventory-table td:not(.table-empty):nth-child(5) { width: 18%; }
 
-/* 7. History / Transactions Table */
+/* history table */
 .transactions-overview .transactions-inventory-table {
   width: 100%;
   border-collapse: collapse;
@@ -1104,7 +1100,7 @@ table:has(.table-empty) tbody tr {
 .transactions-overview .transactions-inventory-table th:nth-child(7),
 .transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(7) { width: 12%; }
 
-/* 8. Reports Tables */
+/* report tables */
 .report-paper .report-table {
   width: 100%;
   border-collapse: collapse;
@@ -1134,7 +1130,7 @@ table:has(.table-empty) tbody tr {
   background: #FFFFFF;
 }
 
-/* Reports Sales Table Scoped Order Cell & Badges */
+/* sales report: order cell and badges */
 .sales-report-table .report-order-cell {
   position: relative;
   white-space: nowrap;
@@ -1162,7 +1158,7 @@ table:has(.table-empty) tbody tr {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
 }
 
-/* Reports Inventory & Capital Table Column Widths (ID -> NAME -> STOCK -> BASE VAL -> SRP VAL) */
+/* inventory report column widths: id, name, stock, base val, srp val */
 .inventory-report-table th:nth-child(1),
 .inventory-report-table td:not(.table-empty):nth-child(1) { width: 55px; text-align: center; }
 .inventory-report-table th:nth-child(2),
@@ -1174,7 +1170,7 @@ table:has(.table-empty) tbody tr {
 .inventory-report-table th:nth-child(5),
 .inventory-report-table td:not(.table-empty):nth-child(5) { width: 22.5%; }
 
-/* Reports Sales Table Column Widths (ID -> ITEM -> DATE/TIME -> QTY -> SRP/UNT -> BASE/UNT -> SRP TOT -> BASE TOT -> PROFIT) */
+/* sales report column widths: id, item, date, qty, srp/unit, base/unit, srp total, base total, profit */
 .sales-report-table th:nth-child(1),
 .sales-report-table td:not(.table-empty):nth-child(1) { width: 50px; text-align: center; }
 .sales-report-table th:nth-child(2),
@@ -1194,7 +1190,7 @@ table:has(.table-empty) tbody tr {
 .sales-report-table th:nth-child(9),
 .sales-report-table td:not(.table-empty):nth-child(9) { width: 10%; }
 
-/* Layout Container Structure for Tables */
+/* table boxes: card + scroll area */
 .products-overview,
 .stocks-overview,
 .low-stock-overview,
@@ -1268,7 +1264,7 @@ table:has(.table-empty) tbody tr {
   background: #FFFFFF;
 }
 
-/* Interactive Drag & Drop Resizer Bars */
+/* drag bars that resize the bottom panels */
 .dashboard-resizer-bar,
 .stocks-resizer-bar {
   width: 100%;
@@ -1380,7 +1376,7 @@ table:has(.table-empty) tbody tr {
   background: #FFFFFF;
 }
 
-/* Collapsed Section Mode */
+/* collapsed bottom panel */
 .dashboard-bottom-section.collapsed-section,
 .stocks-low-section.stocks-collapsed {
   height: auto !important;
@@ -1396,7 +1392,7 @@ table:has(.table-empty) tbody tr {
   display: none !important;
 }
 
-/* Dashboard Panels & Tabs */
+/* dashboard tabs */
 .dashboard-tabs {
   display: flex;
   gap: 10px;
@@ -1602,7 +1598,7 @@ table:has(.table-empty) tbody tr {
   cursor: not-allowed;
 }
 
-/* Page Cards & Forms */
+/* cards and forms */
 .page-head {
   display: flex;
   justify-content: space-between;
@@ -1671,7 +1667,7 @@ table:has(.table-empty) tbody tr {
   box-shadow: 0 0 0 3px rgba(17, 24, 68, 0.12);
 }
 
-/* Price Checker Components */
+/* price checker */
 .price-checker-new {
   display: flex;
   flex-direction: column;
@@ -1855,7 +1851,7 @@ table:has(.table-empty) tbody tr {
   margin-top: 16px;
 }
 
-/* Reports Page Components */
+/* reports page */
 .reports-overview {
   display: flex;
   flex-direction: column;
@@ -2111,9 +2107,7 @@ table:has(.table-empty) tbody tr {
   vertical-align: middle;
 }
 
-/* ============================================================
- * PRINT HISTORY & EXECUTIVE REPORTS FORMAL DOCUMENT STYLING
- * ============================================================ */
+/* on-screen paper look used by the printed history and reports */
 .history-print-paper {
   background: #FFFFFF !important;
   color: #0F172A !important;
@@ -2174,7 +2168,7 @@ table:has(.table-empty) tbody tr {
   margin-left: 2px;
 }
 
-/* History Print Report Section Title */
+/* history report section title */
 .report-section-title {
   font-size: 11px;
   font-weight: 800;
@@ -2186,7 +2180,7 @@ table:has(.table-empty) tbody tr {
   border-bottom: 1.5px solid #E2E8F0;
 }
 
-/* History Chart Layout */
+/* history report charts */
 .report-chart-section {
   margin-top: 18px;
   margin-bottom: 18px;
@@ -2290,7 +2284,7 @@ table:has(.table-empty) tbody tr {
   text-align: center;
 }
 
-/* History Report Table Badges */
+/* history report badges */
 .report-type-badge {
   display: inline-block;
   padding: 3px 8px;
@@ -2389,7 +2383,7 @@ table:has(.table-empty) tbody tr {
   vertical-align: middle !important;
 }
 
-/* Executive Sign-off Footer */
+/* sign-off footer */
 .report-sign-footer {
   display: flex;
   justify-content: space-between;
@@ -2417,7 +2411,7 @@ table:has(.table-empty) tbody tr {
   letter-spacing: 0.5px;
 }
 
-/* Order Item Hover Cell & Tooltip */
+/* order cell and its hover list */
 .order-extra-badge {
   display: inline-flex;
   align-items: center;
@@ -2507,12 +2501,12 @@ table:has(.table-empty) tbody tr {
   font-weight: 800;
 }
 
-/* Reports: breathing room before the Price Changes section */
+/* reports: space before the Price Changes section */
 .report-table-wrap + .report-divider-title { margin-top: 28px; }
 .price-change-table td { white-space: normal; }
 
 
-/* History: visible notice when the server history could not be (fully) loaded */
+/* history: notice when the data could not be loaded */
 .history-banner {
   display: flex;
   align-items: center;
@@ -2529,7 +2523,7 @@ table:has(.table-empty) tbody tr {
 
 .history-banner.hidden { display: none; }
 
-/* Sales & Profit report: Detailed Breakdown / Price Changes buttons */
+/* sales report: Detailed Breakdown / Price Changes buttons */
 .report-subtabs {
   display: flex;
   gap: 10px;

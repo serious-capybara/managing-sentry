@@ -1,7 +1,4 @@
-/* ============================================================
- * pages/reports.js — Inventory & Capital report and
- * Sales & Profit report renderers, plus printable report helpers.
- * ============================================================ */
+// Reports page: inventory & capital and sales & profit
 
 import { state }             from "../state.js";
 import { money, escapeHtml, formatAsiaManila } from "../utils.js";
@@ -14,13 +11,11 @@ export let activeReportRange = "30";
 export function setActiveReportTab(tab) { activeReportTab = tab; }
 export function setActiveReportRange(range) { activeReportRange = range; }
 
-/** On-screen Sales & Profit report shows ONE of these at a time: "breakdown" | "prices". */
+// the Sales & Profit report shows one view at a time: "breakdown" or "prices"
 export let activeSalesView = "breakdown";
 export function setActiveSalesView(view) { activeSalesView = view === "prices" ? "prices" : "breakdown"; }
 
-// ---------------------------------------------------------------------------
-// Shared helpers & date range filter
-// ---------------------------------------------------------------------------
+// helpers and the date range filter
 
 export function reportMoney(value) { return money(value); }
 
@@ -55,9 +50,7 @@ function getExpiryStats() {
   return { expired, expiringSoon };
 }
 
-// ---------------------------------------------------------------------------
-// Sales & profit engine (built on order_items snapshots)
-// ---------------------------------------------------------------------------
+// sales & profit numbers (from the order_items snapshots)
 
 function rangeStart(range = activeReportRange) {
   const now = new Date();
@@ -78,7 +71,7 @@ function inRange(ts, range) {
   return Number(ts) >= from && Number(ts) <= to;
 }
 
-/** One line per product sold. Uses the order_items snapshot (price/cost at the time of sale). */
+// one line per product sold
 export function saleLines(sales) {
   const lines = [];
   sales.forEach(t => {
@@ -109,12 +102,7 @@ export function saleLines(sales) {
   return lines;
 }
 
-/**
- * Price / cost changes detected from sales history.
- * For each product, walk its sale lines oldest → newest; whenever the price (or cost) snapshot differs from
- * the previous sale, that is one change. A product whose CURRENT price differs from its last sold snapshot is
- * also reported as a pending change (not sold yet at the new price).
- */
+// price and cost changes found in past sales
 export function computePriceChanges(range = activeReportRange) {
   const allSales = state.transactions.filter(isSaleType);
   const lines = saleLines(allSales)
@@ -236,9 +224,7 @@ function inventoryReportData() {
   return { tieUp, retail, potentialProfit: retail - tieUp, units, expiry, products };
 }
 
-// ---------------------------------------------------------------------------
-// SVG Vector Chart Generators for Print Reports
-// ---------------------------------------------------------------------------
+// SVG charts for the printed reports
 
 export function generateInventoryChartSvg(d) {
   const tieUp = Number(d.tieUp || 0);
@@ -415,9 +401,7 @@ export function generateSalesProfitChartSvg(totalSales, cogs, grossProfit, lines
   `;
 }
 
-// ---------------------------------------------------------------------------
-// On-Screen Report Renderers
-// ---------------------------------------------------------------------------
+// on-screen reports
 
 export function renderInventoryCapitalReport(range = activeReportRange) {
   const d = inventoryReportData();
@@ -553,9 +537,7 @@ export function renderSalesProfitReport(range = activeReportRange) {
   </div>`;
 }
 
-// ---------------------------------------------------------------------------
-// Executive Formal Printable PDF/Paper Reports
-// ---------------------------------------------------------------------------
+// printed reports
 
 export function renderInventoryCapitalPrintReport(range = activeReportRange) {
   const d = inventoryReportData();
@@ -700,9 +682,7 @@ function printPriceChanges(pc) {
     </table>`;
 }
 
-// ---------------------------------------------------------------------------
-// Reports page container
-// ---------------------------------------------------------------------------
+// reports page
 
 export function renderReports() {
   return `

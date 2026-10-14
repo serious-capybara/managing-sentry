@@ -1,8 +1,4 @@
-/* ============================================================
- * pages/products.js — Products catalog page renderer.
- * Includes the sortable product table and toolbar with
- * "Add New Product" and "Remove Product" buttons.
- * ============================================================ */
+// Products page
 
 import { state }              from "../state.js";
 import { money, escapeHtml }  from "../utils.js";

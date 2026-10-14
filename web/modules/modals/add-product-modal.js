@@ -1,7 +1,4 @@
-/* ============================================================
- * modals/add-product-modal.js — Add / Edit Product modal.
- * Allows adding a new product or selecting an existing product to edit.
- * ============================================================ */
+// add / edit product pop-up
 
 import { apiRequest } from "../api.js";
 import { loadDashboardData } from "../data-loader.js";
@@ -12,11 +9,7 @@ import { state } from "../state.js";
 import { bindStyledSelects } from "../styled-select.js";
 import { removeProductOptions } from "./remove-product-modal.js";
 
-/**
- * Open the selection modal to pick an existing product to edit.
- * @param {number|null} currentSelectedId
- * @param {function(object): void} onSelect
- */
+// lets the user pick an existing product to edit
 
 function openSelectProductToEditModal(currentSelectedId, onSelect) {
   const existing = document.getElementById("selectProductToEditModal");

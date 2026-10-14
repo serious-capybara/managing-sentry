@@ -4,17 +4,12 @@ export const STORE_NAME = "Alekos' Corner General Merchandise";
 export const STORE_ADDRESS = "Cebu, Philippines";
 export const STORE_TEL = "+63 9123456789";
 
-/** Asia/Manila 24-hour timestamp format used on the receipt. */
+// receipt timestamp, Manila time, 24-hour
 export function receiptDate(value = new Date()) {
   return formatAsiaManila(value, true);
 }
 
-/**
- * Render the receipt card.
- * @param {object} receipt
- * @param {boolean} pending  true while checking out (Order ID not assigned yet)
- * @param {boolean} live     adds ids so the checkout modal can update Cash / Change / Payment as you type
- */
+// receipt card; `pending` = no order id yet, `live` = ids so checkout can update cash/change while typing
 export function renderReceipt(receipt, pending = false, live = false) {
   const id = name => (live ? ` id="${name}"` : "");
   return `

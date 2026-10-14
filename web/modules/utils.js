@@ -1,6 +1,4 @@
-/* ============================================================
- * utils.js — Pure helper utilities (no DOM side-effects).
- * ============================================================ */
+// small helpers: money, dates, escaping, toast
 
 // Intl formatters are expensive to build, so they are created once and reused.
 const pesoFormatter = new Intl.NumberFormat("en-PH", {
@@ -32,26 +30,17 @@ function getManilaFormatter(includeSeconds) {
   return manilaFormatters[key];
 }
 
-/**
- * Format a numeric value as Philippine Peso currency string.
- * @param {number|string} value
- * @returns {string}  e.g. "₱1,234.00"
- */
+// peso format, e.g. ₱1,234.00
 export function money(value) {
   return pesoFormatter.format(Number(value || 0));
 }
 
-/** Plain number with 2 decimals and thousands separators, e.g. "1,234.50" (no currency sign). */
+// number with 2 decimals and commas, no peso sign
 export function amount2(value) {
   return amountFormatter.format(Number(value || 0));
 }
 
-/**
- * Escape special HTML characters to prevent XSS injection in
- * template-literal HTML strings.
- * @param {*} value
- * @returns {string}
- */
+// escapes text before it goes into an HTML string
 export function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, ch => ({
     "&": "&amp;",
@@ -62,10 +51,7 @@ export function escapeHtml(value) {
   }[ch]));
 }
 
-/**
- * Display a brief toast notification at the bottom of the screen.
- * @param {string} message
- */
+// short message at the bottom of the screen
 export function toast(message) {
   const el = document.getElementById("toast");
   el.textContent = message;
@@ -74,11 +60,7 @@ export function toast(message) {
 }
 
 
-/**
- * Parse a database timestamp into epoch milliseconds.
- * Handles "2026-10-12T15:50:44+00:00", "2026-10-12 15:50:44.123456+08" and
- * zone-less values (treated as local time). Returns null when unreadable.
- */
+// database timestamp -> milliseconds (null if unreadable)
 export function parseTimestamp(raw) {
   if (raw == null || raw === "") return null;
   if (raw instanceof Date) return raw.getTime();
@@ -103,12 +85,7 @@ export function parseTimestamp(raw) {
   return Date.UTC(+y, +mo - 1, +d, +h, +mi, +sec, ms) - offsetMin * 60000;
 }
 
-/**
- * Format any date or timestamp into Asia/Manila timezone using 24-hour format.
- * @param {number|string|Date} raw
- * @param {boolean} includeSeconds
- * @returns {string} e.g. "2026-10-13 16:15:00"
- */
+// date or timestamp in Manila time, 24-hour
 export function formatAsiaManila(raw, includeSeconds = true) {
   const ts = parseTimestamp(raw) ?? (raw ? new Date(raw).getTime() : Date.now());
   const d = new Date(ts);
@@ -146,7 +123,7 @@ export function formatAsiaManila(raw, includeSeconds = true) {
   }
 }
 
-/** "2026-10-12 15:50:44" in Asia/Manila 24-hour format. */
+// "2026-10-12 15:50:44" in Manila time
 export function formatDateTime24(ts) {
   return formatAsiaManila(ts, true);
 }

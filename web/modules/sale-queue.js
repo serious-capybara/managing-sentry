@@ -1,12 +1,6 @@
-/* ============================================================
- * sale-queue.js — Saves sales to the server in the background.
- *
- * Checkout records the sale on screen straight away and puts it in this
- * queue. The queue sends sales to the server one at a time, in order
- * (so stock is always checked in the right order), and keeps trying
- * if the connection drops. Waiting sales are kept in the browser, so
- * they survive a page refresh.
- * ============================================================ */
+// saves sales to the server in the background.
+// Checkout shows the sale right away and adds it here. Sales are sent one at a time,
+// in order, retried when the connection drops, and kept in the browser across refreshes.
 
 import { state, persist } from "./state.js";
 import { apiRequest } from "./api.js";
@@ -41,27 +35,27 @@ function writeQueue() {
   }
 }
 
-/** How many sales are still waiting to reach the server. */
+// sales still waiting for the server
 export const pendingSaleCount = () => queue.length;
 
-/** Called after the queue empties (live-sync uses it to refresh the screen). */
+// runs when the queue empties (live-sync refreshes the screen)
 export function onQueueDrained(callback) {
   afterSaveHook = callback;
 }
 
-/** Listen for the result of one sale: watcher = { saved(orderId), failed(message) }. */
+// watch one sale: { saved(orderId), failed(message) }
 export function watchSale(token, watcher) {
   watchers.set(token, watcher);
 }
 
-/** Add a sale to the queue and start sending it. Returns immediately. */
+// queue a sale and start sending
 export function enqueueSale(job) {
   queue.push(job);
   writeQueue();
   kickSaleQueue();
 }
 
-/** Start (or restart) sending waiting sales — also called after login / when back online. */
+// start sending (also after login or when back online)
 export function kickSaleQueue() {
   clearTimeout(retryTimer);
   retryTimer = null;

@@ -1,8 +1,4 @@
-/* ============================================================
- * events/page-events.js — DOM event bindings for each page view.
- * Handles inputs, sort selectors, tab buttons, modals, and actions.
- * Automatically executes default sort commands upon initial page load.
- * ============================================================ */
+// event bindings for every page (inputs, sorting, tabs, buttons, sheets)
 
 import { state } from "../state.js";
 import { toast, money, escapeHtml } from "../utils.js";
@@ -36,11 +32,11 @@ import { bindStyledSelects } from "../styled-select.js";
 import { openExpenseTotalsModal } from "../modals/expense-totals-modal.js";
 import { createSheet, isPhone } from "../mobile-sheet.js";
 
-// Phone bottom sheets (re-created every time their page is rendered)
+// phone bottom sheets, rebuilt each time the page renders
 let dashSheet = null;
 let stocksSheet = null;
 
-// Hook renderActiveTab into cart.js operations
+// let cart.js redraw the tab after cart changes
 registerRenderActiveTab(renderActiveTab);
 
 export function updateCartPill() {
@@ -48,7 +44,7 @@ export function updateCartPill() {
   if (pill) pill.textContent = cartCount();
 }
 
-/** Highlight the active dashboard tab button (on phones only while its sheet is open). */
+// marks the active tab button (on phones only while its sheet is open)
 function paintDashTabs(pageContent) {
   const sheetOn = !isPhone() || !!dashSheet?.isOpen();
   pageContent.querySelectorAll(".tab-btn[data-tab]").forEach(btn => {
@@ -65,9 +61,7 @@ function paintDashTabs(pageContent) {
   });
 }
 
-/**
- * Re-render the active tab on the dashboard (expiring or sell) and bind its controls.
- */
+// redraws the current dashboard tab (expiring or sell) and wires it up
 export function renderActiveTab() {
   const target = document.getElementById("dashboardTab");
   const pageContent = document.getElementById("pageContent");
@@ -100,11 +94,7 @@ export function renderActiveTab() {
   }
 }
 
-/**
- * Bind sell tab interactions (add, step qty, delete, checkout, clear, search).
- * Automatically executes initial sort filtering on bind.
- * @param {HTMLElement} target
- */
+// buttons and search inside the sell tab
 export function bindTabActions(target) {
   target.querySelectorAll("[data-add]").forEach(b =>
     b.addEventListener("click", () => addToCart(Number(b.dataset.add)))
@@ -154,11 +144,7 @@ export function bindTabActions(target) {
   }
 }
 
-/**
- * Bind interactive events for any rendered page.
- * Automatically executes default sort commands upon initial page bind.
- * @param {string} page
- */
+// wires up whichever page was just rendered
 export function bindPageEvents(page) {
   document.body.classList.remove("m-sheet-open");
   const pageContent = document.getElementById("pageContent");
@@ -198,7 +184,7 @@ export function bindPageEvents(page) {
     updateDashboard();
 
     document.getElementById("setExpenseTotalsBtn")?.addEventListener("click", () => openExpenseTotalsModal());
-    // Phone: the tab body becomes a bottom sheet (Expiring Soon = 50/90% draggable, Pick Items = 90% locked)
+    // phone: the tab body opens as a bottom sheet (expiring = 50/90%, pick items = 90%)
     const dashBody = document.getElementById("dashboardTabBody");
     const dashBottom = document.getElementById("dashboardBottomSection");
     dashSheet = (dashBody && dashBottom)
@@ -226,14 +212,14 @@ export function bindPageEvents(page) {
           } else {
             dashBody.classList.toggle("is-sell", btn.dataset.tab === "sell");
             dashSheet.open({ locked: btn.dataset.tab === "sell" });
-            // build the tab content on the next frame so the sheet starts opening right away
+            // build the content next frame so the sheet opens without waiting
             requestAnimationFrame(() => setTimeout(renderActiveTab, 0));
           }
           paintDashTabs(pageContent);
           return;
         }
 
-        // Auto-expand bottom section if currently collapsed when a tab is clicked
+        // open the bottom section if it was collapsed
         const bottomSection = document.getElementById("dashboardBottomSection");
         const toggleIcon = document.getElementById("dashboardToggleIcon");
         if (bottomSection && bottomSection.classList.contains("collapsed-section")) {
@@ -242,7 +228,7 @@ export function bindPageEvents(page) {
           localStorage.setItem("sentryDashSectionCollapsed", "false");
         }
 
-        // Highlight the tab straight away, then swap the content on the next frame
+        // highlight first, swap the content next frame
         paintDashTabs(pageContent);
         requestAnimationFrame(() => setTimeout(renderActiveTab, 0));
       });
@@ -278,19 +264,19 @@ export function bindPageEvents(page) {
         const containerHeight = (container && container.getBoundingClientRect().height > 300)
           ? container.getBoundingClientRect().height
           : (window.innerHeight || 800);
-        // Reserve 420px for stats + toolbar + upper table (showing ~4 rows)
+        // keep 420px for the cards, toolbar and about 4 table rows
         return Math.max(180, containerHeight - 420);
       };
 
       const savedHeight = localStorage.getItem("sentryDashPanelHeight");
       const numHeight = Number(savedHeight);
-      // estimate (no layout read) — the exact limit is only needed while dragging
+      // rough value, the exact limit only matters while dragging
       const maxAllowed = Math.max(180, (window.innerHeight || 800) - 64 - 420);
       const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 180)
         ? Math.min(numHeight, maxAllowed)
         : Math.min(320, maxAllowed);
 
-      // Tablet / phone size the bottom section with CSS (30% / 15% of the screen)
+      // tablet and phone size this section in CSS (30% / 15%)
       if (window.innerWidth > 1024) {
         bottomSection.style.height = `${initialHeight}px`;
         bottomSection.style.flex = "0 0 auto";
@@ -571,7 +557,7 @@ export function bindPageEvents(page) {
     document.getElementById("historySort")?.addEventListener("change", updateHistory);
     updateHistory();
 
-    // Always pull the latest sales + stock movements from the server when History opens
+    // refresh sales and stock movements whenever History opens
     const refreshHistory = () => loadDashboardData().then(() => {
       if (!document.getElementById("transactionRows")) return;
       const banner = document.getElementById("historyBanner");
@@ -618,7 +604,7 @@ export function bindPageEvents(page) {
 
       if (printBtn) printBtn.dataset.reportPrint = activeReportTab;
 
-      // Detailed Breakdown / Price Changes buttons (Sales & Profit tab)
+      // Detailed Breakdown / Price Changes switch
       content.querySelectorAll("[data-sales-view]").forEach(btn => {
         btn.addEventListener("click", () => {
           setActiveSalesView(btn.dataset.salesView);
@@ -637,7 +623,7 @@ export function bindPageEvents(page) {
 
     rangeSelect?.addEventListener("change", updateReportView);
 
-    // Reports always use the freshest sales / stock data from the server
+    // reports always use fresh data
     loadDashboardData().then(() => {
       if (document.getElementById("reportTabContent")) updateReportView();
     }).catch(() => {});
@@ -672,9 +658,7 @@ document.addEventListener("change", event => {
   updateStats();
 });
 
-/* ============================================================
- * ORDER ITEMS HOVER TOOLTIP HELPERS & DELEGATION
- * ============================================================ */
+// tooltip that lists every item of a multi-item order
 function getOrderItemsFromCell(cell) {
   if (!cell) return [];
   const raw = cell.dataset.orderItems;

@@ -1,7 +1,4 @@
-/* ============================================================
- * api.js — Centralised HTTP helper for all backend calls.
- * Multi-base fallback, CORS resilience, and session view management.
- * ============================================================ */
+// one place for backend requests (tries each API address, handles login redirects)
 
 import { clearSession } from "./state.js";
 
@@ -37,11 +34,7 @@ export function getCandidateBases() {
   return ["/api", API_BASE];
 }
 
-/**
- * Switch between the app view and the login screen.
- * Clears any leftover inline display styles so the .hidden class always wins.
- * @param {boolean} loggedIn
- */
+// shows the app or the login screen
 export function setAuthView(loggedIn) {
   document.documentElement.classList.remove("session-active");
   const app = document.getElementById("app");
@@ -57,20 +50,14 @@ export function setAuthView(loggedIn) {
   if (!loggedIn) document.getElementById("loginForm")?.reset();
 }
 
-/** An Error that also remembers the HTTP status, so callers can tell "rejected" from "offline". */
+// Error that keeps the HTTP status, so "rejected" and "offline" can be told apart
 function statusError(message, status) {
   const error = new Error(message);
   error.status = status;
   return error;
 }
 
-/**
- * Fetch a backend endpoint with candidate base fallback and CORS resilience.
- *
- * @param {string} endpoint  - e.g. "products.php" or "login.php?action=logout"
- * @param {RequestInit} options - standard fetch options
- * @returns {Promise<any>}   Parsed JSON response body
- */
+// calls the backend, trying each API address in turn
 export async function apiRequest(endpoint, rawOptions = {}) {
   const { onResponse, onlyDetectedBase, ...options } = rawOptions;   // onResponse(response) lets a caller read headers
   const cleanEndpoint = endpoint.replace(/^\/+/, "");

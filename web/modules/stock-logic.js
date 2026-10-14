@@ -1,16 +1,11 @@
-/* ============================================================
- * stock-logic.js — Stock baseline, low-stock rules, and expiry
- * batch management. All functions are pure (state is passed in).
- * ============================================================ */
+// stock baseline, low-stock rules and expiry batches
 
 import { state } from "./state.js";
 import { money } from "./utils.js";
 import { getProfitBreakdown, getSalesRevenue } from "./finance.js";
 import { activeProfitType } from "./pages/dashboard.js";
 
-// ---------------------------------------------------------------------------
-// Stock baseline & low-stock threshold
-// ---------------------------------------------------------------------------
+// stock baseline and low-stock limit
 
 export function ensureStockBaseline(product) {
   if (!product) return 0;
@@ -42,9 +37,7 @@ export function lowStockLabel(product) {
   return `Alert at ${lowStockThreshold(product)} units`;
 }
 
-// ---------------------------------------------------------------------------
-// Expiry batch management
-// ---------------------------------------------------------------------------
+// expiry batches
 
 export function ensureExpiryBatches(product) {
   if (!Array.isArray(product.expiryBatches)) product.expiryBatches = [];
@@ -140,9 +133,7 @@ export function expiryStatusCell(product) {
   return `<span class="badge ${badgeClass}">${info.label}</span>`;
 }
 
-// ---------------------------------------------------------------------------
-// Dashboard stats & low-stock sidebar dots
-// ---------------------------------------------------------------------------
+// dashboard numbers and the low-stock dot in the menu
 
 export function updateStats() {
   const capital    = document.getElementById("capitalValue");

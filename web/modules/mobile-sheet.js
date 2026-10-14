@@ -1,13 +1,6 @@
-/* ============================================================
- * mobile-sheet.js — Phone bottom sheets (Expiring Soon, Pick Items
- * to Sell, Low On Stock).
- *
- * The sheet is flush with the left / right / bottom edges, can be
- * dragged by its handle and always settles on one of two stops:
- * 50% (half view) or 90% (full view) of the screen height.
- * Dragging it far down, tapping the dark area, or tapping its tab
- * again closes it.
- * ============================================================ */
+// bottom sheets for phones (expiring soon, pick items, low stock).
+// They snap to half (50%) or full (90%) height when you drag the handle,
+// and close when you drag far down or tap the dark area.
 
 const PHONE_QUERY = "(max-width: 767px)";
 export const SNAP_HALF = 0.5;
@@ -30,13 +23,6 @@ function ensureBackdrop() {
 
 const viewportH = () => window.innerHeight || document.documentElement.clientHeight || 800;
 
-/**
- * @param {object}      o
- * @param {HTMLElement} o.sheet     the element that becomes the sheet (.m-sheet)
- * @param {HTMLElement} o.handle    drag handle inside the sheet
- * @param {HTMLElement} o.host      element that receives the "sheet-open" class
- * @param {() => void}  [o.onChange] called after every open / close
- */
 export function createSheet({ sheet, handle, host, onChange }) {
   ensureBackdrop();
   sheet.classList.add("m-sheet");
@@ -68,7 +54,7 @@ export function createSheet({ sheet, handle, host, onChange }) {
     toggle(opts) { sheetApi.isOpen() ? sheetApi.close() : sheetApi.open(opts); }
   };
 
-  // ---- dragging -------------------------------------------------------
+  // dragging
   let startY = 0, startH = 0, dragging = false;
 
   handle.addEventListener("pointerdown", e => {
@@ -111,7 +97,7 @@ export function createSheet({ sheet, handle, host, onChange }) {
   return sheetApi;
 }
 
-/** Small markup used by every sheet: grip + optional collapse button. */
+// markup shared by every sheet: the grip and an optional collapse button
 export function sheetHandleHtml(id, withCollapse = false) {
   return `<div class="m-sheet-handle" ${id ? `id="${id}"` : ""}>
     <span class="m-sheet-grip"></span>

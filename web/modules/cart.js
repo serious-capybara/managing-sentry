@@ -1,16 +1,10 @@
-/* ============================================================
- * cart.js — Cart state management and the Sell tab HTML renderer.
- * Handles adding, removing, and quantity-stepping cart items, and
- * the sell-tab grid of available products.
- * ============================================================ */
+// cart actions and the markup for the Pick Items to Sell tab
 
 import { state, persist } from "./state.js";
 import { money, escapeHtml, toast } from "./utils.js";
 import { askYesNo } from "./modals/dialogs.js";
 
-// ---------------------------------------------------------------------------
-// Cart helpers
-// ---------------------------------------------------------------------------
+// cart
 
 export function cartTotal() {
   return state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -79,9 +73,7 @@ export async function clearSellCart() {
   toast("Cart cleared.");
 }
 
-// ---------------------------------------------------------------------------
-// Sell tab renderers
-// ---------------------------------------------------------------------------
+// sell tab markup
 
 export function renderSellTab() {
   const availableCount = state.products.filter(p => p.stock > 0).length;
@@ -236,9 +228,7 @@ export function sellCartRows() {
   </tr>`).join("");
 }
 
-// ---------------------------------------------------------------------------
-// Active tab orchestrator (called whenever cart changes)
-// ---------------------------------------------------------------------------
+// redraw hook, called whenever the cart changes
 
 let _renderActiveTab;
 export function registerRenderActiveTab(fn) { _renderActiveTab = fn; }

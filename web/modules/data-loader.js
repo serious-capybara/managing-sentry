@@ -1,8 +1,4 @@
-/* ============================================================
- * data-loader.js — Fetches all dashboard data from backend API
- * and normalises database SQL responses to frontend state.
- * Includes offline fallback data if backend endpoints are unreachable.
- * ============================================================ */
+// loads products, history and capital from the API into the app state
 
 import { state, persist } from "./state.js";
 import { apiRequest }     from "./api.js";
@@ -10,10 +6,7 @@ import { parseTimestamp, formatDateTime24, toast } from "./utils.js";
 import { ensureStockBaseline, ensureExpiryBatches, earliestExpiry } from "./stock-logic.js";
 import { getProfitBreakdown, getSalesRevenue } from "./finance.js";
 
-/**
- * Fetch products, transaction history, and capital from the backend
- * and normalize SQL database fields to frontend state properties.
- */
+// loads products, history and capital and maps the database fields to the app state
 export async function loadDashboardData() {
   let productsRes = null;
   let transactionsRes = null;
@@ -31,7 +24,7 @@ export async function loadDashboardData() {
       apiRequest("capital.php")
     ]);
 
-    // Make load failures VISIBLE (they used to be swallowed, leaving blank pages).
+    // show load failures instead of leaving blank pages
     state.authFailed = [p, t, c].some(r => r.status === "rejected" && /sign(ed)? in|log in/i.test(r.reason?.message || ""));
     const failed = [["products", p], ["history", t], ["capital", c]].filter(([, r]) => r.status === "rejected");
     if (failed.length && !state.authFailed) {
@@ -55,7 +48,7 @@ export async function loadDashboardData() {
     console.warn("Backend API sync offline, using local/cached state:", err);
   }
 
-  /* 1. Normalize Products */
+  // products
   // Use the server's answer whenever we got one (even an empty list); only fall back to the
   // cached copy when the request itself failed.
   const rawProducts = Array.isArray(productsRes) ? productsRes : state.products;
@@ -94,7 +87,7 @@ export async function loadDashboardData() {
     };
   });
 
-  /* 2. Normalize Transactions */
+  // history
   const rawTransactions = Array.isArray(transactionsRes) ? transactionsRes : state.transactions;
   state.transactions = rawTransactions.map((t, idx) => {
     const id = Number(t.id ?? t.entry_id ?? t.order_id ?? (idx + 1));
@@ -126,7 +119,7 @@ export async function loadDashboardData() {
     };
   }).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-  /* 3. Normalize Capital & Sales Totals */
+  // capital and sales totals
   if (capitalRes && (capitalRes.capital !== undefined || capitalRes.current_balance !== undefined)) {
     state.capital = Number(capitalRes.capital ?? capitalRes.current_balance ?? 0);
     state.startingCapital = Number(capitalRes.starting_capital ?? state.capital);
@@ -138,12 +131,12 @@ export async function loadDashboardData() {
   state.totalSales = getSalesRevenue("all");
   state.profit = getProfitBreakdown().grossProfit;
 
-  /* Clean cart items whose products no longer exist */
+  // drop cart items whose product is gone
   state.cart = (state.cart || []).filter(item =>
     state.products.some(p => p.id === Number(item.id))
   );
 
-  /* Ensure every product has baseline + expiry batch integrity */
+  // make sure every product has a baseline and valid expiry batches
   state.products.forEach(p => {
     ensureStockBaseline(p);
     ensureExpiryBatches(p);

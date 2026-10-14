@@ -2,11 +2,6 @@ import asyncpg
 
 
 async def _insert_with_fallback(conn, primary_sql, primary_args, fallback_sql_builder):
-    """
-    Run an INSERT inside a SAVEPOINT. If it fails (e.g. the id column has no default),
-    only the savepoint is rolled back, so the surrounding transaction stays usable and
-    the fallback INSERT (with an explicit id) can run.
-    """
     try:
         async with conn.transaction():
             return await conn.fetchval(primary_sql, *primary_args)
@@ -36,7 +31,6 @@ async def insert_product(conn, name, category, cost, markup, price, stock, expir
 
 
 async def insert_stock_adjustment(conn, product_id, user_id, adj_type, qty_changed, unit_cost, notes) -> None:
-    """Record a stock movement. This is what the History page reads, so it must not fail silently."""
     notes = notes or None
 
     async def fallback():

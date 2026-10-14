@@ -1,17 +1,8 @@
-/* ============================================================
- * modals/dialogs.js — Reusable dialog modals.
- * askYesNo() replaces window.confirm.
- * showInfoModal() replaces window.alert.
- * ============================================================ */
+// yes/no and info dialogs, used instead of confirm() and alert()
 
 import { escapeHtml } from "../utils.js";
 
-/**
- * Custom Promise-based Yes / No confirmation dialog.
- * @param {string} message
- * @param {object} options
- * @returns {Promise<boolean>}
- */
+// yes/no question, resolves true or false
 export function askYesNo(message, { yesText = "Yes", noText = "No", title = "Confirm" } = {}) {
   return new Promise(resolve => {
     const existing = document.getElementById("yesNoModal");
@@ -44,13 +35,7 @@ export function askYesNo(message, { yesText = "Yes", noText = "No", title = "Con
   });
 }
 
-/**
- * Styled information / alert dialog.
- * @param {string} title
- * @param {string} subtitle
- * @param {string} message
- * @param {boolean} positive
- */
+// info message box
 export function showInfoModal(title, subtitle, message, positive) {
   const existing = document.getElementById("infoModal");
   if (existing) existing.remove();

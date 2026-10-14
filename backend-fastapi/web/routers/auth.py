@@ -36,7 +36,6 @@ async def login(
     except asyncpg.PostgresError:
         raise HTTPException(status_code=500, detail="Internal server error")
 
-    # bcrypt is CPU-heavy, keep it off the event loop
     if row is None or not await run_in_threadpool(verify_password, credentials.password, row["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
