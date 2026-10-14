@@ -8,6 +8,7 @@ import { state } from "../state.js";
 import { money, escapeHtml } from "../utils.js";
 import { renderSellTab } from "../cart.js";
 import { getProfitBreakdown, getSalesRevenue } from "../finance.js";
+import { sheetHandleHtml } from "../mobile-sheet.js";
 
 export let activeDashTab = "expiring";
 export function setActiveDashTab(tab) { activeDashTab = tab; }
@@ -149,7 +150,7 @@ export function renderDashboard() {
           <div class="toolbar-right">
             <input class="compact-input" id="dashboardSearch" placeholder="Search Products">
             <div class="dashboard-profit-controls">
-              <button class="wire-btn" id="setExpenseTotalsBtn" type="button">Set Expense Totals</button>
+              <button class="wire-btn" id="setExpenseTotalsBtn" type="button" title="Set Expense Totals" aria-label="Set Expense Totals"><img class="btn-icon btn-icon-phone" src="src/icon/dark/set-capital.svg" alt=""><span class="btn-text">Set Expense Totals</span></button>
             </div>
           </div>
         </div>
@@ -184,7 +185,10 @@ export function renderDashboard() {
           <img id="dashboardToggleIcon" class="btn-icon" src="src/icon/dark/dropdown-close-expand.svg" alt="Toggle Section">
         </button>
       </div>
-      <div id="dashboardTab" class="dashboard-tab-body">${dashTabHtml(activeDashTab)}</div>
+      <div class="dashboard-tab-body" id="dashboardTabBody">
+        ${sheetHandleHtml("dashSheetHandle", true)}
+        <div id="dashboardTab" class="dashboard-tab-content">${dashTabHtml(activeDashTab)}</div>
+      </div>
     </div>
   `;
 }

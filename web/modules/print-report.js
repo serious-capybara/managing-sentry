@@ -5,14 +5,12 @@
  * Page numbers / footer come from the @page rules in css/print-report.css.
  * ============================================================ */
 
-import { escapeHtml } from "./utils.js";
+import { escapeHtml, formatAsiaManila } from "./utils.js";
 import { getSession } from "./state.js";
 import { STORE_NAME, STORE_ADDRESS, STORE_TEL } from "./receipt.js";
 
 export function printStamp(date = new Date()) {
-  return date.toLocaleString("en-US", {
-    year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "2-digit"
-  });
+  return formatAsiaManila(date, true);
 }
 
 export function docNumber(prefix) {

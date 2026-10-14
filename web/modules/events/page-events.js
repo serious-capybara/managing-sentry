@@ -34,6 +34,11 @@ import { transactionRows, renderHistoryPrintReport, filterHistory, historyBanner
 import { renderSalesProfitReport, renderInventoryCapitalReport, renderInventoryCapitalPrintReport, renderSalesProfitPrintReport, activeReportTab, activeReportRange, setActiveReportTab, setActiveReportRange, setActiveSalesView } from "../pages/reports.js";
 import { bindStyledSelects } from "../styled-select.js";
 import { openExpenseTotalsModal } from "../modals/expense-totals-modal.js";
+import { createSheet, isPhone } from "../mobile-sheet.js";
+
+// Phone bottom sheets (re-created every time their page is rendered)
+let dashSheet = null;
+let stocksSheet = null;
 
 // Hook renderActiveTab into cart.js operations
 registerRenderActiveTab(renderActiveTab);
@@ -41,6 +46,23 @@ registerRenderActiveTab(renderActiveTab);
 export function updateCartPill() {
   const pill = document.getElementById("cartPill");
   if (pill) pill.textContent = cartCount();
+}
+
+/** Highlight the active dashboard tab button (on phones only while its sheet is open). */
+function paintDashTabs(pageContent) {
+  const sheetOn = !isPhone() || !!dashSheet?.isOpen();
+  pageContent.querySelectorAll(".tab-btn[data-tab]").forEach(btn => {
+    const isActive = btn.dataset.tab === activeDashTab && sheetOn;
+    btn.classList.toggle("active", isActive);
+    const icon = btn.querySelector(".tab-icon");
+    if (icon) {
+      if (btn.dataset.tab === "expiring") {
+        icon.src = isActive ? "src/icon/white/low-stock-alert.svg" : "src/icon/dark/low-stock-alert.svg";
+      } else if (btn.dataset.tab === "sell") {
+        icon.src = isActive ? "src/icon/white/cart.svg" : "src/icon/dark/cart.svg";
+      }
+    }
+  });
 }
 
 /**
@@ -55,19 +77,7 @@ export function renderActiveTab() {
   const main = pageContent.closest(".main");
   if (main) main.classList.toggle("sell-view-mode", activeDashTab === "sell");
 
-  // Dynamically update dashboard tab button active state and icon sources
-  pageContent.querySelectorAll(".tab-btn[data-tab]").forEach(btn => {
-    const isActive = btn.dataset.tab === activeDashTab;
-    btn.classList.toggle("active", isActive);
-    const icon = btn.querySelector(".tab-icon");
-    if (icon) {
-      if (btn.dataset.tab === "expiring") {
-        icon.src = isActive ? "src/icon/white/low-stock-alert.svg" : "src/icon/dark/low-stock-alert.svg";
-      } else if (btn.dataset.tab === "sell") {
-        icon.src = isActive ? "src/icon/white/cart.svg" : "src/icon/dark/cart.svg";
-      }
-    }
-  });
+  paintDashTabs(pageContent);
 
   const prevSearch = target.querySelector("#sellSearch")?.value || "";
   const prevSort = target.querySelector("#sellSort")?.value || "";
@@ -150,6 +160,7 @@ export function bindTabActions(target) {
  * @param {string} page
  */
 export function bindPageEvents(page) {
+  document.body.classList.remove("m-sheet-open");
   const pageContent = document.getElementById("pageContent");
   if (!pageContent) return;
   bindStyledSelects(pageContent);
@@ -187,9 +198,39 @@ export function bindPageEvents(page) {
     updateDashboard();
 
     document.getElementById("setExpenseTotalsBtn")?.addEventListener("click", () => openExpenseTotalsModal());
+    // Phone: the tab body becomes a bottom sheet (Expiring Soon = 50/90% draggable, Pick Items = 90% locked)
+    const dashBody = document.getElementById("dashboardTabBody");
+    const dashBottom = document.getElementById("dashboardBottomSection");
+    dashSheet = (dashBody && dashBottom)
+      ? createSheet({
+          sheet: dashBody,
+          handle: document.getElementById("dashSheetHandle"),
+          host: dashBottom,
+          onChange: () => paintDashTabs(pageContent)
+        })
+      : null;
+    if (isPhone() && dashBottom) {
+      dashBottom.classList.remove("collapsed-section");
+      localStorage.setItem("sentryDashSectionCollapsed", "false");
+    }
+    pageContent.querySelector("[data-sheet-collapse]")?.addEventListener("click", () => dashSheet?.close());
+
     pageContent.querySelectorAll(".tab-btn").forEach(btn => {
       btn.addEventListener("click", () => {
+        const previousTab = activeDashTab;
         setActiveDashTab(btn.dataset.tab);
+
+        if (isPhone() && dashSheet) {
+          if (dashSheet.isOpen() && previousTab === btn.dataset.tab) {
+            dashSheet.close();
+          } else {
+            renderActiveTab();
+            dashBody.classList.toggle("is-sell", btn.dataset.tab === "sell");
+            dashSheet.open({ locked: btn.dataset.tab === "sell" });
+          }
+          paintDashTabs(pageContent);
+          return;
+        }
 
         // Auto-expand bottom section if currently collapsed when a tab is clicked
         const bottomSection = document.getElementById("dashboardBottomSection");
@@ -245,8 +286,11 @@ export function bindPageEvents(page) {
         ? Math.min(numHeight, maxAllowed)
         : Math.min(320, maxAllowed);
 
-      bottomSection.style.height = `${initialHeight}px`;
-      bottomSection.style.flex = "0 0 auto";
+      // Tablet / phone size the bottom section with CSS (30% / 15% of the screen)
+      if (window.innerWidth > 1024) {
+        bottomSection.style.height = `${initialHeight}px`;
+        bottomSection.style.flex = "0 0 auto";
+      }
 
       let startY = 0;
       let startHeight = 0;
@@ -308,6 +352,19 @@ export function bindPageEvents(page) {
   }
 
   if (page === "stocks") {
+    const lowBody = document.getElementById("stocksLowBody");
+    const lowHost = document.getElementById("stocksLowPanel");
+    stocksSheet = (lowBody && lowHost)
+      ? createSheet({ sheet: lowBody, handle: document.getElementById("stocksSheetHandle"), host: lowHost })
+      : null;
+    if (isPhone() && lowHost) {
+      lowHost.classList.remove("stocks-collapsed");
+      localStorage.setItem("sentryStockSectionCollapsed", "false");
+    }
+    document.getElementById("stocksLowTab")?.addEventListener("click", () => {
+      if (isPhone()) stocksSheet?.toggle();
+    });
+
     const toggleBtn = document.getElementById("stocksSectionToggle");
     const lowPanel = document.getElementById("stocksLowPanel");
     const toggleIcon = document.getElementById("stocksToggleIcon");
@@ -348,8 +405,10 @@ export function bindPageEvents(page) {
         ? Math.min(numHeight, maxAllowed)
         : Math.min(320, maxAllowed);
 
-      lowPanel.style.height = `${initialHeight}px`;
-      lowPanel.style.flex = "0 0 auto";
+      if (window.innerWidth > 1024) {
+        lowPanel.style.height = `${initialHeight}px`;
+        lowPanel.style.flex = "0 0 auto";
+      }
 
       let startY = 0;
       let startHeight = 0;
@@ -500,7 +559,7 @@ export function bindPageEvents(page) {
 
       activeFilteredTransactions = list;
       const rowsEl = document.getElementById("transactionRows");
-      if (rowsEl) rowsEl.innerHTML = transactionRows(list);
+      if (rowsEl) rowsEl.innerHTML = transactionRows(list, mode);
       bindNotes();
     };
 

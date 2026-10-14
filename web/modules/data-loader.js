@@ -22,7 +22,7 @@ export async function loadDashboardData() {
   try {
     const [p, t, c] = await Promise.allSettled([
       apiRequest("products.php"),
-      apiRequest("get_history.php", {
+      apiRequest("get_history.php?limit=1000", {
         onResponse: (res, base) => {
           state.historySource = base;
           state.historyWarning = res?.headers?.get?.("X-History-Warnings") || "";

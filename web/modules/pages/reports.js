@@ -4,7 +4,7 @@
  * ============================================================ */
 
 import { state }             from "../state.js";
-import { money, escapeHtml } from "../utils.js";
+import { money, escapeHtml, formatAsiaManila } from "../utils.js";
 import { truncate, parseOrderItems, isSaleType } from "./transactions.js";
 import { proDocument, proHeading, proSummary } from "../print-report.js";
 
@@ -421,7 +421,7 @@ export function generateSalesProfitChartSvg(totalSales, cogs, grossProfit, lines
 
 export function renderInventoryCapitalReport(range = activeReportRange) {
   const d = inventoryReportData();
-  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const dateStr = formatAsiaManila(new Date(), true);
   const rangeTitle = getRangeLabel(range);
 
   return `<div class="report-section report-print-section" id="inventoryCapitalReport">
@@ -486,7 +486,7 @@ export function renderSalesProfitReport(range = activeReportRange) {
   const r = computeSalesReport(range);
   const { filtered, sales, stockIn, stockOut, revenue: totalSales, cogs, grossProfit, stockInCost } = r;
   const priceChanges = r.priceChanges.productsChanged;
-  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const dateStr = formatAsiaManila(new Date(), true);
   const rangeTitle = getRangeLabel(range);
 
   return `<div class="report-section report-print-section" id="salesProfitReport">
@@ -562,8 +562,8 @@ export function renderInventoryCapitalPrintReport(range = activeReportRange) {
 
   const rows = d.products.map((p, i) => `<tr>
       <td class="num">${i + 1}</td>
-      <td><strong>${escapeHtml(p.name)}</strong></td>
-      <td>${escapeHtml(p.category || "General")}</td>
+      <td class="clip"><strong>${escapeHtml(p.name)}</strong></td>
+      <td class="clip">${escapeHtml(p.category || "General")}</td>
       <td class="num">${Number(p.stock || 0)}</td>
       <td class="num">${reportMoney(p.cost || 0)}</td>
       <td class="num">${reportMoney(p.price || 0)}</td>
@@ -637,9 +637,9 @@ export function renderSalesProfitPrintReport(range = activeReportRange) {
 
     ${proHeading("Detailed sales breakdown", `${r.lines.length} item line${r.lines.length === 1 ? "" : "s"} — price and cost as recorded at each sale`)}
     <table class="pro-table sales-table">
-      <colgroup><col style="width:4%"><col style="width:20%"><col style="width:14%"><col style="width:5%"><col style="width:10%"><col style="width:10%"><col style="width:12%"><col style="width:12%"><col style="width:13%"></colgroup>
+      <colgroup><col style="width:9%"><col style="width:17%"><col style="width:14%"><col style="width:5%"><col style="width:10%"><col style="width:10%"><col style="width:12%"><col style="width:12%"><col style="width:13%"></colgroup>
       <thead><tr>
-        <th class="num">No.</th><th>Item</th><th>Date &amp; time</th><th class="num">Qty</th>
+        <th>ID</th><th>Item</th><th>Date &amp; time</th><th class="num">Qty</th>
         <th class="num">SRP / unit</th><th class="num">Cost / unit</th><th class="num">Total SRP</th><th class="num">Total cost</th><th class="num">Profit</th>
       </tr></thead>
       <tbody>${printSalesRows(r.lines, rangeTitle)}</tbody>
@@ -665,8 +665,8 @@ function printSalesRows(lines, rangeTitle) {
   return lines.map((l, i) => {
     const profit = l.revenue - l.cogs;
     return `<tr>
-      <td class="num">${i + 1}</td>
-      <td><strong>${escapeHtml(l.name)}</strong></td>
+      <td class="nowrap">ORD-${escapeHtml(l.orderId ?? i + 1)}</td>
+      <td class="clip"><strong>${escapeHtml(l.name)}</strong></td>
       <td>${escapeHtml(l.date || "—")}</td>
       <td class="num">${l.qty}</td>
       <td class="num">${reportMoney(l.price)}</td>
@@ -683,7 +683,7 @@ function printPriceChanges(pc) {
   const rows = pc.events.map(e => {
     const diff = e.newPrice - e.oldPrice;
     return `<tr>
-      <td><strong>${escapeHtml(e.name)}</strong></td>
+      <td class="clip"><strong>${escapeHtml(e.name)}</strong></td>
       <td class="num">${reportMoney(e.oldPrice)}</td>
       <td class="num">${reportMoney(e.newPrice)}</td>
       <td class="num ${diff > 0 ? "up" : diff < 0 ? "down" : ""}">${diff > 0 ? "+" : diff < 0 ? "−" : ""}${reportMoney(Math.abs(diff))} (${pct(e.oldPrice, e.newPrice).toFixed(1)}%)</td>
@@ -726,7 +726,7 @@ export function renderReports() {
             </select>
           </div>
           <button class="wire-btn report-print-btn" id="topReportPrintBtn" data-report-print="${activeReportTab}">
-            <img class="btn-icon" src="src/icon/dark/reports.svg" alt=""> Print Report
+            <img class="btn-icon" src="src/icon/dark/reports.svg" alt=""><span class="btn-text">Print Report</span>
           </button>
         </div>
       </div>

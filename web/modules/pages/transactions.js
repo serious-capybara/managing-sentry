@@ -4,7 +4,7 @@
  * ============================================================ */
 
 import { state }             from "../state.js";
-import { money, escapeHtml } from "../utils.js";
+import { money, escapeHtml, formatAsiaManila } from "../utils.js";
 import { proDocument, proHeading, proSummary } from "../print-report.js";
 
 export function renderTransactions() {
@@ -15,6 +15,7 @@ export function renderTransactions() {
           <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Show:</span>
           <select class="compact-select styled-select-native" id="historySort" aria-label="Filter history">
             <option value="newest" selected>Newest</option>
+            <option value="oldest">Oldest</option>
             <option value="sales">Sales</option>
             <option value="stock">Stock</option>
           </select>
@@ -22,7 +23,7 @@ export function renderTransactions() {
       </div>
       <div class="toolbar-right">
         <input id="transactionSearch" class="compact-input" placeholder="Search transactions...">
-        <button class="wire-btn" id="printHistoryBtn"><img class="btn-icon" src="src/icon/dark/reports.svg" alt=""> Print History</button>
+        <button class="wire-btn" id="printHistoryBtn"><img class="btn-icon" src="src/icon/dark/reports.svg" alt=""><span class="btn-text">Print History</span></button>
       </div>
     </div>
     ${historyBanner()}
@@ -51,17 +52,54 @@ export function historyBanner() {
 export const isSaleType  = t => String(t?.type || "").trim().toUpperCase() === "SALE";
 export const isStockType = t => /^STOCK[ _]?(IN|OUT)$/.test(String(t?.type || "").trim().toUpperCase());
 
+/** The real database number: orders.order_id for sales, stock_adjustments.adjustment_id for stock. */
+export function dbIdOf(t) {
+  if (isStockType(t)) {
+    const id = Number(t.id ?? t.entry_id ?? 0);
+    return id >= 100000 ? id - 100000 : id;   // backend adds 100000 to adjustment ids
+  }
+  return Number(t.order_id ?? t.id ?? 0);
+}
+
+/** Format database ID with proper prefix (ORD- for sales, STK- for stock movements). */
+export function formatTransactionId(t) {
+  const dbId = dbIdOf(t);
+  if (isSaleType(t))  return `ORD-${dbId}`;
+  if (isStockType(t)) return `STK-${dbId}`;
+  return `ID-${dbId}`;
+}
+
+/** Oldest → newest comparison used to give every record a stable running number. */
+const chronoCmp = (a, b) =>
+  (a.timestamp || 0) - (b.timestamp || 0) || (a.id || 0) - (b.id || 0);
+
+/**
+ * Running number of every record across ALL history (oldest = 1, newest = total).
+ * Built from the full list so the number never changes when you search or filter.
+ */
+export function historyNumbers(list = state.transactions) {
+  const map = new Map();
+  [...list].sort(chronoCmp).forEach((t, i) => map.set(t, i + 1));
+  return map;
+}
+
 /**
  * Filter + order the history list.
- *  newest → everything, newest first   sales → sales only   stock → stock in/out only
+ *  newest → everything, newest first (highest running number on top)
+ *  oldest → everything, oldest first (running number 1 on top)
+ *  sales  → sales only, highest ORD-id on top
+ *  stock  → stock in/out only, highest STK-id on top
  */
-export function filterHistory(list, mode = "newest", query = "") {
+export function filterHistory(list = state.transactions, mode = "newest", query = "") {
   const q = String(query || "").trim().toLowerCase();
   let out = [...list];
   if (mode === "sales") out = out.filter(isSaleType);
   else if (mode === "stock") out = out.filter(isStockType);
-  if (q) out = out.filter(t => `${t.name} ${t.type} ${t.date} ${t.notes || ""}`.toLowerCase().includes(q));
-  return out.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0) || (b.id || 0) - (a.id || 0));
+  if (q) out = out.filter(t => `${t.name} ${t.type} ${t.date} ${t.notes || ""} ${formatTransactionId(t)}`.toLowerCase().includes(q));
+
+  if (mode === "oldest") return out.sort(chronoCmp);
+  if (mode === "sales" || mode === "stock") return out.sort((a, b) => dbIdOf(b) - dbIdOf(a));
+  return out.sort((a, b) => chronoCmp(b, a));
 }
 
 export function parseOrderItems(fullName, tx = null) {
@@ -95,18 +133,12 @@ export function truncate(str, maxLength = 28) {
 
 export function format24hDate(raw) {
   if (!raw) return "—";
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return String(raw);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  const seconds = String(d.getSeconds()).padStart(2, "0");
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  return formatAsiaManila(raw, true);
 }
 
-export function transactionRows(list = state.transactions) {
+export function transactionRows(list = state.transactions, mode = "newest") {
+  const numbers = historyNumbers(state.transactions);
+  const showRunning = mode === "newest" || mode === "oldest";
   if (!list.length) {
     const why = state.historyError
       ? `Could not load history from the server: ${escapeHtml(state.historyError)}`
@@ -127,9 +159,13 @@ export function transactionRows(list = state.transactions) {
     const formattedDate = t.timestamp ? format24hDate(t.timestamp) : (t.date || "—");
     const isStock = isStockType(t);
     const qtyText = isStock ? `${Number(t.qty) > 0 ? "+" : ""}${Number(t.qty)}` : String(t.qty);
+    const txIdDisplay = formatTransactionId(t);
+    const idCell = showRunning
+      ? String(numbers.get(t) ?? "")
+      : escapeHtml(txIdDisplay);
 
     return `<tr>
-    <td>${i + 1}</td>
+    <td>${idCell}</td>
     <td>${escapeHtml(formattedDate)}</td>
     <td class="${isMultiItem ? "order-hover-cell" : ""}" data-order-items="${encodedItems}">${orderDisplayText}</td>
     <td>${qtyText}</td>
@@ -257,6 +293,14 @@ export function generateHistoryChartSvg(list = []) {
   `;
 }
 
+/** First product name (no "(xN)"), then "+N" for the remaining products; long names end in "...". */
+function printOrderCell(items) {
+  if (!items.length) return "—";
+  const first = String(items[0]).replace(/\s*\(x\d+\)\s*$/i, "").trim() || "Item";
+  const more = items.length - 1;
+  return `<div class="pro-clip-row"><span class="pro-clip-name" title="${escapeHtml(items.join(", "))}">${escapeHtml(first)}</span>${more > 0 ? `<span class="pro-clip-more">+${more}</span>` : ""}</div>`;
+}
+
 /**
  * Printable transaction-history report (professional layout, see css/print-report.css).
  * @param {Array} list  the rows currently shown on screen
@@ -272,18 +316,23 @@ export function renderHistoryPrintReport(list = state.transactions, mode = "newe
   const unitsSold = sum(sales, t => Math.abs(Number(t.qty || 0)));
   const unitsIn = sum(stockIn, t => Math.abs(Number(t.qty || 0)));
   const unitsOut = sum(stockOut, t => Math.abs(Number(t.qty || 0)));
-  const filterLabel = { newest: "All activity (newest first)", sales: "Sales only", stock: "Stock movements only" }[mode] || "All activity";
+  const stockMode = mode === "stock";
+  const costIn = sum(stockIn, t => Number(t.amount || 0));
+  const costOut = sum(stockOut, t => Number(t.amount || 0));
+  const filterLabel = { newest: "All activity (newest first)", oldest: "All activity (oldest first)", sales: "Sales only", stock: "Stock movements only" }[mode] || "All activity";
 
+  const numbers = historyNumbers(state.transactions);
+  const showRunning = mode === "newest" || mode === "oldest";
   const rows = list.map((t, i) => {
     const items = parseOrderItems(t.name, t);
     const type = typeOf(t) || "SALE";
     const cls = type === "SALE" ? "sale" : type === "STOCK IN" ? "stock-in" : "stock-out";
     const qty = isStockType(t) ? `${Number(t.qty) > 0 ? "+" : ""}${Number(t.qty)}` : String(t.qty ?? 1);
     return `<tr>
-      <td class="num">${i + 1}</td>
+      <td class="num nowrap">${showRunning ? (numbers.get(t) ?? i + 1) : escapeHtml(formatTransactionId(t))}</td>
       <td class="nowrap">${escapeHtml(t.timestamp ? format24hDate(t.timestamp) : (t.date || "—"))}</td>
       <td><span class="pro-tag ${cls}">${escapeHtml(type)}</span></td>
-      <td>${escapeHtml(items.join(", ") || "—")}</td>
+      <td>${printOrderCell(items)}</td>
       <td class="num">${escapeHtml(qty)}</td>
       <td class="num">${money(t.amount || 0)}</td>
       <td>${escapeHtml(t.notes || "—")}</td>
@@ -292,7 +341,12 @@ export function renderHistoryPrintReport(list = state.transactions, mode = "newe
 
   const body = `
     ${proHeading("Summary")}
-    ${proSummary([
+    ${stockMode ? proSummary([
+      { label: "Records listed", value: String(list.length), note: filterLabel },
+      { label: "Stock in", value: String(stockIn.length), note: `+${unitsIn} units` },
+      { label: "Stock out", value: String(stockOut.length), note: `−${unitsOut} units` },
+      { label: "Stock-in cost", value: money(costIn), tone: "good", note: `Stock-out value ${money(costOut)}` }
+    ]) : proSummary([
       { label: "Records listed", value: String(list.length), note: filterLabel },
       { label: "Sales", value: String(sales.length), note: `${unitsSold} units sold` },
       { label: "Sales revenue", value: money(revenue), tone: "good", note: sales.length ? `Avg ${money(revenue / sales.length)} per sale` : "No sales" },
@@ -304,16 +358,19 @@ export function renderHistoryPrintReport(list = state.transactions, mode = "newe
 
     ${proHeading("Transaction log", `${list.length} record${list.length === 1 ? "" : "s"}`)}
     <table class="pro-table">
-      <colgroup><col style="width:5%"><col style="width:21%"><col style="width:11%"><col style="width:27%"><col style="width:6%"><col style="width:12%"><col style="width:18%"></colgroup>
+      <colgroup><col style="width:8%"><col style="width:20%"><col style="width:11%"><col style="width:25%"><col style="width:6%"><col style="width:12%"><col style="width:18%"></colgroup>
       <thead><tr>
-        <th class="num">No.</th><th>Date &amp; time</th><th>Type</th><th>Order / item</th>
+        <th class="num">ID</th><th>Date &amp; time</th><th>Type</th><th>Order / item</th>
         <th class="num">Qty</th><th class="num">Amount</th><th>Notes</th>
       </tr></thead>
       <tbody>${rows || `<tr><td colspan="7" class="empty">No transaction records found.</td></tr>`}</tbody>
-      ${list.length ? `<tfoot><tr>
+      ${list.length ? (stockMode ? `<tfoot>
+        <tr><td colspan="5" class="label">Total stock-in cost</td><td class="num">${money(costIn)}</td><td></td></tr>
+        <tr><td colspan="5" class="label">Total stock-out value</td><td class="num">${money(costOut)}</td><td></td></tr>
+      </tfoot>` : `<tfoot><tr>
         <td colspan="5" class="label">Total sales revenue</td>
         <td class="num">${money(revenue)}</td><td></td>
-      </tr></tfoot>` : ""}
+      </tr></tfoot>`) : ""}
     </table>`;
 
   return proDocument({
