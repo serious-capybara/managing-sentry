@@ -152,7 +152,7 @@ export function openAddProductModal(editingProduct = null) {
             <div class="form-group">
               <label for="modalProdCategory">Category</label>
               <div class="category-input-row">
-                <input id="modalProdCategory" name="category" list="categoryDatalist" required placeholder="e.g. Beverages" autocomplete="off">
+                <input id="modalProdCategory" name="category" required placeholder="e.g. Beverages" autocomplete="off">
                 <div class="category-picker-wrap">
                   <button type="button" class="category-picker-btn" id="modalCategoryPickerBtn" title="Select Established Category" aria-haspopup="listbox" aria-expanded="false">
                     <img class="btn-icon" src="src/icon/dark/sort-filter.svg" alt="Select Category">
@@ -164,9 +164,6 @@ export function openAddProductModal(editingProduct = null) {
                     <button type="button" class="styled-select-option" data-category-val="__NEW__" role="option">Custom</button>
                   </div>
                 </div>
-                <datalist id="categoryDatalist">
-                  ${allCategories.map(cat => `<option value="${escapeHtml(cat)}"></option>`).join("")}
-                </datalist>
               </div>
             </div>
             <div class="form-group">
