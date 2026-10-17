@@ -49,7 +49,7 @@ def create_access_token(user: dict) -> str:
     return serializer.dumps(data)
 
 
-def decode_access_token(token: str, max_age: int = 86400 * 30) -> dict | None:
+def decode_access_token(token: str, max_age: int = 86400 * 365) -> dict | None:
     try:
         data = serializer.loads(token, max_age=max_age)
         if isinstance(data, dict) and "user_id" in data:

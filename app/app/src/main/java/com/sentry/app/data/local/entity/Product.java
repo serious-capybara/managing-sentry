@@ -56,14 +56,29 @@ public class Product {
         return "In Stock";
     }
 
-    /** Whole days until the expiration date (negative when already expired), or null if none is set. */
+    /** Whole calendar days until the expiration date (negative when already expired), or null if none is set. */
     public Integer getDaysLeft() {
         if (expirationDate == null || expirationDate.trim().isEmpty()) return null;
         try {
-            java.util.Date expiry = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-                    .parse(expirationDate.trim().substring(0, 10));
-            long today = new java.util.Date().getTime() / 86400000L;
-            return (int) (expiry.getTime() / 86400000L - today);
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
+            java.util.Date expiryDate = sdf.parse(expirationDate.trim().substring(0, 10));
+            if (expiryDate == null) return null;
+
+            java.util.Calendar todayCal = java.util.Calendar.getInstance();
+            todayCal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            todayCal.set(java.util.Calendar.MINUTE, 0);
+            todayCal.set(java.util.Calendar.SECOND, 0);
+            todayCal.set(java.util.Calendar.MILLISECOND, 0);
+
+            java.util.Calendar expiryCal = java.util.Calendar.getInstance();
+            expiryCal.setTime(expiryDate);
+            expiryCal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            expiryCal.set(java.util.Calendar.MINUTE, 0);
+            expiryCal.set(java.util.Calendar.SECOND, 0);
+            expiryCal.set(java.util.Calendar.MILLISECOND, 0);
+
+            long diffMillis = expiryCal.getTimeInMillis() - todayCal.getTimeInMillis();
+            return (int) Math.round((double) diffMillis / (1000.0 * 60 * 60 * 24));
         } catch (Exception e) {
             return null;
         }

@@ -59,9 +59,16 @@ export function expiryDateInfo(dateStr) {
   if (!dateStr) return { state: "none", label: "No Expiry", days: null };
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const expiry = new Date(`${dateStr}T23:59:59`);
+
+  const cleanStr = String(dateStr).trim().substring(0, 10);
+  const parts = cleanStr.split("-");
+  if (parts.length < 3) return { state: "none", label: "No Expiry", days: null };
+  const expiry = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
   if (Number.isNaN(expiry.getTime())) return { state: "none", label: "No Expiry", days: null };
-  const days = Math.ceil((expiry - today) / 86400000);
+
+  const diffMillis = expiry.getTime() - today.getTime();
+  const days = Math.round(diffMillis / 86400000);
+
   if (days < 0) return { state: "expired", label: "Expired", days };
   if (days <= 7) return { state: "soon", label: `${days} day${days === 1 ? "" : "s"} left`, days };
   return { state: "safe", label: `${days} days left`, days };

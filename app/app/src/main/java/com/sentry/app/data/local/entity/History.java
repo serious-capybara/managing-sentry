@@ -57,9 +57,16 @@ public class History {
 
     public long getParsedTimestampMillis() {
         if (timestamp == null || timestamp.trim().isEmpty()) return 0L;
-        String clean = timestamp.split("\\.")[0].replace("T", " ").replace("Z", "").trim();
+        String clean = timestamp.replace("T", " ").replace("Z", "").trim();
+        if (clean.contains(".")) {
+            clean = clean.split("\\.")[0].trim();
+        }
         
-        String[] formats = {"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm"};
+        String[] formats = {
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm",
+            "yyyy-MM-dd"
+        };
         for (String format : formats) {
             try {
                 SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.US);
@@ -67,6 +74,15 @@ public class History {
                 if (date != null) return date.getTime();
             } catch (Exception ignored) {}
         }
+        
+        try {
+            if (clean.length() >= 10) {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+                Date date = sdf.parse(clean.substring(0, 10));
+                if (date != null) return date.getTime();
+            }
+        } catch (Exception ignored) {}
+
         return 0L;
     }
 
