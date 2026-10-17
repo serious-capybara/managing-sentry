@@ -2,7 +2,7 @@ import asyncpg
 from fastapi import APIRouter, HTTPException, Request
 from models.sale import SaleRequest, SaleResponse
 from core.security import require_web_access
-from core.utils import round_money
+from core.utils import round_money, by_line
 
 router = APIRouter(tags=["sales"])
 
@@ -19,11 +19,12 @@ async def make_sale(sale: SaleRequest, request: Request):
         requested[item.product_id] = requested.get(item.product_id, 0) + item.quantity
 
     method = sale.method or "Cash"
-    notes = (
+    details = (
         (f"Payment: {method}. " if method != "Cash" else "")
         + (f"Ref: {sale.reference}. " if sale.reference else "")
         + (sale.notes or "")
     ).strip()
+    notes = by_line(user.get("full_name") or user.get("username"), sale.client_ref) + (f"\n{details}" if details else "")
 
     try:
         async with request.app.state.pool.acquire() as conn:

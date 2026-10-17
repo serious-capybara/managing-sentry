@@ -20,6 +20,9 @@ public class SaleRequest implements Serializable {
     @SerializedName("notes")
     private String notes;
 
+    @SerializedName("client_ref")
+    private String clientRef;
+
     @SerializedName("reference_number")
     private String referenceNumber;
     
@@ -56,4 +59,7 @@ public class SaleRequest implements Serializable {
 
     public String getReferenceNumber() { return referenceNumber; }
     public void setReferenceNumber(String referenceNumber) { this.referenceNumber = referenceNumber; }
+
+    public String getClientRef() { return clientRef; }
+    public void setClientRef(String clientRef) { this.clientRef = clientRef; }
 }

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Body, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
 from pydantic import ValidationError
 from models.user import LoginRequest, LoginResponse, MessageResponse
-from core.security import ALLOWED_ROLES, normalize_role, sign_in, sign_out, verify_password
+from core.security import ALLOWED_ROLES, normalize_role, sign_in, sign_out, verify_password, hash_password, needs_rehash
 
 router = APIRouter(tags=["auth"])
 
@@ -38,6 +38,15 @@ async def login(
 
     if row is None or not await run_in_threadpool(verify_password, credentials.password, row["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    # One-time speed-up: a slow (cost 12) hash is replaced by a cost-10 PHP-compatible one.
+    if needs_rehash(row["password_hash"]):
+        try:
+            faster = await run_in_threadpool(hash_password, credentials.password)
+            async with request.app.state.pool.acquire() as conn:
+                await conn.execute("UPDATE users SET password_hash = $1 WHERE user_id = $2", faster, row["user_id"])
+        except Exception as err:
+            print(f"Could not upgrade the password hash: {err}")
 
     if normalize_role(row["role"]) not in ALLOWED_ROLES:
         raise HTTPException(status_code=403, detail="The web portal is only available to Admin and Manager accounts")

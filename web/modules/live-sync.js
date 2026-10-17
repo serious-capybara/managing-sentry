@@ -82,7 +82,7 @@ function redrawKeepingPlace() {
 // reload from the server and redraw
 export async function refreshFromServer() {
   const fingerprint = await readFingerprint().catch(() => null);
-  await loadDashboardData();
+  await loadDashboardData({ force: true });
   if (fingerprint) lastFingerprint = fingerprint;
   updateStats();
   if (userIsBusy()) {
@@ -131,6 +131,7 @@ export function startLiveSync() {
   onQueueDrained(() => { refreshFromServer().catch(() => {}); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
   window.addEventListener("online", check);
+  window.addEventListener("data-fully-loaded", () => { if (!userIsBusy()) redrawKeepingPlace(); });
   window.addEventListener("focus", check);
   schedule();
 }

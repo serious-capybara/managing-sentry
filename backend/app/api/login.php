@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../init.php';
 
 use config\Database;
+use core\Auth;
 use core\Response;
 use PDOException;
 
@@ -31,6 +32,8 @@ try {
     }
 
     unset($user['password_hash']);
+    $token = Auth::signIn($user);
+    $user['token'] = $token;
     Response::json($user);
 
 } catch (PDOException $e) {

@@ -31,6 +31,10 @@ import { renderSalesProfitReport, renderInventoryCapitalReport, renderInventoryC
 import { bindStyledSelects } from "../styled-select.js";
 import { openExpenseTotalsModal } from "../modals/expense-totals-modal.js";
 import { createSheet, isPhone } from "../mobile-sheet.js";
+import { openHistoryReceipt } from "../modals/history-receipt-modal.js";
+import { hasMoreHistory, loadMoreHistory, loadAllHistory } from "../data-loader.js";
+
+const HISTORY_PAGE = 100;
 
 // phone bottom sheets, rebuilt each time the page renders
 let dashSheet = null;
@@ -530,15 +534,19 @@ export function bindPageEvents(page) {
   if (page === "transactions") {
     initOrderHoverTooltip();
 
-    const bindNotes = () => {
-      document.querySelectorAll("#transactionRows .notes-btn.has").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const t = state.transactions[Number(btn.dataset.notesIdx)];
-          if (!t || !t.notes || !String(t.notes).trim()) return;
-          showInfoModal(`Notes — ${t.name}`, `${t.type} • ${t.date}`, t.notes, true);
-        });
-      });
-    };
+    const bindNotes = () => {};   // clicks are handled once, below (event delegation)
+
+    document.getElementById("transactionRows")?.addEventListener("click", event => {
+      const receiptLink = event.target.closest("[data-receipt-idx]");
+      if (receiptLink) {
+        const sale = state.transactions[Number(receiptLink.dataset.receiptIdx)];
+        if (sale) openHistoryReceipt(sale);
+        return;
+      }
+      const noteLink = event.target.closest("[data-notes-idx]");
+      const t = noteLink && state.transactions[Number(noteLink.dataset.notesIdx)];
+      if (t?.notes) showInfoModal(`Notes — ${t.name}`, `${t.type} • ${t.date}`, t.notes, true);
+    });
 
     let activeFilteredTransactions = [...state.transactions];
 
@@ -548,10 +556,42 @@ export function bindPageEvents(page) {
       const list = filterHistory(state.transactions, mode, query);
 
       activeFilteredTransactions = list;
+      // Searching and "Oldest" must look at every row, so fetch the rest first.
+      if ((mode === "oldest" || query.trim()) && hasMoreHistory()) {
+        loadAllHistory().then(() => { if (document.getElementById("transactionRows")) updateHistory(); });
+      }
       const rowsEl = document.getElementById("transactionRows");
-      if (rowsEl) rowsEl.innerHTML = transactionRows(list, mode);
+      shownRows = HISTORY_PAGE;
+      if (rowsEl) rowsEl.innerHTML = transactionRows(list.slice(0, shownRows), mode);
       bindNotes();
     };
+
+    // Show 100 rows at first; the next 100 are added as the user scrolls to the bottom.
+    let shownRows = HISTORY_PAGE;
+    let fetchingMore = false;
+    document.querySelector(".transactions-table-scroll")?.addEventListener("scroll", async event => {
+      const box = event.currentTarget;
+      if (box.scrollTop + box.clientHeight < box.scrollHeight - 160 || fetchingMore) return;
+      const mode = document.getElementById("historySort")?.value || "newest";
+      const query = document.getElementById("transactionSearch")?.value || "";
+
+      // Reached the end of what is loaded: ask the server for the next 100 rows.
+      if (shownRows >= activeFilteredTransactions.length && hasMoreHistory()) {
+        fetchingMore = true;
+        try {
+          await loadMoreHistory(HISTORY_PAGE);
+          activeFilteredTransactions = filterHistory(state.transactions, mode, query);
+        } catch { /* try again on the next scroll */ }
+        fetchingMore = false;
+      }
+      if (shownRows >= activeFilteredTransactions.length) return;
+      const next = activeFilteredTransactions.slice(shownRows, shownRows + HISTORY_PAGE);
+      shownRows += next.length;
+      document.getElementById("transactionRows")?.insertAdjacentHTML("beforeend", transactionRows(next, mode));
+    }, { passive: true });
+    window.addEventListener("data-fully-loaded", () => {
+      if (document.getElementById("transactionRows")) updateHistory();
+    }, { once: true });
 
     document.getElementById("transactionSearch")?.addEventListener("input", updateHistory);
     document.getElementById("historySort")?.addEventListener("change", updateHistory);

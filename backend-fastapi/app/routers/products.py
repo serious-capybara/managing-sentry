@@ -1,6 +1,7 @@
 from typing import Union
 from fastapi import APIRouter, HTTPException, Request, Query
 from models.product import ProductResponse
+from core.security import require_app_access
 
 router = APIRouter(tags=["products"])
 
@@ -8,6 +9,7 @@ router = APIRouter(tags=["products"])
 @router.get("/products", response_model=list[ProductResponse])
 @router.get("/api/products.php", include_in_schema=False)
 async def get_products_api(request: Request, action: Union[str, None] = Query(None)):
+    require_app_access(request)
     if action == "categories":
         return await get_categories(request)
 
@@ -37,6 +39,7 @@ async def get_products_api(request: Request, action: Union[str, None] = Query(No
 @router.get("/categories", response_model=list[str])
 @router.get("/get_categories.php", response_model=list[str], include_in_schema=False)
 async def get_categories(request: Request):
+    require_app_access(request)
     try:
         async with request.app.state.pool.acquire() as conn:
             rows = await conn.fetch(

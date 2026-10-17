@@ -252,3 +252,17 @@
   text-align: center;
   line-height: 1.5;
 }
+
+
+/* Round logo */
+.brand-mark { border-radius: 50%; object-fit: cover; }
+
+/* The three bars under the photo follow the photo: same 15-second cycle as the fading pictures */
+.dot.active { background: rgba(255, 255, 255, 0.3); }
+.dot { transition: background 0.5s ease, width 0.5s ease; animation: dotOff 15s infinite; }
+.dot:nth-child(1) { animation-name: dotFirst; }
+.dot:nth-child(2) { animation-name: dotSecond; }
+.dot:nth-child(3) { animation-name: dotThird; }
+@keyframes dotFirst  { 0%, 30% { background: #fff; width: 44px; } 33%, 96% { background: rgba(255,255,255,.3); width: 28px; } 98%, 100% { background: #fff; width: 44px; } }
+@keyframes dotSecond { 0%, 30% { background: rgba(255,255,255,.3); width: 28px; } 33%, 63% { background: #fff; width: 44px; } 66%, 100% { background: rgba(255,255,255,.3); width: 28px; } }
+@keyframes dotThird  { 0%, 63% { background: rgba(255,255,255,.3); width: 28px; } 66%, 96% { background: #fff; width: 44px; } 98%, 100% { background: rgba(255,255,255,.3); width: 28px; } }

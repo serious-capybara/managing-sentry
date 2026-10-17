@@ -5,6 +5,7 @@ import { toast } from "../utils.js";
 import { apiRequest, setAuthView } from "../api.js";
 import { loadDashboardData } from "../data-loader.js";
 import { startLiveSync } from "../live-sync.js";
+import { showSkeleton } from "../skeleton.js";
 import { kickSaleQueue } from "../sale-queue.js";
 import { updateStats } from "../stock-logic.js";
 import { renderPage } from "../router.js";
@@ -96,6 +97,12 @@ export function bindSidebarEvents() {
 
         saveSession(username || "admin", user?.full_name || user?.username || username || "admin");
 
+        // Open the app right away with placeholders; the data loads while you look at it.
+        if (message) message.textContent = "";
+        setAuthView(true);
+        showSkeleton();
+        kickSaleQueue();
+
         try {
           await loadDashboardData();
         } catch (dataErr) {
@@ -104,14 +111,11 @@ export function bindSidebarEvents() {
 
         if (state.authFailed) {
           clearSession();
+          setAuthView(false);
           throw new Error("Signed in, but the browser did not keep the server session (cookie blocked). Please try again or contact the administrator.");
         }
 
-        if (message) message.textContent = "";
-
-        setAuthView(true);
         renderPage("dashboard");
-        kickSaleQueue();
         startLiveSync();
       } catch (error) {
         if (message) message.textContent = error.message;

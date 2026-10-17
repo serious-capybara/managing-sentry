@@ -2567,3 +2567,44 @@ table:has(.table-empty) tbody tr {
 .report-subtab.active .report-subtab-count { background: rgba(255, 255, 255, 0.22); }
 
 @media print { .report-subtabs { display: none; } }
+
+
+/* History: "Receipt" and notes look like plain text but can be clicked */
+.text-link { cursor: pointer; color: inherit; font: inherit; background: none; border: 0; padding: 0; }
+.text-link:hover { text-decoration: underline; }
+.note-text { display: inline-block; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.note-text.muted { opacity: 0.55; }
+.badge.blue { background: #DBEAFE; color: #1D4ED8; }
+.badge.red { background: #FEE2E2; color: #B91C1C; }
+
+
+/* ---------- Loading placeholders ---------- */
+.skeleton { display: block; border-radius: 8px; background: linear-gradient(90deg, #E8EDF3 25%, #F4F7FA 50%, #E8EDF3 75%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.skeleton-page { display: flex; flex-direction: column; gap: 16px; animation: fadeUp 0.5s ease both; }
+.skeleton-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.skeleton-card { display: flex; gap: 14px; align-items: center; padding: 20px; background: #fff; border: 1px solid var(--border-light, #E2E8F0); border-radius: 20px; }
+.skeleton-card > div { display: flex; flex-direction: column; gap: 8px; }
+.skeleton-toolbar { display: flex; gap: 12px; align-items: center; }
+.skeleton-table { background: #fff; border: 1px solid var(--border-light, #E2E8F0); border-radius: 20px; overflow: hidden; }
+.skeleton-row { display: flex; gap: 4%; align-items: center; height: 48px; padding: 0 20px; border-bottom: 1px solid var(--border-light, #E2E8F0); }
+.skeleton-row.head { background: #F1F5F9; height: 44px; }
+@media (max-width: 767px) { .skeleton-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .skeleton-card { padding: 12px; } }
+
+/* ---------- Smooth movement (0.4 – 0.6 s) ---------- */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes popIn { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: none; } }
+#pageContent > * { animation: fadeUp 0.45s ease both; }
+.modal { animation: popIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.modal-overlay { animation: fadeIn 0.4s ease both; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.app-enter { animation: appEnter 0.6s ease both; }
+@keyframes appEnter { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: none; } }
+.login-screen { transition: opacity 0.5s ease; }
+.login-screen.hidden { opacity: 0; }
+.stat-card, .wire-btn, .tab-btn, .nav-item, tbody tr { transition: background-color 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease, color 0.4s ease, border-color 0.4s ease; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+/* Products and Stocks tables scroll but never show the browser's scroll bar (all screen sizes) */
+.products-table-scroll, .stocks-table-scroll, .stocks-low-table-wrap { scrollbar-width: none; -ms-overflow-style: none; }
+.products-table-scroll::-webkit-scrollbar, .stocks-table-scroll::-webkit-scrollbar, .stocks-low-table-wrap::-webkit-scrollbar { display: none; width: 0; height: 0; }

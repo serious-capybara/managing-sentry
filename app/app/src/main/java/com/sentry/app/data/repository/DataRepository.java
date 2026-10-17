@@ -95,7 +95,10 @@ public class DataRepository {
                     if (response.isSuccessful() && response.body() != null) {
                         List<Product> products = response.body();
                         executor.execute(() -> {
-                            db.productDao().insertProducts(products);
+                            db.runInTransaction(() -> {
+                                db.productDao().deleteAll();
+                                db.productDao().insertProducts(products);
+                            });
                             remoteCallback.onSuccess(products);
                         });
                     } else {
@@ -121,7 +124,11 @@ public class DataRepository {
                         List<History> history = response.body();
                         sortHistoryDescending(history);
                         executor.execute(() -> {
-                            db.historyDao().insertHistory(history);
+                            db.runInTransaction(() -> {
+                                // mirror the server, but keep sales that are still waiting to be sent
+                                if (db.pendingSaleDao().getAllPendingSales().isEmpty()) db.historyDao().deleteAll();
+                                db.historyDao().insertHistory(history);
+                            });
                             remoteCallback.onSuccess(history);
                         });
                     } else {
@@ -160,37 +167,130 @@ public class DataRepository {
         });
     }
 
+    /**
+     * The sale is recorded on the phone immediately and put in the waiting list; sending it to
+     * the server happens in the background, one sale at a time, so the next sale can start at once.
+     */
     public void performSale(SaleRequest request, DataCallback<Integer> callback) {
-        if (isOnline()) {
-            RetrofitClient.getApiService().makeSale(request).enqueue(new Callback<>() {
-                @Override
-                public void onResponse(@NonNull Call<com.sentry.app.data.remote.dto.ApiResponse> call, @NonNull Response<com.sentry.app.data.remote.dto.ApiResponse> response) {
-                    if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                        executor.execute(() -> {
-                            int orderId = applyLocalSaleEffects(request, STATUS_SUCCESS);
-                            callback.onSuccess(orderId);
-                        });
-                    } else {
-                        handleSaleOffline(request, callback);
-                    }
-                }
-
-                @Override
-                public void onFailure(@NonNull Call<com.sentry.app.data.remote.dto.ApiResponse> call, @NonNull Throwable t) {
-                    handleSaleOffline(request, callback);
-                }
-            });
-        } else {
-            handleSaleOffline(request, callback);
-        }
-    }
-
-    private void handleSaleOffline(SaleRequest request, DataCallback<Integer> callback) {
         executor.execute(() -> {
             int orderId = applyLocalSaleEffects(request, STATUS_PENDING);
+            // private 12-character code so a sale can never be saved twice (the server puts it in the "By NAME (CODE)" line)
+            request.setClientRef(randomCode());
             queuePendingSale(request);
             callback.onSuccess(orderId);
+            flushPendingSalesNow();
         });
+    }
+
+    /** Send every waiting sale to the server in order. Safe to call any time. */
+    public void flushPendingSales() {
+        executor.execute(this::flushPendingSalesNow);
+    }
+
+    private void flushPendingSalesNow() {
+        List<PendingSale> waiting = db.pendingSaleDao().getAllPendingSales();
+        boolean sentAny = false;
+        boolean stoppedEarly = false;
+        for (PendingSale ps : waiting) {
+            SaleRequest request = gson.fromJson(ps.getSaleRequestJson(), SaleRequest.class);
+            String token = request.getClientRef();
+            try {
+                // An earlier try may have reached the server before the connection dropped:
+                // ask the server first, so the same sale is never saved a second time.
+                if (token != null && wasAttempted(token)) {
+                    Response<com.sentry.app.data.remote.dto.SaleCheckResponse> check =
+                            RetrofitClient.getApiService().checkSale(token).execute();
+                    if (!check.isSuccessful() || check.body() == null) {
+                        stoppedEarly = true;
+                        break;
+                    }
+                    if (check.body().isExists()) {
+                        db.pendingSaleDao().delete(ps);
+                        forgetAttempt(token);
+                        sentAny = true;
+                        continue;
+                    }
+                }
+                if (token != null) markAttempt(token);
+
+                Response<com.sentry.app.data.remote.dto.ApiResponse> response =
+                        RetrofitClient.getApiService().makeSale(request).execute();
+                int code = response.code();
+                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                    db.pendingSaleDao().delete(ps);
+                    if (token != null) forgetAttempt(token);
+                    sentAny = true;
+                } else if (code >= 400 && code < 500 && code != 401 && code != 408 && code != 429) {
+                    db.pendingSaleDao().delete(ps);   // the server said no: drop it and restore real stock below
+                    if (token != null) forgetAttempt(token);
+                    sentAny = true;
+                } else {
+                    stoppedEarly = true;
+                    break;
+                }
+            } catch (Exception offline) {
+                stoppedEarly = true;
+                break;
+            }
+        }
+        if (stoppedEarly) scheduleRetry();
+        if (sentAny && !stoppedEarly) refreshAllFromServer();
+    }
+
+    private String randomCode() {
+        final String letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        StringBuilder code = new StringBuilder();
+        for (int i = 0; i < 12; i++) code.append(letters.charAt(random.nextInt(letters.length())));
+        return code.toString();
+    }
+
+    private android.content.SharedPreferences attempts() {
+        return context.getSharedPreferences("sale_attempts", Context.MODE_PRIVATE);
+    }
+
+    private boolean wasAttempted(String token) {
+        return attempts().getBoolean(token, false);
+    }
+
+    private void markAttempt(String token) {
+        attempts().edit().putBoolean(token, true).commit();   // saved before sending, on purpose
+    }
+
+    private void forgetAttempt(String token) {
+        attempts().edit().remove(token).apply();
+    }
+
+    private void scheduleRetry() {
+        androidx.work.Constraints online = new androidx.work.Constraints.Builder()
+                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED).build();
+        androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
+                "retry-pending-sales",
+                androidx.work.ExistingWorkPolicy.REPLACE,
+                new androidx.work.OneTimeWorkRequest.Builder(com.sentry.app.worker.SyncWorker.class)
+                        .setConstraints(online).build());
+    }
+
+    /** Download products and history and store them on the phone right away. */
+    private void refreshAllFromServer() {
+        try {
+            Response<List<Product>> products = RetrofitClient.getApiService().getProducts().execute();
+            if (products.isSuccessful() && products.body() != null) {
+                db.runInTransaction(() -> {
+                    db.productDao().deleteAll();
+                    db.productDao().insertProducts(products.body());
+                });
+            }
+            Response<List<History>> history = RetrofitClient.getApiService().getHistory().execute();
+            if (history.isSuccessful() && history.body() != null) {
+                db.runInTransaction(() -> {
+                    db.historyDao().deleteAll();
+                    db.historyDao().insertHistory(history.body());
+                });
+            }
+        } catch (Exception ignored) {
+            // the next refresh will fix it
+        }
     }
 
     private int applyLocalSaleEffects(SaleRequest request, String status) {
@@ -219,9 +319,27 @@ public class DataRepository {
         localHistory.setTimestamp(timestamp);
         localHistory.setStatus(status);
         localHistory.setNotes(request.getNotes());
+        localHistory.setAmountTendered(request.getAmountTendered());
+        localHistory.setChangeGiven(request.getChangeGiven());
+        localHistory.setCashier(new com.sentry.app.data.local.prefs.SessionManager(context).getFullName());
+        localHistory.setItemsJson(buildItemsJson(request.getItems()));
 
         db.historyDao().insertSingle(localHistory);
         return nextOrderId;
+    }
+
+    private String buildItemsJson(List<SaleItem> items) {
+        com.google.gson.JsonArray array = new com.google.gson.JsonArray();
+        if (items != null) {
+            for (SaleItem item : items) {
+                com.google.gson.JsonObject o = new com.google.gson.JsonObject();
+                o.addProperty("name", item.getProductName());
+                o.addProperty("qty", item.getQuantity());
+                o.addProperty("price", item.getPriceSnapshot());
+                array.add(o);
+            }
+        }
+        return array.toString();
     }
 
     @SuppressWarnings("all")

@@ -13,6 +13,7 @@ class SaleRequest(BaseModel):
     method: str | None = "Cash"
     reference: str | None = None
     notes: str | None = None
+    client_ref: str | None = None
     amount_received: float = Field(default=0, ge=0, validation_alias=AliasChoices("amount_received", "amount_tendered"))
 
 

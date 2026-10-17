@@ -1,14 +1,27 @@
+import re
+
 import bcrypt
 from fastapi import HTTPException, Request
 
 ALLOWED_ROLES = ("admin", "manager")
 
+BCRYPT_ROUNDS = 10   # PHP's default cost; about 4x faster to check than cost 12
+
 
 def hash_password(plain_password: str) -> str:
-    return bcrypt.hashpw(
+    hashed = bcrypt.hashpw(
         plain_password.encode("utf-8")[:72],
-        bcrypt.gensalt(rounds=12),
+        bcrypt.gensalt(rounds=BCRYPT_ROUNDS),
     ).decode("utf-8")
+    # "$2y$" is the prefix PHP writes, so the old PHP code can still verify these hashes.
+    return "$2y$" + hashed[4:]
+
+
+def needs_rehash(password_hash: str) -> bool:
+    """True for a bcrypt hash that is slower than we need (cost above BCRYPT_ROUNDS).
+    Old PHP hashes (cost 10) are left exactly as they are."""
+    match = re.match(r"^\$2[abxy]\$(\d{2})\$", password_hash or "")
+    return bool(match) and int(match.group(1)) > BCRYPT_ROUNDS
 
 
 def verify_password(plain_password: str, password_hash: str) -> bool:

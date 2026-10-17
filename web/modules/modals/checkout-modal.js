@@ -1,7 +1,7 @@
 // checkout pop-up: takes the payment, saves the sale and shows the receipt
 
 import { state, getSession, persist } from "../state.js";
-import { money, amount2, toast } from "../utils.js";
+import { money, amount2, toast, makeClientRef } from "../utils.js";
 import { updateStats, consumeExpiryBatches } from "../stock-logic.js";
 import { enqueueSale, watchSale } from "../sale-queue.js";
 import { printReceipt } from "../print.js";
@@ -45,18 +45,11 @@ export function openCheckoutModal() {
       </div>
       <form class="checkout-form-shell" id="checkoutForm" novalidate>
         <div class="modal-body checkout-content" id="checkoutContent">
-          ${renderReceipt({
-            orderId: null,
-            date,
-            cashier,
-            items: state.cart,
-            subtotal: total,
-            total,
-            received: 0,
-            change: 0,
-            method: "Cash"
-          }, true, true)}
-          <div class="form-grid checkout-payment-fields">
+          <div class="form-grid checkout-payment-fields" id="checkoutFields">
+            <div class="form-group full checkout-total-field">
+              <label>Total</label>
+              <div class="checkout-total-display" id="checkoutTotal">${money(total)}</div>
+            </div>
             <div class="form-group full checkout-payment-method">
               <label for="payMethod">Payment Method</label>
               <select id="payMethod" name="payMethod" class="styled-select-native" aria-label="Payment Method">
@@ -88,6 +81,17 @@ export function openCheckoutModal() {
               <textarea id="saleNotes" name="notes" rows="3" maxlength="2000" placeholder="Add a note for this sale"></textarea>
             </div>
           </div>
+          ${renderReceipt({
+            orderId: null,
+            date,
+            cashier,
+            items: state.cart,
+            subtotal: total,
+            total,
+            received: 0,
+            change: 0,
+            method: "Cash"
+          }, true, true)}
         </div>
         <div class="modal-foot checkout-actions">
           <button class="ghost-btn" id="cancelCheckout" type="button">Cancel</button>
@@ -256,11 +260,16 @@ function renderSuccessReceipt(overlay, receipt) {
       <p class="modal-caption" id="checkoutCaption">Saving to the server in the background — you can start the next sale.</p>
     </div>
     <button class="modal-close checkout-close" id="closeCheckout" type="button" aria-label="Close receipt">×</button>`;
-  overlay.querySelector("#checkoutContent").innerHTML = `
-    <div class="checkout-success-banner" role="status">Payment recorded.</div>
-    <div class="checkout-receipt-box">
-      ${renderReceipt(receipt, false)}
-    </div>`;
+  // Fade the payment fields away, then show the finished receipt where they were.
+  const fields = overlay.querySelector("#checkoutFields");
+  fields?.classList.add("collapsing");
+  setTimeout(() => {
+    overlay.querySelector("#checkoutContent").innerHTML = `
+      <div class="checkout-success-banner" role="status">Payment recorded.</div>
+      <div class="checkout-receipt-box">
+        ${renderReceipt(receipt, false)}
+      </div>`;
+  }, 450);
   overlay.querySelector(".checkout-actions").innerHTML = `
     <button class="ghost-btn" id="printReceiptBtn" type="button">Print Receipt</button>
     <button class="primary-btn" id="doneCheckoutBtn" type="button">Done</button>`;
@@ -289,8 +298,7 @@ export function finalizeSale({ method, online, received, ref, notes, cashier, da
   const total = roundMoney(saleItems.reduce((sum, item) => sum + roundMoney(Number(item.price) * item.qty), 0));
 
   // A short reference stored with the sale lets the queue make sure it is never saved twice.
-  const token = `web-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-  const serverNotes = `${notes ? `${notes} ` : ""}[${token}]`;
+  const token = makeClientRef();
 
   // Expected order number (replaced by the real one as soon as the server confirms)
   const lastOrderId = state.transactions
@@ -337,7 +345,8 @@ export function finalizeSale({ method, online, received, ref, notes, cashier, da
       items: saleItems.map(item => ({ product_id: item.id, quantity: item.qty })),
       method,
       reference: online ? ref : "",
-      notes: serverNotes,
+      notes: notes || "",
+      client_ref: token,
       amount_received: received
     }
   });

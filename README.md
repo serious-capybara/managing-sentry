@@ -12,6 +12,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [Project Team](#project-team)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
@@ -41,6 +42,16 @@ The name reflects the system's philosophy: **Managing** for organizing business 
 | **Solution** | Hybrid POS + inventory system with offline support and real-time sync |
 | **Target Users** | Store owners, managers, and staff |
 | **Key Benefit** | Faster checkouts, accurate stock tracking, and data-driven decisions |
+
+---
+
+## Project Team
+
+- **Aldave, Resty S.**
+- **Bagahansol, Shan Lester S.**
+- **Llaguno, Clary Mae F.**
+- **Rama, John Wilfred Y.**
+
 
 ---
 
