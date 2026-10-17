@@ -2642,13 +2642,16 @@ table:has(.table-empty) tbody tr {
 
 /* Net / Gross Profit card: the drop-down arrow sits at the right, centred in the card */
 .profit-stat-card { position: relative; }
-.profit-stat-card .stat-card-main { padding-right: 26px; }
+.profit-stat-card .stat-card-main { padding-right: 40px; }
 .profit-stat-card .profit-type-control .styled-select,
 .profit-stat-card .profit-type-control .styled-select-trigger { position: static; }
-.profit-stat-card .profit-type-control .styled-select-trigger { padding-right: 6px; }
+.profit-stat-card .profit-type-control .styled-select-trigger {
+  /* same height as a normal label, so the money sits as close as in the other cards */
+  min-height: 0; height: auto; padding: 0 6px 0 0; line-height: 1.25;
+}
 .dashboard-only-stats .profit-stat-card .profit-type-control .styled-select-trigger::after,
 .profit-stat-card .profit-type-control .styled-select-trigger::after {
-  position: absolute; right: 16px; top: 50%; width: 9px; height: 9px;
+  position: absolute; right: 26px; top: 50%; width: 9px; height: 9px;
   transform: translateY(-70%) rotate(45deg);
 }
 .dashboard-only-stats .profit-stat-card .profit-type-control .styled-select.is-open .styled-select-trigger::after,
@@ -2658,4 +2661,14 @@ table:has(.table-empty) tbody tr {
 @media (max-width: 767px) {
   .dashboard-only-stats .profit-stat-card .profit-type-control .styled-select-trigger::after { right: 10px; }
   .profit-stat-card .stat-card-main { padding-right: 20px; }
+}
+
+/* Bigger tap area for the arrow: invisible, no box, covers the whole right side of the card */
+.profit-stat-card .profit-type-control .styled-select-trigger::before {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 84px; z-index: 1;
+}
+@media (max-width: 767px) {
+  .dashboard-only-stats .profit-stat-card .profit-type-control .styled-select-trigger::after { right: 18px; }
+  .profit-stat-card .stat-card-main { padding-right: 28px; }
+  .profit-stat-card .profit-type-control .styled-select-trigger::before { width: 56px; }
 }
