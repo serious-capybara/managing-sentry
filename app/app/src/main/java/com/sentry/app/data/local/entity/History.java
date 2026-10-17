@@ -30,6 +30,20 @@ public class History {
     @SerializedName("notes")
     private String notes;
 
+    @SerializedName("items_json")
+    private String itemsJson;
+
+    @SerializedName("amount_tendered")
+    @androidx.room.ColumnInfo(defaultValue = "0")
+    private double amountTendered;
+
+    @SerializedName("change_given")
+    @androidx.room.ColumnInfo(defaultValue = "0")
+    private double changeGiven;
+
+    @SerializedName("cashier")
+    private String cashier;
+
     public String getTimestamp() {
         return timestamp;
     }
@@ -43,9 +57,16 @@ public class History {
 
     public long getParsedTimestampMillis() {
         if (timestamp == null || timestamp.trim().isEmpty()) return 0L;
-        String clean = timestamp.split("\\.")[0].replace("T", " ").replace("Z", "").trim();
+        String clean = timestamp.replace("T", " ").replace("Z", "").trim();
+        if (clean.contains(".")) {
+            clean = clean.split("\\.")[0].trim();
+        }
         
-        String[] formats = {"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm"};
+        String[] formats = {
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm",
+            "yyyy-MM-dd"
+        };
         for (String format : formats) {
             try {
                 SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.US);
@@ -53,6 +74,15 @@ public class History {
                 if (date != null) return date.getTime();
             } catch (Exception ignored) {}
         }
+        
+        try {
+            if (clean.length() >= 10) {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+                Date date = sdf.parse(clean.substring(0, 10));
+                if (date != null) return date.getTime();
+            }
+        } catch (Exception ignored) {}
+
         return 0L;
     }
 
@@ -69,4 +99,13 @@ public class History {
     public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
     public void setStatus(String status) { this.status = status; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public String getItemsJson() { return itemsJson; }
+    public void setItemsJson(String itemsJson) { this.itemsJson = itemsJson; }
+    public double getAmountTendered() { return amountTendered; }
+    public void setAmountTendered(double amountTendered) { this.amountTendered = amountTendered; }
+    public double getChangeGiven() { return changeGiven; }
+    public void setChangeGiven(double changeGiven) { this.changeGiven = changeGiven; }
+    public String getCashier() { return cashier; }
+    public void setCashier(String cashier) { this.cashier = cashier; }
 }

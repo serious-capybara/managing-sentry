@@ -7,7 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from core import config
 from core.docs_auth import add_protected_docs
 from database.connection import lifespan
-from routers import auth, test, products, history, sales, capital, reset, maintenance, sync
+from routers import auth, health, products, history, sales, capital, reset, maintenance, sync
 
 app = FastAPI(title="Inventory & Sales API", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -42,7 +42,7 @@ async def validation_error(request, exc):
 
 
 app.include_router(auth.router)
-app.include_router(test.router)
+app.include_router(health.router)
 app.include_router(products.router)
 app.include_router(history.router)
 app.include_router(sales.router)

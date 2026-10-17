@@ -9,3 +9,7 @@ class HistoryResponse(BaseModel):
     total_amount: float
     order_status: str
     notes: str = ""
+    items_json: str = "[]"
+    amount_tendered: float = 0.0
+    change_given: float = 0.0
+    cashier: str = ""

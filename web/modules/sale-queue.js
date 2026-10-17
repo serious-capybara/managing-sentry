@@ -55,6 +55,14 @@ export function enqueueSale(job) {
   kickSaleQueue();
 }
 
+/**
+ * Add any other change (new / edited / removed product, stock in / out) to the same queue.
+ * job = { token, endpoint, body, label, tempProductId? }
+ */
+export function enqueueTask(job) {
+  enqueueSale({ ...job, kind: "task" });
+}
+
 // start sending (also after login or when back online)
 export function kickSaleQueue() {
   clearTimeout(retryTimer);
@@ -70,10 +78,8 @@ async function alreadySaved(token) {
   // The connection may have dropped AFTER the server saved the sale. Look for our reference
   // before sending again, so a sale is never recorded twice.
   try {
-    const history = await apiRequest("get_history.php");
-    const match = (Array.isArray(history) ? history : []).find(entry =>
-      String(entry.notes || "").includes(`[${token}]`)
-    );
+    const history = await apiRequest("get_history.php?limit=200");
+    const match = (Array.isArray(history) ? history : []).find(entry => entry.client_ref === token);
     return match ? Number(match.order_id ?? match.entry_id) : null;
   } catch {
     return null;
@@ -89,13 +95,18 @@ async function run() {
       if (!Number.isInteger(orderId)) {
         job.maybeSent = true;       // from here on, a failure may have reached the server
         writeQueue();
-        const result = await apiRequest("make_sale.php", {
+        const result = await apiRequest(job.endpoint || "make_sale.php", {
           method: "POST",
           body: JSON.stringify(job.body),
           onlyDetectedBase: true
         });
-        orderId = Number(result.order_id);
-        if (!Number.isInteger(orderId)) throw new Error("The server did not return a valid order ID.");
+        if (job.kind === "task") {
+          orderId = Number(result.product_id) || 1;
+          if (job.tempProductId && Number(result.product_id)) remapProductId(job.tempProductId, Number(result.product_id));
+        } else {
+          orderId = Number(result.order_id);
+          if (!Number.isInteger(orderId)) throw new Error("The server did not return a valid order ID.");
+        }
       }
       failures = 0;
       queue.shift();
@@ -125,7 +136,25 @@ async function run() {
   afterSaveHook();
 }
 
+/** A product added while offline got a temporary ID: swap in the real one everywhere. */
+function remapProductId(tempId, realId) {
+  const product = state.products.find(p => p.id === tempId);
+  if (product) product.id = realId;
+  queue.forEach(waiting => {
+    if (waiting.body?.product_id === tempId) waiting.body.product_id = realId;
+    if (waiting.body?.id === tempId) waiting.body.id = realId;
+    (waiting.body?.items || []).forEach(item => { if (item.product_id === tempId) item.product_id = realId; });
+  });
+  writeQueue();
+}
+
 function markSaved(job, orderId) {
+  if (job.kind === "task") {
+    persist();
+    watchers.get(job.token)?.saved(orderId);
+    watchers.delete(job.token);
+    return;
+  }
   const tx = state.transactions.find(t => t.saleToken === job.token);
   if (tx) {
     // Swap the temporary number for the real one, but never leave two rows with the same ID.
@@ -140,15 +169,17 @@ function markSaved(job, orderId) {
 }
 
 async function markRejected(job, error) {
-  // The server refused this sale (for example, not enough stock): undo it on screen.
+  // The server refused this change (for example, not enough stock): undo it on screen.
   state.transactions = state.transactions.filter(t => t.saleToken !== job.token);
   persist();
   try {
-    await loadDashboardData();      // bring stock and money back to what the server really has
+    await loadDashboardData({ force: true });      // bring stock and money back to what the server really has
   } catch { /* ignore: the next refresh will fix it */ }
   updateStats();
   const message = error?.message || "unknown error";
-  toast(`A sale of ${money(job.total)} could not be saved: ${message}. It was cancelled.`);
+  toast(job.kind === "task"
+    ? `${job.label || "A change"} could not be saved: ${message}. It was undone.`
+    : `A sale of ${money(job.total)} could not be saved: ${message}. It was cancelled.`);
   watchers.get(job.token)?.failed(message);
   watchers.delete(job.token);
   afterSaveHook();

@@ -14,11 +14,12 @@ class SaleItem(BaseModel):
 class SaleCreate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    user_id: int
+    user_id: int = 0
     total_amount: float = Field(ge=0)
     amount_tendered: float = Field(ge=0)
     change_given: float = Field(ge=0)
     notes: str = ""
+    client_ref: str | None = None
     items: list[SaleItem] = Field(min_length=1)
 
 class SaleResponse(BaseModel):

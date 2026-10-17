@@ -13,9 +13,14 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 if not all([DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD]):
-    raise RuntimeError("Database configuration is incomplete. Please check your env file.")
+    raise RuntimeError("Database configuration is incomplete. Please check your environment variables.")
 
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+
+async def init_connection(conn: asyncpg.Connection):
+    for pg_type in ("date", "time", "timetz", "timestamp", "timestamptz", "interval"):
+        await conn.set_type_codec(pg_type, encoder=str, decoder=str, schema="pg_catalog", format="text")
 
 
 @asynccontextmanager
@@ -26,7 +31,8 @@ async def lifespan(app: FastAPI):
             min_size=1,
             max_size=10,
             statement_cache_size=0,
-            ssl="require" if "pooler" in DB_HOST.lower() or "supabase" in DB_HOST.lower() else None
+            init=init_connection,
+            ssl="require" if "pooler" in (DB_HOST or "").lower() or "supabase" in (DB_HOST or "").lower() else None
         )
     except Exception as e:
         raise RuntimeError(f"Connection failed: {e}")

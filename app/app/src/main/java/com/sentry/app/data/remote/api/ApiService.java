@@ -27,6 +27,9 @@ public interface ApiService {
     @POST("api/make_sale.php")
     Call<ApiResponse> makeSale(@Body SaleRequest request);
 
+    @GET("api/check_sale.php")
+    Call<com.sentry.app.data.remote.dto.SaleCheckResponse> checkSale(@retrofit2.http.Query("ref") String ref);
+
     @GET("api/get_history.php")
     Call<List<History>> getHistory();
 }

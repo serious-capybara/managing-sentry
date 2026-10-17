@@ -18,6 +18,7 @@
     <string name="header_action">Action</string>
     <string name="header_total">Total</string>
     <string name="header_status">Stat</string>
+    <string name="header_expiry">Expiry</string>
 
     <!-- Labels & Buttons -->
     <string name="label_total">Total :</string>

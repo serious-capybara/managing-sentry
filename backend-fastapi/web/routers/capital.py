@@ -43,23 +43,28 @@ async def set_capital(data: CapitalUpdate, request: Request):
 
     try:
         async with request.app.state.pool.acquire() as conn:
-            config_id = await conn.fetchval(
-                "SELECT config_id FROM capital_configs ORDER BY config_id DESC LIMIT 1"
+            row = await conn.fetchrow(
+                "SELECT starting_capital, current_balance FROM capital_configs ORDER BY config_id DESC LIMIT 1"
             )
-            if config_id:
-                await conn.execute(
-                    "UPDATE capital_configs SET current_balance = $1, starting_capital = $1, "
-                    "last_updated_at = NOW() WHERE config_id = $2",
-                    data.capital, config_id
-                )
-            else:
+            if row:
+                old_starting = float(row["starting_capital"] or 0)
+                old_current = float(row["current_balance"] or 0)
+                diff = data.capital - old_starting
+                new_balance = round(old_current + diff, 2)
                 await conn.execute(
                     "INSERT INTO capital_configs (starting_capital, current_balance, last_updated_at) "
-                    "VALUES ($1, $1, NOW())",
-                    data.capital
+                    "VALUES ($1, $2, NOW())",
+                    data.capital, new_balance
+                )
+            else:
+                new_balance = round(data.capital, 2)
+                await conn.execute(
+                    "INSERT INTO capital_configs (starting_capital, current_balance, last_updated_at) "
+                    "VALUES ($1, $2, NOW())",
+                    data.capital, new_balance
                 )
     except asyncpg.PostgresError:
         raise HTTPException(status_code=500, detail="Could not save capital data")
 
-    return {"success": True, "message": "Capital saved", "capital": data.capital,
-            "starting_capital": data.capital, "current_balance": data.capital}
+    return {"success": True, "message": "Capital saved", "capital": new_balance,
+            "starting_capital": data.capital, "current_balance": new_balance}

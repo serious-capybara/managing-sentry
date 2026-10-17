@@ -2,8 +2,7 @@
 
 import { state } from "../state.js";
 import { escapeHtml, money, toast } from "../utils.js";
-import { apiRequest } from "../api.js";
-import { loadDashboardData } from "../data-loader.js";
+import { removeProductInBackground } from "../optimistic.js";
 import { updateStats } from "../stock-logic.js";
 import { askYesNo } from "./dialogs.js";
 import { renderPage } from "../router.js";
@@ -46,18 +45,9 @@ export async function deleteProductById(productId) {
     noText: "Cancel"
   });
   if (!confirmed) return;
-  try {
-    await apiRequest("products.php?action=delete", {
-      method: "POST",
-      body: JSON.stringify({ product_id: product.id })
-    });
-    await loadDashboardData();
-    updateStats();
-    renderPage("products");
-    toast(`${product.name} removed.`);
-  } catch (error) {
-    toast(`Could not remove product: ${error.message}`);
-  }
+  removeProductInBackground(product.id);
+  renderPage("products");
+  toast(`${product.name} removed.`);
 }
 
 export function openRemoveProductModal() {

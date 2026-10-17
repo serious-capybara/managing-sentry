@@ -55,4 +55,51 @@ public class Product {
         if (stockQuantity <= lowStockAlertLevel) return "Low Stock";
         return "In Stock";
     }
+
+    /** Whole calendar days until the expiration date (negative when already expired), or null if none is set. */
+    public Integer getDaysLeft() {
+        if (expirationDate == null || expirationDate.trim().isEmpty()) return null;
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
+            java.util.Date expiryDate = sdf.parse(expirationDate.trim().substring(0, 10));
+            if (expiryDate == null) return null;
+
+            java.util.Calendar todayCal = java.util.Calendar.getInstance();
+            todayCal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            todayCal.set(java.util.Calendar.MINUTE, 0);
+            todayCal.set(java.util.Calendar.SECOND, 0);
+            todayCal.set(java.util.Calendar.MILLISECOND, 0);
+
+            java.util.Calendar expiryCal = java.util.Calendar.getInstance();
+            expiryCal.setTime(expiryDate);
+            expiryCal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            expiryCal.set(java.util.Calendar.MINUTE, 0);
+            expiryCal.set(java.util.Calendar.SECOND, 0);
+            expiryCal.set(java.util.Calendar.MILLISECOND, 0);
+
+            long diffMillis = expiryCal.getTimeInMillis() - todayCal.getTimeInMillis();
+            return (int) Math.round((double) diffMillis / (1000.0 * 60 * 60 * 24));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public boolean isExpired() {
+        Integer days = getDaysLeft();
+        return days != null && days < 0;
+    }
+
+    /** Display text for expiry: "Expired", "Expires Today", "1 day", "3 days" or "—" */
+    public String getExpiryText() {
+        Integer days = getDaysLeft();
+        if (days == null) return "—";
+        if (days < 0) return "Expired";
+        if (days == 0) return "Expires Today";
+        return days + (Math.abs(days) == 1 ? " day" : " days");
+    }
+
+    public boolean isExpiredOrDueSoon() {
+        Integer days = getDaysLeft();
+        return days != null && days <= 1;
+    }
 }

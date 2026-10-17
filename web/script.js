@@ -3,6 +3,7 @@
 import { state, persist, isSessionValid, getActivePage, clearSession } from "./modules/state.js";
 import { loadDashboardData } from "./modules/data-loader.js";
 import { startLiveSync } from "./modules/live-sync.js";
+import { showSkeleton } from "./modules/skeleton.js";
 import { kickSaleQueue } from "./modules/sale-queue.js";
 import {
   ensureStockBaseline,
@@ -22,6 +23,7 @@ bindSidebarEvents();
 async function initSession() {
   if (isSessionValid()) {
     setAuthView(true);
+    showSkeleton();
 
     try {
       await loadDashboardData();

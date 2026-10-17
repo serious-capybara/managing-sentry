@@ -1,7 +1,6 @@
 // add / edit product pop-up
 
-import { apiRequest } from "../api.js";
-import { loadDashboardData } from "../data-loader.js";
+import { saveNewProduct, saveEditedProduct } from "../optimistic.js";
 import { updateStats } from "../stock-logic.js";
 import { toast, escapeHtml } from "../utils.js";
 import { renderPage } from "../router.js";
@@ -150,6 +149,10 @@ export function openAddProductModal(editingProduct = null) {
               </div>
             </div>
             <div class="form-group">
+              <label for="modalProdUnit">Unit <small class="form-hint">(optional)</small></label>
+              <input id="modalProdUnit" name="unit" maxlength="20" placeholder="e.g. 1L, 500g, 12 pcs" autocomplete="off">
+            </div>
+            <div class="form-group">
               <label for="modalProdCategory">Category</label>
               <div class="category-input-row">
                 <input id="modalProdCategory" name="category" required placeholder="e.g. Beverages" autocomplete="off">
@@ -233,7 +236,10 @@ export function openAddProductModal(editingProduct = null) {
     if (confirmBtn) confirmBtn.textContent = "Save Changes";
 
     const nameInput = document.getElementById("modalProdName");
-    if (nameInput) nameInput.value = product.name || "";
+    const unitMatch = String(product.name || "").match(/^(.*?)\s*\(([^()]*)\)\s*$/);
+    if (nameInput) nameInput.value = unitMatch ? unitMatch[1] : (product.name || "");
+    const unitInput = document.getElementById("modalProdUnit");
+    if (unitInput) unitInput.value = unitMatch ? unitMatch[2] : "";
 
     const catInput = document.getElementById("modalProdCategory");
     if (catInput) catInput.value = product.category || "";
@@ -245,7 +251,12 @@ export function openAddProductModal(editingProduct = null) {
     if (priceInput) priceInput.value = product.price !== undefined ? product.price : (product.retail_price || 0);
 
     const stockInput = document.getElementById("modalProdStock");
-    if (stockInput) stockInput.value = product.stock !== undefined ? product.stock : (product.stock_quantity || 0);
+    if (stockInput) {
+      stockInput.value = product.stock !== undefined ? product.stock : (product.stock_quantity || 0);
+      stockInput.disabled = true;
+      stockInput.required = false;
+      stockInput.title = "Change the quantity from the Stocks section";
+    }
 
     const alertInput = document.getElementById("modalAlertLevel");
     if (alertInput) alertInput.value = product.lowStockAlertLevel || product.low_stock_alert_level || 20;
@@ -354,44 +365,29 @@ export function openAddProductModal(editingProduct = null) {
     });
   }
 
-  document.getElementById("addProductModalForm").addEventListener("submit", async e => {
+  document.getElementById("addProductModalForm").addEventListener("submit", e => {
     e.preventDefault();
     const f = new FormData(e.target);
-    const saveBtn = document.getElementById("confirmAddProduct");
-    saveBtn.disabled = true;
-
-    const price = Number(f.get("price"));
-    const cost = Number(f.get("cost"));
-    const stock = Number(f.get("stock"));
-    const alertLevel = Number(f.get("low_stock_alert_level")) || 20;
     const editingId = f.get("product_id") || currentEditingProductId;
+    const baseName = String(f.get("name") || "").trim();
+    const unit = String(f.get("unit") || "").trim();
+    const fields = {
+      name: unit ? `${baseName} (${unit})` : baseName,
+      category: String(f.get("category") || "").trim(),
+      price: Number(f.get("price")),
+      cost: Number(f.get("cost")),
+      stock: Number(f.get("stock")) || 0,
+      alertLevel: Number(f.get("low_stock_alert_level")) || 20,
+      expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : ""
+    };
+    const userNote = String(document.getElementById("modalProdDesc")?.value || "").trim();
 
-    const endpoint = editingId ? "products.php?action=edit" : "products.php?action=add";
+    if (editingId) saveEditedProduct(Number(editingId), fields, userNote);
+    else saveNewProduct(fields, userNote);
 
-    try {
-      await apiRequest(endpoint, {
-        method: "POST",
-        body: JSON.stringify({
-          product_id: editingId ? Number(editingId) : undefined,
-          id: editingId ? Number(editingId) : undefined,
-          name: f.get("name"),
-          category: f.get("category"),
-          price,
-          cost,
-          stock,
-          low_stock_alert_level: alertLevel,
-          expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : ""
-        })
-      });
-      await loadDashboardData();
-      updateStats();
-      close();
-      toast(editingId ? "Product updated successfully." : "Product added successfully to database.");
-      renderPage("products");
-    } catch (error) {
-      toast(`Could not ${editingId ? "update" : "add"} product: ${error.message}`);
-      saveBtn.disabled = false;
-    }
+    close();
+    toast(editingId ? "Product updated." : "Product added.");
+    renderPage("products");
   });
 
   setTimeout(() => document.getElementById("modalProdName")?.focus(), 50);

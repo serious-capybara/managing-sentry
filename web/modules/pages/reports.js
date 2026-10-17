@@ -147,7 +147,7 @@ export function computeSalesReport(range = activeReportRange) {
   const filtered = getFilteredTransactions(range);
   const sales = filtered.filter(isSaleType);
   const typeOf = t => String(t.type || "").toUpperCase().replace(/_/g, " ");
-  const stockIn = filtered.filter(t => typeOf(t) === "STOCK IN");
+  const stockIn = filtered.filter(t => typeOf(t) === "STOCK IN" || typeOf(t) === "NEW PRODUCT");
   const stockOut = filtered.filter(t => typeOf(t) === "STOCK OUT");
   const lines = saleLines(sales);
 

@@ -248,4 +248,11 @@ public class MainActivity extends AppCompatActivity {
 
         WorkManager.getInstance(this).enqueue(syncRequest);
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // send any sale that is still waiting to reach the server
+        new com.sentry.app.data.repository.DataRepository(this).flushPendingSales();
+    }
 }

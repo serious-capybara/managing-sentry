@@ -127,3 +127,11 @@ export function formatAsiaManila(raw, includeSeconds = true) {
 export function formatDateTime24(ts) {
   return formatAsiaManila(ts, true);
 }
+
+
+/** A random 12-character code (0-9 and A-Z) that names one action, so it can never be saved twice. */
+export function makeClientRef() {
+  const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return Array.from(bytes, b => letters[b % 36]).join("");
+}

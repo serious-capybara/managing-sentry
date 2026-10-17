@@ -1,6 +1,7 @@
 // History page: table, filters and the printable report
 
 import { state }             from "../state.js";
+import { historyTotalCount } from "../data-loader.js";
 import { money, escapeHtml, formatAsiaManila } from "../utils.js";
 import { proDocument, proHeading, proSummary } from "../print-report.js";
 
@@ -27,7 +28,7 @@ export function renderTransactions() {
     <div class="wire-table-wrap transactions-table-card">
       <div class="transactions-table-scroll">
         <table class="transactions-inventory-table">
-          <thead><tr><th>ID</th><th>Time Stamp</th><th>Order</th><th>Quantity</th><th>Amount</th><th>Status</th><th>Notes</th></tr></thead>
+          <thead><tr><th>ID</th><th>Time Stamp</th><th>Order</th><th>Quantity</th><th>Amount</th><th>Status</th><th>Receipt / Notes</th></tr></thead>
           <tbody id="transactionRows">${transactionRows()}</tbody>
         </table>
       </div>
@@ -73,7 +74,10 @@ const chronoCmp = (a, b) =>
 // running number across all history (oldest = 1)
 export function historyNumbers(list = state.transactions) {
   const map = new Map();
-  [...list].sort(chronoCmp).forEach((t, i) => map.set(t, i + 1));
+  // Only the newest rows may be loaded so far: number them as part of the full history.
+  const saved = list.filter(t => !t.pending).length;
+  const skipped = Math.max(0, historyTotalCount() - saved);
+  [...list].sort(chronoCmp).forEach((t, i) => map.set(t, skipped + i + 1));
   return map;
 }
 
@@ -124,6 +128,14 @@ export function format24hDate(raw) {
   return formatAsiaManila(raw, true);
 }
 
+function detailCell(t) {
+  const index = state.transactions.indexOf(t);
+  if (t.type === "SALE") return `<span class="text-link" data-receipt-idx="${index}" role="button" tabindex="0">Receipt</span>`;
+  const text = String(t.notes || "").split("\n").map(l => l.trim()).filter(Boolean).join(" · ");
+  if (!text) return `<span class="note-text muted">N/A</span>`;
+  return `<span class="note-text text-link" data-notes-idx="${index}" title="${escapeHtml(text)}">${escapeHtml(text)}</span>`;
+}
+
 export function transactionRows(list = state.transactions, mode = "newest") {
   const numbers = historyNumbers(state.transactions);
   const showRunning = mode === "newest" || mode === "oldest";
@@ -158,8 +170,8 @@ export function transactionRows(list = state.transactions, mode = "newest") {
     <td class="${isMultiItem ? "order-hover-cell" : ""}" data-order-items="${encodedItems}">${orderDisplayText}</td>
     <td>${qtyText}</td>
     <td>${money(t.amount)}</td>
-    <td><span class="badge ${t.type === "SALE" ? "green" : "orange"}">${escapeHtml(t.type)}</span></td>
-    <td><button class="notes-btn ${hasNotes ? "has" : "none"}" data-notes-idx="${state.transactions.indexOf(t)}" ${hasNotes ? "" : "disabled"}>${hasNotes ? "Notes" : "Unavailable"}</button></td>
+    <td><span class="badge ${t.type === "SALE" ? "green" : (t.type === "NEW PRODUCT" ? "green" : (t.type === "PRODUCT EDITED" ? "blue" : (t.type === "PRODUCT REMOVED" ? "red" : "orange")))}">${escapeHtml(t.type)}</span></td>
+    <td>${detailCell(t)}</td>
   </tr>`;
   }).join("");
 }

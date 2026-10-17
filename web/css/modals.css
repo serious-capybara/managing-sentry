@@ -873,3 +873,13 @@
   width: 0;
   height: 0;
 }
+
+
+/* Checkout: total on top, receipt under the notes; the payment fields fade away after confirming */
+.checkout-total-display {
+  height: 48px; display: flex; align-items: center; padding: 0 14px;
+  border-radius: 12px; background: #F1F5F9; font-size: 20px; font-weight: 800; color: var(--text-primary);
+}
+.checkout-payment-fields { max-height: 1200px; transition: max-height 0.5s ease, opacity 0.4s ease, margin 0.5s ease; }
+.checkout-payment-fields.collapsing { max-height: 0; opacity: 0; margin: 0; overflow: hidden; pointer-events: none; }
+.checkout-content .checkout-receipt { margin-top: 16px; }
