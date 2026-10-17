@@ -10,7 +10,7 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     user_id: int
-    full_name: str
+    full_name: str | None = ""
     username: str
     role: str
     token: str
