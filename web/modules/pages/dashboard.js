@@ -99,7 +99,13 @@ export function expiringRows(list) {
       <td><span class="badge ${isExpired ? "red" : "orange"}">${isExpired ? "EXPIRED" : days === 0 ? "Expires Today" : `Expires in ${days}d`}</span></td>
       <td>
         ${isExpired
-          ? `<button class="primary-btn sm danger-btn" type="button" data-confirm-expired-removal="${p.id}" style="padding: 4px 10px; font-size: 11px;">Confirm Removal</button>`
+          ? `<button class="confirm-removal-btn" type="button" data-confirm-expired-removal="${p.id}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Confirm Disposal
+             </button>`
           : `<span style="color:var(--text-secondary); font-size:12px;">Active Batch</span>`}
       </td>
     </tr>`;
@@ -116,6 +122,7 @@ export function expiringPanel() {
     if (parts.length < 3) return false;
     const expDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
     const days = Math.round((expDate - today) / 86400000);
+    if (days < 0 && Number(p.stock || 0) <= 0) return false;
     return days <= 7;
   });
   return `
