@@ -84,10 +84,17 @@ public class Product {
         }
     }
 
-    /** The exact number of days left, for example "12 days", "1 day", "0 days" or "-3 days". */
+    public boolean isExpired() {
+        Integer days = getDaysLeft();
+        return days != null && days < 0;
+    }
+
+    /** Display text for expiry: "Expired", "Expires Today", "1 day", "3 days" or "—" */
     public String getExpiryText() {
         Integer days = getDaysLeft();
         if (days == null) return "—";
+        if (days < 0) return "Expired";
+        if (days == 0) return "Expires Today";
         return days + (Math.abs(days) == 1 ? " day" : " days");
     }
 

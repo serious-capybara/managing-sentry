@@ -14,9 +14,24 @@ export function cartCount() {
   return state.cart.reduce((s, i) => s + i.qty, 0);
 }
 
+export function isProductExpired(p) {
+  if (!p || !p.expiry) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const parts = String(p.expiry).trim().substring(0, 10).split("-");
+  if (parts.length < 3) return false;
+  const expDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  return !Number.isNaN(expDate.getTime()) && expDate < today;
+}
+
 export function addToCart(id) {
   const p = state.products.find(x => x.id === id);
   if (!p) return;
+
+  if (isProductExpired(p)) {
+    return toast(`Cannot sell expired product (${p.name}).`);
+  }
+
   const inCart    = state.cart.find(c => c.id === id)?.qty || 0;
   const available = p.stock - inCart;
   if (available <= 0) return toast("This product is out of stock.");
@@ -76,7 +91,7 @@ export async function clearSellCart() {
 // sell tab markup
 
 export function renderSellTab() {
-  const availableCount = state.products.filter(p => p.stock > 0).length;
+  const availableCount = state.products.filter(p => p.stock > 0 && !isProductExpired(p)).length;
   return `<div class="sell-workspace">
     <section class="panel sell-panel">
       <div class="sell-panel-header">
@@ -167,18 +182,24 @@ export function sellProductRows(products = state.products.filter(p => p.stock > 
     return `<tr><td colspan="4" class="table-empty">No products found.</td></tr>`;
   }
   return products.map(p => {
+    const expired   = isProductExpired(p);
     const inCart    = state.cart.find(i => i.id === p.id)?.qty || 0;
     const available = Math.max(0, p.stock - inCart);
+    const canAdd    = available > 0 && !expired;
+
     return `<tr>
       <td title="${escapeHtml(p.name)}">
         <div class="sell-prod-cell">
           <span class="sell-prod-name">${escapeHtml(p.name)}</span>
           ${p.category ? `<span class="sell-prod-cat">${escapeHtml(p.category)}</span>` : ""}
+          ${expired ? `<span class="badge red" style="font-size:10px; margin-top:2px;">Expired</span>` : ""}
         </div>
       </td>
       <td><span class="sell-prod-srp">${money(p.price)}</span></td>
       <td style="text-align:center">
-        ${available <= 5 && available > 0
+        ${expired
+          ? `<span class="sell-stock-tag out">Expired</span>`
+          : available <= 5 && available > 0
           ? `<span class="sell-stock-tag low" title="Low stock: ${available} left">${available} left</span>`
           : available > 5
           ? `<span class="sell-stock-tag normal">${available}</span>`
@@ -186,8 +207,8 @@ export function sellProductRows(products = state.products.filter(p => p.stock > 
         }
       </td>
       <td style="text-align:right">
-        <button class="sell-add-btn" type="button" data-add="${p.id}" ${available ? "" : "disabled"}>
-          ${available ? `<img class="btn-sm-icon" src="src/icon/white/add.svg" alt=""> Add` : "Out"}
+        <button class="sell-add-btn" type="button" data-add="${p.id}" ${canAdd ? "" : "disabled"}>
+          ${expired ? "Expired" : canAdd ? `<img class="btn-sm-icon" src="src/icon/white/add.svg" alt=""> Add` : "Out"}
         </button>
       </td>
     </tr>`;
@@ -233,8 +254,6 @@ export function sellCartRows() {
 let _renderActiveTab;
 export function registerRenderActiveTab(fn) { _renderActiveTab = fn; }
 
-// Redraw the Sell tab on the next frame (and only once, even after several quick taps),
-// so the tap itself is answered right away.
 let _sellRedrawQueued = false;
 function renderActiveTab() {
   if (_sellRedrawQueued) return;

@@ -3,7 +3,7 @@
 import { state } from "../state.js";
 import { escapeHtml, money, toast } from "../utils.js";
 import { moveStockInBackground } from "../optimistic.js";
-import { updateStats } from "../stock-logic.js";
+import { updateStats, activeExpiryBatches } from "../stock-logic.js";
 import { renderPage, currentPage } from "../router.js";
 import { bindStyledSelects } from "../styled-select.js";
 import { renderProductPickerItem } from "./remove-product-modal.js";
@@ -197,13 +197,19 @@ export function openStockOutModal(targetProductId = null) {
               </div>
               <input type="hidden" id="stockOutProduct" name="product" value="${defaultId}" required>
             </div>
-            <div class="form-group full">
+            <div class="form-group">
               <label for="stockOutQty">Quantity to Remove</label>
               <input id="stockOutQty" name="qty" type="number" min="1" value="1" required placeholder="1">
             </div>
+            <div class="form-group">
+              <label for="stockOutBatchSelect">Deduct From Batch / Expiry Date</label>
+              <select id="stockOutBatchSelect" name="batchExpiry" class="compact-select styled-select-native" aria-label="Select batch or expiry date">
+                <option value="">Oldest Batch First (FIFO)</option>
+              </select>
+            </div>
             <div class="form-group full">
               <label for="stockOutNotes">Notes <small class="form-hint">(Max 50 words)</small></label>
-              <textarea id="stockOutNotes" name="notes" placeholder="Optional stock out reason or details (Max 50 words)" rows="4" maxlength="300" style="resize:none"></textarea>
+              <textarea id="stockOutNotes" name="notes" placeholder="Optional stock out reason (e.g. Expired, Damaged, Disposal) (Max 50 words)" rows="4" maxlength="300" style="resize:none"></textarea>
             </div>
           </div>
         </div>
@@ -226,12 +232,27 @@ export function openStockOutModal(targetProductId = null) {
   const productList = document.getElementById("stockOutProductList");
   const hiddenInput = document.getElementById("stockOutProduct");
   const qtyInput = document.getElementById("stockOutQty");
+  const batchSelect = document.getElementById("stockOutBatchSelect");
+
+  const populateBatches = (prodId) => {
+    const selected = state.products.find(p => p.id === Number(prodId));
+    if (!selected || !batchSelect) return;
+    const batches = activeExpiryBatches(selected);
+    let html = `<option value="">Oldest Batch First (FIFO)</option>`;
+    for (const b of batches) {
+      if (b.expiry) {
+        html += `<option value="${escapeHtml(b.expiry)}">Expiry: ${escapeHtml(b.expiry)} (${b.qty} units available)</option>`;
+      }
+    }
+    batchSelect.innerHTML = html;
+  };
 
   const syncMaxQty = (prodId) => {
     const selected = state.products.find(p => p.id === Number(prodId));
     if (selected) {
       qtyInput.max = selected.stock;
     }
+    populateBatches(prodId);
   };
 
   const renderStockOptions = () => {
@@ -272,6 +293,7 @@ export function openStockOutModal(targetProductId = null) {
     const productId = Number(hiddenInput.value);
     const product = state.products.find(p => p.id === productId);
     const qty = Number(f.get("qty"));
+    const selectedBatchExpiry = String(f.get("batchExpiry") || "").trim();
 
     if (!product) return toast("Please select a valid product.");
     if (qty > product.stock) return toast(`Cannot remove ${qty} units. Only ${product.stock} available in stock.`);
@@ -279,7 +301,9 @@ export function openStockOutModal(targetProductId = null) {
     const submitBtn = document.getElementById("confirmStockOut");
     submitBtn.disabled = true;
 
-    moveStockInBackground(product, "STOCK OUT", qty, { userNote: String(f.get("notes") || "").trim() });
+    const noteText = (selectedBatchExpiry ? `Batch Expiry: ${selectedBatchExpiry}. ` : "") + String(f.get("notes") || "").trim();
+
+    moveStockInBackground(product, "STOCK OUT", qty, { expiry: selectedBatchExpiry, userNote: noteText });
     close();
     toast(`Deducted ${qty} units from ${product.name}.`);
     renderPage(currentPage || "stocks");
