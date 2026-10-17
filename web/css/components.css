@@ -1114,17 +1114,17 @@ table:has(.table-empty) tbody tr {
 .transactions-overview .transactions-inventory-table th:nth-child(1),
 .transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(1) { width: 110px; text-align: center; white-space: nowrap; }
 .transactions-overview .transactions-inventory-table th:nth-child(2),
-.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(2) { width: 20%; }
+.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(2) { width: 18%; }
 .transactions-overview .transactions-inventory-table th:nth-child(3),
-.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(3) { width: 28%; }
+.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(3) { width: 22%; }
 .transactions-overview .transactions-inventory-table th:nth-child(4),
-.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(4) { width: 10%; }
+.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(4) { width: 9%; }
 .transactions-overview .transactions-inventory-table th:nth-child(5),
-.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(5) { width: 14%; }
+.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(5) { width: 12%; }
 .transactions-overview .transactions-inventory-table th:nth-child(6),
-.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(6) { width: 12%; }
+.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(6) { width: 18%; }
 .transactions-overview .transactions-inventory-table th:nth-child(7),
-.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(7) { width: 12%; }
+.transactions-overview .transactions-inventory-table td:not(.table-empty):nth-child(7) { width: 15%; }
 
 /* report tables */
 .report-paper .report-table {
@@ -2635,3 +2635,27 @@ table:has(.table-empty) tbody tr {
 /* Products and Stocks tables scroll but never show the browser's scroll bar (all screen sizes) */
 .products-table-scroll, .stocks-table-scroll, .stocks-low-table-wrap { scrollbar-width: none; -ms-overflow-style: none; }
 .products-table-scroll::-webkit-scrollbar, .stocks-table-scroll::-webkit-scrollbar, .stocks-low-table-wrap::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+
+/* History: long status names ("PRODUCT REMOVED") stay inside their own column */
+.transactions-overview .transactions-inventory-table .badge { font-size: 11px; padding: 4px 10px; white-space: nowrap; }
+
+/* Net / Gross Profit card: the drop-down arrow sits at the right, centred in the card */
+.profit-stat-card { position: relative; }
+.profit-stat-card .stat-card-main { padding-right: 26px; }
+.profit-stat-card .profit-type-control .styled-select,
+.profit-stat-card .profit-type-control .styled-select-trigger { position: static; }
+.profit-stat-card .profit-type-control .styled-select-trigger { padding-right: 6px; }
+.dashboard-only-stats .profit-stat-card .profit-type-control .styled-select-trigger::after,
+.profit-stat-card .profit-type-control .styled-select-trigger::after {
+  position: absolute; right: 16px; top: 50%; width: 9px; height: 9px;
+  transform: translateY(-70%) rotate(45deg);
+}
+.dashboard-only-stats .profit-stat-card .profit-type-control .styled-select.is-open .styled-select-trigger::after,
+.profit-stat-card .profit-type-control .styled-select.is-open .styled-select-trigger::after {
+  transform: translateY(-30%) rotate(225deg);
+}
+@media (max-width: 767px) {
+  .dashboard-only-stats .profit-stat-card .profit-type-control .styled-select-trigger::after { right: 10px; }
+  .profit-stat-card .stat-card-main { padding-right: 20px; }
+}
