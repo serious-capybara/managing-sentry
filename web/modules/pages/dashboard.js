@@ -78,11 +78,17 @@ export function dashboardRows(products = state.products) {
 
 export function expiringRows(list) {
   const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return list.map((p, i) => {
     const inCart = state.cart.find(c => c.id === p.id)?.qty || 0;
     const available = Math.max(0, p.stock - inCart);
-    const days = Math.ceil((new Date(p.expiry) - now) / 86400000);
-    const isExpired = days <= 0;
+    const parts = String(p.expiry || "").trim().substring(0, 10).split("-");
+    let days = 0;
+    if (parts.length >= 3) {
+      const expDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      days = Math.round((expDate - today) / 86400000);
+    }
+    const isExpired = days < 0;
     return `<tr>
       <td>${i + 1}</td>
       <td><strong>${escapeHtml(p.name)}</strong></td>
@@ -90,7 +96,12 @@ export function expiringRows(list) {
       <td>${available} in stock</td>
       <td>${money(p.price)}</td>
       <td>${p.expiry || "—"}</td>
-      <td><span class="badge ${isExpired ? "red" : "orange"}">${isExpired ? "EXPIRED" : `Expires in ${days}d`}</span></td>
+      <td><span class="badge ${isExpired ? "red" : "orange"}">${isExpired ? "EXPIRED" : days === 0 ? "Expires Today" : `Expires in ${days}d`}</span></td>
+      <td>
+        ${isExpired
+          ? `<button class="primary-btn sm danger-btn" type="button" data-confirm-expired-removal="${p.id}">Confirm Removal</button>`
+          : `<span style="color:var(--text-secondary); font-size:12px;">Active Batch</span>`}
+      </td>
     </tr>`;
   }).join("");
 }
@@ -98,18 +109,22 @@ export function expiringRows(list) {
 // expiring soon panel
 export function expiringPanel() {
   const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const soon = state.products.filter(p => {
     if (!p.expiry) return false;
-    const days = Math.ceil((new Date(p.expiry) - now) / 86400000);
+    const parts = String(p.expiry || "").trim().substring(0, 10).split("-");
+    if (parts.length < 3) return false;
+    const expDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    const days = Math.round((expDate - today) / 86400000);
     return days <= 7;
   });
   return `
     <div class="wire-table-wrap dash-expiring-table-wrap">
       <table class="dashboard-inventory-table">
-        <thead><tr><th>ID</th><th>NAME</th><th>CATEGORY</th><th>STOCK</th><th>SRP</th><th>EXPIRATION DATE</th><th>STATUS</th></tr></thead>
+        <thead><tr><th>ID</th><th>NAME</th><th>CATEGORY</th><th>STOCK</th><th>SRP</th><th>EXPIRATION DATE</th><th>STATUS</th><th>ACTION</th></tr></thead>
         <tbody>${soon.length
       ? expiringRows(soon)
-      : `<tr><td colspan="7" class="table-empty">✓ No expiring items within the next 7 days.</td></tr>`}
+      : `<tr><td colspan="8" class="table-empty">✓ No expiring items within the next 7 days.</td></tr>`}
         </tbody>
       </table>
     </div>`;

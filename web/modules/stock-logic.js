@@ -91,10 +91,27 @@ export function consumeExpiryBatches(product, qty) {
   let remaining = Math.max(0, Number(qty || 0));
   ensureExpiryBatches(product);
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   product.expiryBatches.sort((a, b) => {
     if (!a.expiry && b.expiry) return 1;
     if (a.expiry && !b.expiry) return -1;
-    return String(a.expiry || "").localeCompare(String(b.expiry || ""));
+    if (!a.expiry && !b.expiry) return 0;
+
+    const partsA = String(a.expiry).trim().substring(0, 10).split("-");
+    const partsB = String(b.expiry).trim().substring(0, 10).split("-");
+    const dateA = new Date(Number(partsA[0]), Number(partsA[1]) - 1, Number(partsA[2]));
+    const dateB = new Date(Number(partsB[0]), Number(partsB[1]) - 1, Number(partsB[2]));
+
+    const isExpiredA = dateA < today;
+    const isExpiredB = dateB < today;
+
+    // FEFO: Unexpired active batches take priority over expired batches for sales rerouting
+    if (!isExpiredA && isExpiredB) return -1;
+    if (isExpiredA && !isExpiredB) return 1;
+
+    return dateA - dateB;
   });
 
   for (const batch of product.expiryBatches) {

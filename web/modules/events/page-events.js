@@ -21,7 +21,7 @@ import { openAddProductModal } from "../modals/add-product-modal.js";
 import { openRemoveProductModal, deleteProductById } from "../modals/remove-product-modal.js";
 import { openStockInModal, openStockOutModal } from "../modals/stock-modal.js";
 import { openExpirationModal } from "../modals/expiration-modal.js";
-import { showInfoModal } from "../modals/dialogs.js";
+import { showInfoModal, askYesNo } from "../modals/dialogs.js";
 import { dashboardRows, sortProducts, dashTabHtml, setActiveProfitType } from "../pages/dashboard.js";
 import { productRows } from "../pages/products.js";
 import { stockRows } from "../pages/stocks.js";
@@ -121,6 +121,24 @@ export function bindTabActions(target) {
 
   const clearCart = target.querySelector("#clearCartBtn");
   if (clearCart) clearCart.addEventListener("click", clearSellCart);
+
+  target.querySelectorAll("[data-confirm-expired-removal]").forEach(b => {
+    b.addEventListener("click", async () => {
+      const prodId = Number(b.dataset.confirmExpiredRemoval);
+      const product = state.products.find(p => p.id === prodId);
+      if (!product) return;
+      const confirmed = await askYesNo(`Confirm removal/disposal of expired stock for "${product.name}"?`, {
+        title: "Confirm Expired Removal",
+        yesText: "Confirm & Dispose",
+        noText: "Cancel"
+      });
+      if (!confirmed) return;
+      const { moveStockInBackground } = await import("../optimistic.js");
+      moveStockInBackground(product, "STOCK OUT", product.stock, { userNote: "Confirmed disposal of expired batch" });
+      toast(`Disposed expired stock for ${product.name}.`);
+      renderPage("dashboard");
+    });
+  });
 
   const sellSearch = target.querySelector("#sellSearch");
   const sellSort = target.querySelector("#sellSort");
