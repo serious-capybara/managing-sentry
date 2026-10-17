@@ -1232,7 +1232,7 @@ img, svg, video { max-width: 100%; }
     right: 0;
     bottom: 62px !important;
     top: auto;
-    z-index: 60;
+    z-index: 70;
     display: flex !important;
     flex-direction: column;
     height: var(--sheet-h, 50dvh);
