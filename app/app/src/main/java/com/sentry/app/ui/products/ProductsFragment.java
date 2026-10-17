@@ -205,7 +205,7 @@ public class ProductsFragment extends BaseFragment {
 
     private void setupHeader(View header) {
         if (header == null) return;
-        hideViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_category, R.id.header_sales, R.id.header_subtotal, R.id.header_status);
+        hideViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_category, R.id.header_sales, R.id.header_subtotal, R.id.header_checkout, R.id.header_status);
         showViews(header, R.id.header_name, R.id.header_quantity, R.id.header_srp, R.id.header_status);
         setText(header, R.id.header_quantity, "Stock");
         setText(header, R.id.header_status, "Status");

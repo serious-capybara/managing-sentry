@@ -1,44 +1,100 @@
-/* ============================================================
- * api.js — Centralised HTTP helper for all backend calls.
- * Attempts multiple base paths so the app works whether served
- * from a sub-directory or the root.
- * ============================================================ */
+// one place for backend requests (tries each API address, handles login redirects)
 
-export const API_BASE = "../backend/web/api";
+import { clearSession } from "./state.js";
+
+export const API_BASE = "https://managing-sentry-web.vercel.app/api";
 
 let detectedApiBase = null;
 
-const CANDIDATE_BASES = [
-  "../backend/web/api",
-  "backend/web/api",
-  "/backend/web/api",
-  "./backend/web/api"
-];
+export function getCandidateBases() {
+  const isLocal = typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
-/**
- * Fetch a backend PHP endpoint, automatically detecting the
- * working base path on first success and reusing it thereafter.
- *
- * @param {string} endpoint  - e.g. "products.php" or "login.php?action=logout"
- * @param {RequestInit} options - standard fetch options
- * @returns {Promise<any>}   Parsed JSON response body
- */
-export async function apiRequest(endpoint, options = {}) {
+  if (isLocal) {
+    // Developer machine: try the local FastAPI first, then the hosted API.
+    const host = window.location.hostname;
+    return [
+      `http://${host}:8003/api`,
+      `http://${host}:8003`,
+      "http://localhost:8003/api",
+      "http://localhost:8003",
+      "http://127.0.0.1:8003/api",
+      "http://127.0.0.1:8003",
+      API_BASE,
+      "./api",
+      "/api"
+    ];
+  }
+
+  // Deployed site. NEVER probe localhost / 127.0.0.1 here: it makes the browser ask
+  // "allow this site to access other apps and services on this device?".
+  //  1) /api            -> same-origin proxy (see vercel.json). Session cookie stays first-party,
+  //                        so it is not blocked as a third-party cookie.
+  //  2) API_BASE        -> direct call to the hosted API (fallback).
+  return ["/api", API_BASE];
+}
+
+// shows the app or the login screen
+export function setAuthView(loggedIn) {
+  document.documentElement.classList.remove("session-active");
+  const app = document.getElementById("app");
+  const loginScreen = document.getElementById("loginScreen");
+  if (app) {
+    app.style.removeProperty("display");
+    app.classList.toggle("hidden", !loggedIn);
+  }
+  if (loginScreen) {
+    loginScreen.style.removeProperty("display");
+    loginScreen.classList.toggle("hidden", loggedIn);
+  }
+  if (!loggedIn) document.getElementById("loginForm")?.reset();
+}
+
+// Error that keeps the HTTP status, so "rejected" and "offline" can be told apart
+function statusError(message, status) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+// calls the backend, trying each API address in turn
+export async function apiRequest(endpoint, rawOptions = {}) {
+  const { onResponse, onlyDetectedBase, ...options } = rawOptions;   // onResponse(response) lets a caller read headers
   const cleanEndpoint = endpoint.replace(/^\/+/, "");
+  const baseList = getCandidateBases();
+  // onlyDetectedBase: never repeat this request on another address (used for saving a sale, so
+  // a connection that drops after the server saved it cannot make a second copy elsewhere).
   const candidateBases = detectedApiBase
-    ? [detectedApiBase]
-    : CANDIDATE_BASES;
+    ? (onlyDetectedBase ? [detectedApiBase] : [detectedApiBase, ...baseList.filter(b => b !== detectedApiBase)])
+    : baseList;
 
   let lastError = null;
 
   for (let i = 0; i < candidateBases.length; i++) {
     const base = candidateBases[i];
     const url = `${base}/${cleanEndpoint}`;
+
     try {
-      const response = await fetch(url, {
-        ...options,
-        headers: { "Content-Type": "application/json", ...(options.headers || {}) }
-      });
+      let response;
+      try {
+        response = await fetch(url, {
+          cache: "no-store",
+          ...options,
+          credentials: "include",
+          headers: { "Content-Type": "application/json", ...(options.headers || {}) }
+        });
+      } catch (fetchErr) {
+        response = await fetch(url, {
+          cache: "no-store",
+          ...options,
+          headers: { "Content-Type": "application/json", ...(options.headers || {}) }
+        });
+      }
+
+      if ((response.status === 404 || response.status === 405) && i < candidateBases.length - 1) {
+        if (base === detectedApiBase) detectedApiBase = null;
+        continue;
+      }
 
       const rawText = await response.text();
       let result = null;
@@ -46,30 +102,54 @@ export async function apiRequest(endpoint, options = {}) {
       try {
         result = rawText ? JSON.parse(rawText) : {};
       } catch (jsonErr) {
-        if (response.status === 404 && i < candidateBases.length - 1) {
+        if ((response.status === 404 || response.status === 405) && i < candidateBases.length - 1) {
+          if (base === detectedApiBase) detectedApiBase = null;
           continue;
         }
         if (!response.ok) {
-          throw new Error(`Server returned status ${response.status} (${response.statusText})`);
+          if (base === detectedApiBase) detectedApiBase = null;
+          throw statusError(`Server returned status ${response.status} (${response.statusText})`, response.status);
         }
         throw new Error("Invalid response from server (expected JSON).");
       }
 
+      if (response.status === 401) {
+        // The server does not recognise us (cookie missing/expired). Do not leave the user on
+        // empty pages: send them back to the login screen. (Wrong password on login stays on login.)
+        if (!/^login/.test(cleanEndpoint)) {
+          clearSession();
+          setAuthView(false);
+        }
+        throw statusError(result.error || "Not signed in. Please log in again.", 401);
+      }
+
       if (!response.ok) {
-        throw new Error(result.error || result.message || `Server error (${response.status})`);
+        if ((response.status === 404 || response.status === 405) && i < candidateBases.length - 1) {
+          if (base === detectedApiBase) detectedApiBase = null;
+          continue;
+        }
+        throw statusError(result.error || `Server error (${response.status})`, response.status);
       }
 
       detectedApiBase = base;
+      if (typeof onResponse === "function") onResponse(response, base);
       return result;
     } catch (err) {
       lastError = err;
+      // The server answered and said no (wrong password, not enough stock, ...): that answer is
+      // final. Only "not found" and connection problems mean "try the next address".
+      if (err.status && err.status !== 404 && err.status !== 405) throw err;
+      if (base === detectedApiBase) detectedApiBase = null;
       if (
         i < candidateBases.length - 1 &&
-        (err.message.includes("404") || err.message.includes("Failed to fetch"))
+        (err.name === "TypeError" ||
+         err.message.includes("404") ||
+         err.message.includes("fetch") ||
+         err.message.includes("NetworkError") ||
+         err.message.includes("Failed to fetch"))
       ) {
         continue;
       }
-      throw err;
     }
   }
 

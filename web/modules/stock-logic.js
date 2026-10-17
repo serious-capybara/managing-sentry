@@ -1,19 +1,15 @@
-/* ============================================================
- * stock-logic.js — Stock baseline, low-stock rules, and expiry
- * batch management. All functions are pure (state is passed in).
- * ============================================================ */
+// stock baseline, low-stock rules and expiry batches
 
 import { state } from "./state.js";
 import { money } from "./utils.js";
 import { getProfitBreakdown, getSalesRevenue } from "./finance.js";
 import { activeProfitType } from "./pages/dashboard.js";
 
-// ---------------------------------------------------------------------------
-// Stock baseline & low-stock threshold
-// ---------------------------------------------------------------------------
+// stock baseline and low-stock limit
 
 export function ensureStockBaseline(product) {
-  const current = Math.max(0, Number(product.stock || 0));
+  if (!product) return 0;
+  const current = Math.max(0, Number(product.stock || product.stock_quantity || 0));
   if (
     !Number.isFinite(Number(product.stockBaseline)) ||
     Number(product.stockBaseline) <= 0
@@ -24,23 +20,24 @@ export function ensureStockBaseline(product) {
 }
 
 export function lowStockThreshold(product) {
-  const baseline = ensureStockBaseline(product);
-  return baseline > 0 ? Math.max(1, Math.ceil(baseline * 0.10)) : 0;
+  if (!product) return 20;
+  const alertLevel = Number(product.low_stock_alert_level ?? product.lowStockAlertLevel ?? product.low_stock_threshold ?? 20);
+  return Number.isFinite(alertLevel) && alertLevel > 0 ? alertLevel : 20;
 }
 
 export function isLowStock(product) {
-  const stock = Math.max(0, Number(product.stock || 0));
+  if (!product) return false;
+  const stock = Math.max(0, Number(product.stock ?? product.stock_quantity ?? 0));
   const threshold = lowStockThreshold(product);
-  return threshold > 0 && stock <= threshold;
+  return stock <= threshold;
 }
 
 export function lowStockLabel(product) {
-  return `Alert at ${lowStockThreshold(product)} units (10% of ${ensureStockBaseline(product)})`;
+  if (!product) return "Alert at 20 units";
+  return `Alert at ${lowStockThreshold(product)} units`;
 }
 
-// ---------------------------------------------------------------------------
-// Expiry batch management
-// ---------------------------------------------------------------------------
+// expiry batches
 
 export function ensureExpiryBatches(product) {
   if (!Array.isArray(product.expiryBatches)) product.expiryBatches = [];
@@ -117,9 +114,26 @@ export function expiryButton(product) {
   return `<button type="button" class="expiry-btn expiry-${info.state}" data-expiry-product="${product.id}" title="Click to view all expiration batches">${escaped}<span>${info.label}</span></button>`;
 }
 
-// ---------------------------------------------------------------------------
-// Dashboard stats & low-stock sidebar dots
-// ---------------------------------------------------------------------------
+export function expiryDateCell(product) {
+  const batch = earliestExpiry(product);
+  if (!batch || !batch.expiry) {
+    return `<span style="color:var(--text-secondary); font-size:13px; font-weight:500; display:inline-flex; align-items:center; min-height:28px;">No Expiry</span>`;
+  }
+  const escaped = String(batch.expiry).replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+  return `<button type="button" class="expiry-date-plain-btn" data-expiry-product="${product.id}" title="Click to view all expiration batches">${escaped}</button>`;
+}
+
+export function expiryStatusCell(product) {
+  const batch = earliestExpiry(product);
+  if (!batch || !batch.expiry) {
+    return `<span style="color:var(--text-secondary); font-size:13px; display:inline-flex; align-items:center; min-height:28px;">—</span>`;
+  }
+  const info = expiryDateInfo(batch.expiry);
+  const badgeClass = info.state === "expired" ? "red" : info.state === "soon" ? "orange" : "green";
+  return `<span class="badge ${badgeClass}">${info.label}</span>`;
+}
+
+// dashboard numbers and the low-stock dot in the menu
 
 export function updateStats() {
   const capital    = document.getElementById("capitalValue");

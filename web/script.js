@@ -1,10 +1,9 @@
-/* ============================================================
- * script.js — Main application orchestrator for Managing Sentry.
- * Coordinates 7-day session auto-restoration on page reloads/refreshes.
- * ============================================================ */
+// app start: restores the saved session and shows the first page
 
 import { state, persist, isSessionValid, getActivePage, clearSession } from "./modules/state.js";
 import { loadDashboardData } from "./modules/data-loader.js";
+import { startLiveSync } from "./modules/live-sync.js";
+import { kickSaleQueue } from "./modules/sale-queue.js";
 import {
   ensureStockBaseline,
   ensureExpiryBatches,
@@ -13,22 +12,16 @@ import {
 } from "./modules/stock-logic.js";
 import { bindSidebarEvents } from "./modules/events/sidebar-events.js";
 import { renderPage } from "./modules/router.js";
+import { setAuthView } from "./modules/api.js";
+import { toast } from "./modules/utils.js";
 
-// Initialize application event listeners (login, nav, actions)
+// login, menu and button events
 bindSidebarEvents();
 
-/**
- * Initialize application session state on startup / page refresh.
- * Automatically restores active session if within 7-day window.
- */
+// on start or refresh: restore the session
 async function initSession() {
-  const loginScreen = document.getElementById("loginScreen");
-  const app = document.getElementById("app");
-
   if (isSessionValid()) {
-    // Show main app and hide login screen immediately for smooth refresh
-    if (loginScreen) loginScreen.classList.add("hidden");
-    if (app) app.classList.remove("hidden");
+    setAuthView(true);
 
     try {
       await loadDashboardData();
@@ -36,16 +29,17 @@ async function initSession() {
       console.warn("Could not sync backend data on reload:", err);
     }
 
-    // Restore the user's active page view (or default to dashboard)
+    // go back to the last page
     renderPage(getActivePage());
+    kickSaleQueue();      // send any sale that was still waiting when the page closed
+    startLiveSync();
   } else {
-    // Session expired (>= 7 days) or not logged in
+    // session over (1 hour) or never signed in
     clearSession();
-    if (app) app.classList.add("hidden");
-    if (loginScreen) loginScreen.classList.remove("hidden");
+    setAuthView(false);
   }
 
-  // Stock baseline & batch integrity check
+  // stock baseline and expiry batch check
   if (Array.isArray(state.products)) {
     state.products.forEach(p => {
       ensureStockBaseline(p);
@@ -56,6 +50,20 @@ async function initSession() {
     persist();
     updateStats();
   }
+
+  watchSessionExpiry();
+}
+
+// sign out after 1 hour even if the tab stays open
+function watchSessionExpiry() {
+  setInterval(() => {
+    if (isSessionValid()) return;
+    // Already signed out, or sitting on the login screen — nothing to do.
+    if (document.getElementById("app")?.classList.contains("hidden")) return;
+    clearSession();
+    setAuthView(false);
+    toast("Session expired an hour after login. Please sign in again.");
+  }, 20000);
 }
 
 initSession();

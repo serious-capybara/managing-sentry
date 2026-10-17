@@ -5,7 +5,7 @@
 ---
 
 > [!NOTE]
-> **Dual Backend Notice:** This repository contains two parallel backend implementations maintained for academic evaluation purposes — a **PHP backend** (`backend/`) and a **FastAPI (Python) backend** (`backend-fastapi/`). Both implement the same core functionality. After project defense, the team will officially adopt one and archive the other. See [Architecture](#architecture) for details.
+> **FastAPI is now the active platform:** This repository still contains a legacy PHP implementation (`backend/`) for reference and historical comparison, but the current development stack is the **FastAPI backend** (`backend-fastapi/`). The PHP backend is no longer the primary system and is retained as a legacy codebase only. See [Architecture](#architecture) for details.
 
 ---
 
@@ -31,7 +31,7 @@
 
 ## Overview
 
-**Managing Sentry** is a custom business management system designed to replace the paper-based workflows of a small family-run general merchandise store. The system combines an **Android POS application**, a **web-based admin portal**, and a **dockerized backend** to provide reliable, accurate, and fast business operations — even without an internet connection.
+**Managing Sentry** is a custom business management system designed to replace the paper-based workflows of a small family-run general merchandise store. The system combines an **Android POS application**, a **web-based admin portal**, and a **dockerized FastAPI backend** to provide reliable, accurate, and fast business operations — even without an internet connection.
 
 The name reflects the system's philosophy: **Managing** for organizing business data, and **Sentry** for being a dependable guardian of business records.
 
@@ -52,7 +52,6 @@ The name reflects the system's philosophy: **Managing** for organizing business 
 - **Offline Functionality** — Local SQLite database ensures uninterrupted operations during downtime
 - **Auto-Sync** — Synchronizes offline transactions with the central database on reconnection
 - **Web Admin Portal** — Browser-based dashboard for product management, sales monitoring, and reporting
-- **Profit Adjustments** — Save operating expense, interest, and tax totals for net profit reporting
 - **Transaction History** — Filterable logs of all past sales and inventory movements
 - **Sales Analytics** — Daily and weekly trend reports for informed restocking decisions
 - **Role-Based Access** — Separate access levels for Admins, Managers, and Staff
@@ -81,7 +80,7 @@ The name reflects the system's philosophy: **Managing** for organizing business 
 | Styling | CSS3 |
 | Logic | Vanilla JavaScript |
 
-### Backend — PHP (`backend/`)
+### Backend — PHP (`backend/`) [Legacy]
 
 | Layer | Technology |
 |:---|:---|
@@ -91,7 +90,7 @@ The name reflects the system's philosophy: **Managing** for organizing business 
 | Runtime | Docker (`php:8.2-cli`) |
 | Port | `8000` |
 
-### Backend — FastAPI (`backend-fastapi/`)
+### Backend — FastAPI (`backend-fastapi/`) [Active]
 
 | Layer | Technology |
 |:---|:---|
@@ -99,7 +98,7 @@ The name reflects the system's philosophy: **Managing** for organizing business 
 | Framework | FastAPI |
 | Server | Uvicorn (ASGI) |
 | Runtime | Docker (`python:3.11-slim`) |
-| Port | `8001` |
+| Port | `8001` (Android API), `8003` (web portal API/local development socket) |
 
 ### Infrastructure
 
@@ -136,19 +135,19 @@ Managing-Sentry/
 │   ├── style.css
 │   └── script.js
 │
-├── backend/                    # PHP backend (PDO + PostgreSQL)
+├── backend/                    # Legacy PHP backend (reference only)
 │   └── app/
 │       ├── api/                          # API endpoint handlers
 │       ├── config/                       # Database configuration
 │       ├── core/                         # Core utilities
 │       └── init.php                      # Application bootstrap
 │
-├── backend-fastapi/            # FastAPI backend (Python + PostgreSQL)
+├── backend-fastapi/            # Active FastAPI backend
 │   └── app/
 │       ├── api/                          # API route definitions
 │       ├── core/                         # Core config and security
 │       ├── database/                     # Database session and connection
-│       ├── models/                       # SQLAlchemy ORM models
+│       ├── models/                       # Data models and schema definitions
 │       ├── routers/                      # FastAPI routers
 │       └── requirements.txt
 │
@@ -165,14 +164,14 @@ All services run simultaneously via Docker Compose and share the same PostgreSQL
 
 | Service | Stack | Serves | Host Port |
 |:---|:---|:---|:---|
-| `php-app` | PHP 8.2 | Android-facing API (`backend/app`) | `8000` |
-| `php-web` | PHP 8.2 | Web portal API (`backend/web`) | `8002` |
-| `fastapi` | Python 3.11 + FastAPI | Android-facing API (`backend-fastapi/app`) | `8001` |
-| `fastapi-web` | Python 3.11 + FastAPI | Web portal API (`backend-fastapi/web`) | `8003` *(planned)* |
+| `php-app` | PHP 8.2 | Legacy Android-facing API (`backend/app`) | `8000` |
+| `php-web` | PHP 8.2 | Legacy web portal API (`backend/web`) | `8002` |
+| `fastapi` | Python 3.11 + FastAPI | Active Android-facing API (`backend-fastapi/app`) | `8001` |
+| `fastapi-web` | Python 3.11 + FastAPI | Active web portal API (`backend-fastapi/web`) | `8003` |
 | `db` | PostgreSQL 18 | Shared database | `5433` |
 
 > [!NOTE]
-> `fastapi-web` is a **planned service** — `backend-fastapi/web/` has not been implemented yet. When development begins, a dedicated `fastapi-web` container (port `8003`) will be added to `docker-compose.yml` to serve the web portal API separately, following the same pattern as `php-app` / `php-web`.
+> The `php-*` services are maintained as legacy references only. The active application stack uses the FastAPI services, and port `8003` is the local development socket used for the FastAPI web portal API.
 
 ---
 
@@ -206,19 +205,19 @@ cd Managing-Sentry
 **1. Edit `docker-compose.yml`** — update the `volumes` bind mount paths for all three PHP and FastAPI services:
 
 ```yaml
-# php-app service — Android-facing API (backend/app)
+# php-app service — Legacy Android-facing API (backend/app)
 # Before:
   - /home/the-grand-capybara/Desktop/.../backend/app:/app
 # After (your path):
   - /home/YOUR_USERNAME/path/to/Managing-Sentry/backend/app:/app
 
-# php-web service — Web portal API (backend/web)
+# php-web service — Legacy web portal API (backend/web)
 # Before:
   - /home/the-grand-capybara/Desktop/.../backend/web:/app
 # After (your path):
   - /home/YOUR_USERNAME/path/to/Managing-Sentry/backend/web:/app
 
-# fastapi service — FastAPI backend (backend-fastapi/app)
+# fastapi service — Active FastAPI backend (backend-fastapi/app)
 # Before:
   - /home/the-grand-capybara/Desktop/.../backend-fastapi/app:/app
 # After (your path):
@@ -239,22 +238,22 @@ docker compose up -d
 docker ps -a
 ```
 
-You should see four containers running: `db` (PostgreSQL), `php-app`, `php-web`, and `fastapi`.
+You should see the database and active backend containers running, including the FastAPI services used for the current development workflow.
 
 **5. Test the backends:**
 
 ```
-PHP Android API:  http://localhost:8000
-PHP Web API:      http://localhost:8002
-FastAPI backend:  http://localhost:8001/docs
+Legacy PHP Android API:     http://localhost:8000
+Legacy PHP Web API:         http://localhost:8002
+Active FastAPI backend:     http://localhost:8001/docs
+Active FastAPI web API:     http://localhost:8003/docs
 ```
 
 > [!NOTE]
-> A `fastapi-web` service (port `8003`) is planned for the future once `backend-fastapi/web/` is implemented. When ready, it will be added to `docker-compose.yml` as a dedicated container serving the web portal FastAPI backend — mirroring the same `php-app` / `php-web` separation pattern.
+> The FastAPI web service is active and uses port `8003` as the local development socket for the web portal API. The PHP stack remains available only as a legacy reference implementation.
 
 > [!WARNING]
 > Never commit your personal bind mount paths or `.env` credentials to the shared repository. These are local-only configurations.
-
 
 ---
 
@@ -268,10 +267,10 @@ FastAPI backend:  http://localhost:8001/docs
 
 ```java
 // For Android Emulator:
-private static final String BASE_URL = "http://10.0.2.2:8000/";
+private static final String BASE_URL = "http://10.0.2.2:8001/";
 
 // For a real device over Wi-Fi (replace with your machine's local IP):
-private static final String BASE_URL = "http://192.168.x.x:8000/";
+private static final String BASE_URL = "http://192.168.x.x:8001/";
 ```
 
 > Find your local IP on Linux/macOS with `ip addr show`, or on Windows with `ipconfig`. Do not commit a personal IP address back to the repository.
@@ -282,15 +281,9 @@ private static final String BASE_URL = "http://192.168.x.x:8000/";
 
 ### Running the Web Portal
 
-The portal reads and writes PostgreSQL through the PHP API, so do not open `web/index.html` directly or use a static-only server. From the repository root, run the PHP built-in server:
+The portal reads and writes PostgreSQL through the active FastAPI API on port `8003`, not the legacy PHP API. From the repository root, run the FastAPI web service or local development server as configured for your environment, then open `http://127.0.0.1:8003` and sign in with an existing Admin or Manager account from the database. Staff/Cashier accounts are denied access.
 
-```powershell
-C:\xampp\php\php.exe -S 127.0.0.1:8000 -t .
-```
-
-Then open `http://127.0.0.1:8000/web/` and sign in with an existing Admin or Manager account from the database. Staff/Cashier accounts are denied access. The PHP API uses `backend/web/.env`.
-
-To enable saved profit adjustments on an existing database, run `backend/web/migrations/001_add_expense_totals_to_capital_configs.sql` once in pgAdmin's Query Tool against the same database. This adds three columns to the existing `capital_configs` table; it does not create an expenses table or modify existing capital values.
+For an existing database backup, run `backend/web/schema.sql` once in pgAdmin's Query Tool against that database before starting the portal.
 
 ---
 

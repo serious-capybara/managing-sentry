@@ -46,7 +46,6 @@ firebase-debug.log
 **/generated/
 **/intermediates/
 **/lint/
-**/apk/
 **/debug/
 **/release/
 **/.artifacts/
@@ -100,3 +99,8 @@ temp/
 __pycache__/
 *.py[cod]
 *$py.class
+
+
+/web/backend/web
+/knowledge-base/
+

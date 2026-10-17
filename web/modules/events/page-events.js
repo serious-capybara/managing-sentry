@@ -1,10 +1,7 @@
-/* ============================================================
- * events/page-events.js — DOM event bindings for each page view.
- * Handles inputs, sort selectors, tab buttons, modals, and actions.
- * ============================================================ */
+// event bindings for every page (inputs, sorting, tabs, buttons, sheets)
 
 import { state } from "../state.js";
-import { toast, money } from "../utils.js";
+import { toast, money, escapeHtml } from "../utils.js";
 import { apiRequest } from "../api.js";
 import { loadDashboardData } from "../data-loader.js";
 import { isLowStock, updateStats } from "../stock-logic.js";
@@ -21,7 +18,7 @@ import {
 } from "../cart.js";
 import { openCheckoutModal } from "../modals/checkout-modal.js";
 import { openAddProductModal } from "../modals/add-product-modal.js";
-import { openRemoveProductModal } from "../modals/remove-product-modal.js";
+import { openRemoveProductModal, deleteProductById } from "../modals/remove-product-modal.js";
 import { openStockInModal, openStockOutModal } from "../modals/stock-modal.js";
 import { openExpirationModal } from "../modals/expiration-modal.js";
 import { showInfoModal } from "../modals/dialogs.js";
@@ -29,12 +26,17 @@ import { dashboardRows, sortProducts, dashTabHtml, setActiveProfitType } from ".
 import { productRows } from "../pages/products.js";
 import { stockRows } from "../pages/stocks.js";
 import { priceMatchRows, priceDirectoryRows } from "../pages/price-checker.js";
-import { transactionRows } from "../pages/transactions.js";
-import { renderSalesProfitReport, renderInventoryCapitalReport, activeReportTab, activeReportRange, setActiveReportTab, setActiveReportRange } from "../pages/reports.js";
+import { transactionRows, renderHistoryPrintReport, filterHistory, historyBanner } from "../pages/transactions.js";
+import { renderSalesProfitReport, renderInventoryCapitalReport, renderInventoryCapitalPrintReport, renderSalesProfitPrintReport, activeReportTab, activeReportRange, setActiveReportTab, setActiveReportRange, setActiveSalesView } from "../pages/reports.js";
 import { bindStyledSelects } from "../styled-select.js";
 import { openExpenseTotalsModal } from "../modals/expense-totals-modal.js";
+import { createSheet, isPhone } from "../mobile-sheet.js";
 
-// Hook renderActiveTab into cart.js operations
+// phone bottom sheets, rebuilt each time the page renders
+let dashSheet = null;
+let stocksSheet = null;
+
+// let cart.js redraw the tab after cart changes
 registerRenderActiveTab(renderActiveTab);
 
 export function updateCartPill() {
@@ -42,21 +44,11 @@ export function updateCartPill() {
   if (pill) pill.textContent = cartCount();
 }
 
-/**
- * Re-render the active tab on the dashboard (expiring or sell) and bind its controls.
- */
-export function renderActiveTab() {
-  const target = document.getElementById("dashboardTab");
-  const pageContent = document.getElementById("pageContent");
-  if (!target || !pageContent) return;
-
-  pageContent.classList.toggle("dashboard-sell-mode", activeDashTab === "sell");
-  const main = pageContent.closest(".main");
-  if (main) main.classList.toggle("sell-view-mode", activeDashTab === "sell");
-
-  // Dynamically update dashboard tab button active state and icon sources
+// marks the active tab button (on phones only while its sheet is open)
+function paintDashTabs(pageContent) {
+  const sheetOn = !isPhone() || !!dashSheet?.isOpen();
   pageContent.querySelectorAll(".tab-btn[data-tab]").forEach(btn => {
-    const isActive = btn.dataset.tab === activeDashTab;
+    const isActive = btn.dataset.tab === activeDashTab && sheetOn;
     btn.classList.toggle("active", isActive);
     const icon = btn.querySelector(".tab-icon");
     if (icon) {
@@ -67,16 +59,42 @@ export function renderActiveTab() {
       }
     }
   });
+}
+
+// redraws the current dashboard tab (expiring or sell) and wires it up
+export function renderActiveTab() {
+  const target = document.getElementById("dashboardTab");
+  const pageContent = document.getElementById("pageContent");
+  if (!target || !pageContent) return;
+
+  pageContent.classList.toggle("dashboard-sell-mode", activeDashTab === "sell");
+  const main = pageContent.closest(".main");
+  if (main) main.classList.toggle("sell-view-mode", activeDashTab === "sell");
+
+  paintDashTabs(pageContent);
+
+  const prevSearch = target.querySelector("#sellSearch")?.value || "";
+  const prevSort = target.querySelector("#sellSort")?.value || "";
 
   target.innerHTML = dashTabHtml(activeDashTab);
   bindTabActions(target);
+  bindStyledSelects(target);
   updateCartPill();
+
+  if (activeDashTab === "sell") {
+    const searchEl = target.querySelector("#sellSearch");
+    const sortEl = target.querySelector("#sellSort");
+    if (searchEl && prevSearch) {
+      searchEl.value = prevSearch;
+    }
+    if (sortEl && prevSort) {
+      sortEl.value = prevSort;
+      sortEl.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
 }
 
-/**
- * Bind sell tab interactions (add, step qty, delete, checkout, clear, search).
- * @param {HTMLElement} target
- */
+// buttons and search inside the sell tab
 export function bindTabActions(target) {
   target.querySelectorAll("[data-add]").forEach(b =>
     b.addEventListener("click", () => addToCart(Number(b.dataset.add)))
@@ -122,17 +140,17 @@ export function bindTabActions(target) {
     };
     sellSearch.addEventListener("input", refreshSellProducts);
     sellSort.addEventListener("change", refreshSellProducts);
+    refreshSellProducts();
   }
 }
 
-/**
- * Bind interactive events for any rendered page.
- * @param {string} page
- */
+// wires up whichever page was just rendered
 export function bindPageEvents(page) {
+  document.body.classList.remove("m-sheet-open");
   const pageContent = document.getElementById("pageContent");
   if (!pageContent) return;
   bindStyledSelects(pageContent);
+  initOrderHoverTooltip();
 
   pageContent.querySelectorAll("[data-go]").forEach(btn =>
     btn.addEventListener("click", () => {
@@ -163,12 +181,45 @@ export function bindPageEvents(page) {
 
     document.getElementById("dashboardSearch")?.addEventListener("input", updateDashboard);
     document.getElementById("dashboardSort")?.addEventListener("change", updateDashboard);
+    updateDashboard();
+
     document.getElementById("setExpenseTotalsBtn")?.addEventListener("click", () => openExpenseTotalsModal());
+    // phone: the tab body opens as a bottom sheet (expiring = 50/90%, pick items = 90%)
+    const dashBody = document.getElementById("dashboardTabBody");
+    const dashBottom = document.getElementById("dashboardBottomSection");
+    dashSheet = (dashBody && dashBottom)
+      ? createSheet({
+          sheet: dashBody,
+          handle: document.getElementById("dashSheetHandle"),
+          host: dashBottom,
+          onChange: () => paintDashTabs(pageContent)
+        })
+      : null;
+    if (isPhone() && dashBottom) {
+      dashBottom.classList.remove("collapsed-section");
+      localStorage.setItem("sentryDashSectionCollapsed", "false");
+    }
+    pageContent.querySelector("[data-sheet-collapse]")?.addEventListener("click", () => dashSheet?.close());
+
     pageContent.querySelectorAll(".tab-btn").forEach(btn => {
       btn.addEventListener("click", () => {
+        const previousTab = activeDashTab;
         setActiveDashTab(btn.dataset.tab);
 
-        // Auto-expand bottom section if currently collapsed when a tab is clicked
+        if (isPhone() && dashSheet) {
+          if (dashSheet.isOpen() && previousTab === btn.dataset.tab) {
+            dashSheet.close();
+          } else {
+            dashBody.classList.toggle("is-sell", btn.dataset.tab === "sell");
+            dashSheet.open({ locked: btn.dataset.tab === "sell" });
+            // build the content next frame so the sheet opens without waiting
+            requestAnimationFrame(() => setTimeout(renderActiveTab, 0));
+          }
+          paintDashTabs(pageContent);
+          return;
+        }
+
+        // open the bottom section if it was collapsed
         const bottomSection = document.getElementById("dashboardBottomSection");
         const toggleIcon = document.getElementById("dashboardToggleIcon");
         if (bottomSection && bottomSection.classList.contains("collapsed-section")) {
@@ -177,7 +228,9 @@ export function bindPageEvents(page) {
           localStorage.setItem("sentryDashSectionCollapsed", "false");
         }
 
-        renderActiveTab();
+        // highlight first, swap the content next frame
+        paintDashTabs(pageContent);
+        requestAnimationFrame(() => setTimeout(renderActiveTab, 0));
       });
     });
 
@@ -190,6 +243,9 @@ export function bindPageEvents(page) {
       if (isCollapsed) {
         bottomSection.classList.add("collapsed-section");
         toggleIcon.src = "src/icon/dark/dropdown-open-expand.svg";
+      } else {
+        bottomSection.classList.remove("collapsed-section");
+        toggleIcon.src = "src/icon/dark/dropdown-close-expand.svg";
       }
 
       toggleBtn.addEventListener("click", () => {
@@ -199,6 +255,75 @@ export function bindPageEvents(page) {
           : "src/icon/dark/dropdown-close-expand.svg";
         localStorage.setItem("sentryDashSectionCollapsed", collapsed ? "true" : "false");
       });
+    }
+
+    const dashResizer = document.getElementById("dashboardResizerBar");
+    if (dashResizer && bottomSection) {
+      const getMaxDashPanelHeight = () => {
+        const container = bottomSection.parentElement;
+        const containerHeight = (container && container.getBoundingClientRect().height > 300)
+          ? container.getBoundingClientRect().height
+          : (window.innerHeight || 800);
+        // keep 420px for the cards, toolbar and about 4 table rows
+        return Math.max(180, containerHeight - 420);
+      };
+
+      const savedHeight = localStorage.getItem("sentryDashPanelHeight");
+      const numHeight = Number(savedHeight);
+      // rough value, the exact limit only matters while dragging
+      const maxAllowed = Math.max(180, (window.innerHeight || 800) - 64 - 420);
+      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 180)
+        ? Math.min(numHeight, maxAllowed)
+        : Math.min(320, maxAllowed);
+
+      // tablet and phone size this section in CSS (30% / 15%)
+      if (window.innerWidth > 1024) {
+        bottomSection.style.height = `${initialHeight}px`;
+        bottomSection.style.flex = "0 0 auto";
+      }
+
+      let startY = 0;
+      let startHeight = 0;
+
+      const onMouseMove = e => {
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const deltaY = startY - clientY;
+        const maxAllowedHeight = getMaxDashPanelHeight();
+        const newHeight = Math.max(180, Math.min(maxAllowedHeight, startHeight + deltaY));
+        bottomSection.style.height = `${newHeight}px`;
+        bottomSection.style.flex = "0 0 auto";
+        dashResizer.classList.add("dragging");
+      };
+
+      const onMouseUp = () => {
+        dashResizer.classList.remove("dragging");
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        document.removeEventListener("touchmove", onMouseMove);
+        document.removeEventListener("touchend", onMouseUp);
+        const finalHeight = parseInt(bottomSection.style.height, 10);
+        if (finalHeight && finalHeight >= 180) {
+          localStorage.setItem("sentryDashPanelHeight", finalHeight);
+        }
+      };
+
+      const onMouseDown = e => {
+        e.preventDefault();
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
+        startHeight = bottomSection.getBoundingClientRect().height;
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = "ns-resize";
+
+        document.addEventListener("mousemove", onMouseMove, { passive: false });
+        document.addEventListener("mouseup", onMouseUp);
+        document.addEventListener("touchmove", onMouseMove, { passive: false });
+        document.addEventListener("touchend", onMouseUp);
+      };
+
+      dashResizer.addEventListener("mousedown", onMouseDown);
+      dashResizer.addEventListener("touchstart", onMouseDown, { passive: false });
     }
 
     renderActiveTab();
@@ -212,11 +337,24 @@ export function bindPageEvents(page) {
     };
     document.getElementById("productSort")?.addEventListener("change", updateProducts);
     updateProducts();
-    document.getElementById("addProductBtn")?.addEventListener("click", openAddProductModal);
-    document.getElementById("removeProductBtn")?.addEventListener("click", openRemoveProductModal);
+    document.getElementById("addProductBtn")?.addEventListener("click", () => openAddProductModal());
+    document.getElementById("removeProductBtn")?.addEventListener("click", () => openRemoveProductModal());
   }
 
   if (page === "stocks") {
+    const lowBody = document.getElementById("stocksLowBody");
+    const lowHost = document.getElementById("stocksLowPanel");
+    stocksSheet = (lowBody && lowHost)
+      ? createSheet({ sheet: lowBody, handle: document.getElementById("stocksSheetHandle"), host: lowHost })
+      : null;
+    if (isPhone() && lowHost) {
+      lowHost.classList.remove("stocks-collapsed");
+      localStorage.setItem("sentryStockSectionCollapsed", "false");
+    }
+    document.getElementById("stocksLowTab")?.addEventListener("click", () => {
+      if (isPhone()) stocksSheet?.toggle();
+    });
+
     const toggleBtn = document.getElementById("stocksSectionToggle");
     const lowPanel = document.getElementById("stocksLowPanel");
     const toggleIcon = document.getElementById("stocksToggleIcon");
@@ -224,12 +362,15 @@ export function bindPageEvents(page) {
     if (toggleBtn && lowPanel && toggleIcon) {
       const isCollapsed = localStorage.getItem("sentryStockSectionCollapsed") === "true";
       if (isCollapsed) {
-        lowPanel.classList.add("collapsed-section");
+        lowPanel.classList.add("stocks-collapsed");
         toggleIcon.src = "src/icon/dark/dropdown-open-expand.svg";
+      } else {
+        lowPanel.classList.remove("stocks-collapsed");
+        toggleIcon.src = "src/icon/dark/dropdown-close-expand.svg";
       }
 
       toggleBtn.addEventListener("click", () => {
-        const collapsed = lowPanel.classList.toggle("collapsed-section");
+        const collapsed = lowPanel.classList.toggle("stocks-collapsed");
         toggleIcon.src = collapsed
           ? "src/icon/dark/dropdown-open-expand.svg"
           : "src/icon/dark/dropdown-close-expand.svg";
@@ -237,20 +378,85 @@ export function bindPageEvents(page) {
       });
     }
 
-    document.getElementById("stockSort")?.addEventListener("change", e => {
-      const rowsEl = document.getElementById("stockRows");
-      if (rowsEl) rowsEl.innerHTML = stockRows(sortProducts(state.products, e.target.value));
-      const lowRowsEl = document.getElementById("stockLowRows");
-      if (lowRowsEl) lowRowsEl.innerHTML = stockRows(sortProducts(state.products.filter(isLowStock), e.target.value));
-    });
-    const stockSort = document.getElementById("stockSort");
-    if (stockSort) {
-      const sortedProducts = sortProducts(state.products, stockSort.value || "name");
+    const resizer = document.getElementById("stocksResizerBar");
+    if (resizer && lowPanel) {
+      const getMaxLowPanelHeight = () => {
+        const container = lowPanel.closest(".stocks-overview") || lowPanel.parentElement;
+        const containerHeight = (container && container.getBoundingClientRect().height > 300)
+          ? container.getBoundingClientRect().height
+          : (window.innerHeight || 800);
+        return Math.max(180, containerHeight - 150);
+      };
+
+      const savedHeight = localStorage.getItem("sentryStocksLowPanelHeight");
+      const numHeight = Number(savedHeight);
+      const maxAllowed = Math.max(180, (window.innerHeight || 800) - 64 - 150);
+      const initialHeight = (savedHeight && !isNaN(numHeight) && numHeight >= 180)
+        ? Math.min(numHeight, maxAllowed)
+        : Math.min(320, maxAllowed);
+
+      if (window.innerWidth > 1024) {
+        lowPanel.style.height = `${initialHeight}px`;
+        lowPanel.style.flex = "0 0 auto";
+      }
+
+      let startY = 0;
+      let startHeight = 0;
+
+      const onMouseMove = e => {
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const deltaY = startY - clientY;
+        const maxAllowedHeight = getMaxLowPanelHeight();
+        const newHeight = Math.max(180, Math.min(maxAllowedHeight, startHeight + deltaY));
+        lowPanel.style.height = `${newHeight}px`;
+        lowPanel.style.flex = "0 0 auto";
+        resizer.classList.add("dragging");
+      };
+
+      const onMouseUp = () => {
+        resizer.classList.remove("dragging");
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        document.removeEventListener("touchmove", onMouseMove);
+        document.removeEventListener("touchend", onMouseUp);
+        const finalHeight = parseInt(lowPanel.style.height, 10);
+        if (finalHeight && finalHeight >= 250) {
+          localStorage.setItem("sentryStocksLowPanelHeight", finalHeight);
+        }
+      };
+
+      const onMouseDown = e => {
+        e.preventDefault();
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
+        startHeight = lowPanel.getBoundingClientRect().height;
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = "ns-resize";
+
+        document.addEventListener("mousemove", onMouseMove, { passive: false });
+        document.addEventListener("mouseup", onMouseUp);
+        document.addEventListener("touchmove", onMouseMove, { passive: false });
+        document.addEventListener("touchend", onMouseUp);
+      };
+
+      resizer.addEventListener("mousedown", onMouseDown);
+      resizer.addEventListener("touchstart", onMouseDown, { passive: false });
+    }
+
+    const updateStocks = () => {
+      const stockSort = document.getElementById("stockSort");
+      const mode = stockSort ? stockSort.value : "name";
+      const sortedProducts = sortProducts(state.products, mode);
       const rowsEl = document.getElementById("stockRows");
       if (rowsEl) rowsEl.innerHTML = stockRows(sortedProducts);
       const lowRowsEl = document.getElementById("stockLowRows");
       if (lowRowsEl) lowRowsEl.innerHTML = stockRows(sortedProducts.filter(isLowStock));
-    }
+    };
+
+    document.getElementById("stockSort")?.addEventListener("change", updateStocks);
+    updateStocks();
+
     pageContent.addEventListener("click", e => {
       const btn = e.target.closest("[data-expiry-product]");
       if (btn) openExpirationModal(btn.dataset.expiryProduct);
@@ -318,70 +524,69 @@ export function bindPageEvents(page) {
 
     input.addEventListener("input", showSearch);
     if (sort) sort.addEventListener("change", refreshDirectory);
-
-    if (echo) {
-      echo.addEventListener("input", () => {
-        input.value = echo.value;
-        showSearch();
-      });
-    }
-
     refreshDirectory();
   }
 
   if (page === "transactions") {
+    initOrderHoverTooltip();
+
     const bindNotes = () => {
-      document.querySelectorAll("#transactionRows .notes-btn").forEach(btn => {
+      document.querySelectorAll("#transactionRows .notes-btn.has").forEach(btn => {
         btn.addEventListener("click", () => {
           const t = state.transactions[Number(btn.dataset.notesIdx)];
-          if (!t) return;
-          const has = t.notes && String(t.notes).trim();
-          if (has) showInfoModal(`Notes — ${t.name}`, `${t.type} • ${t.date}`, t.notes, true);
-          else showInfoModal("Notes Unavailable", `${t.type} • ${t.date}`, `No notes were added to this ${String(t.type).toLowerCase()} transaction.`, false);
+          if (!t || !t.notes || !String(t.notes).trim()) return;
+          showInfoModal(`Notes — ${t.name}`, `${t.type} • ${t.date}`, t.notes, true);
         });
       });
     };
+
+    let activeFilteredTransactions = [...state.transactions];
+
     const updateHistory = () => {
-      const q = (document.getElementById("transactionSearch")?.value || "").toLowerCase();
-      const mode = document.getElementById("historySort")?.value || "date";
+      const query = document.getElementById("transactionSearch")?.value || "";
+      const mode = document.getElementById("historySort")?.value || "newest";
+      const list = filterHistory(state.transactions, mode, query);
 
-      let list = [...state.transactions];
-
-      if (q) {
-        list = list.filter(t => `${t.name} ${t.type} ${t.date} ${t.notes || ""}`.toLowerCase().includes(q));
-      }
-
-      if (mode === "SALE") {
-        list = list.filter(t => t.type === "SALE" || t.type === "sale");
-        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      } else if (mode === "STOCK_IN" || mode === "STOCK IN") {
-        list = list.filter(t => t.type === "STOCK IN" || t.type === "STOCK_IN" || t.type === "stock_in");
-        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      } else if (mode === "STOCK_OUT" || mode === "STOCK OUT") {
-        list = list.filter(t => t.type === "STOCK OUT" || t.type === "STOCK_OUT" || t.type === "stock_out");
-        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      } else if (mode === "name") {
-        list.sort((a, b) => a.name.localeCompare(b.name));
-      } else if (mode === "sales") {
-        list.sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0));
-      } else {
-        // Default "date": Newest First
-        list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      }
-
+      activeFilteredTransactions = list;
       const rowsEl = document.getElementById("transactionRows");
-      if (rowsEl) rowsEl.innerHTML = transactionRows(list);
+      if (rowsEl) rowsEl.innerHTML = transactionRows(list, mode);
       bindNotes();
     };
 
     document.getElementById("transactionSearch")?.addEventListener("input", updateHistory);
     document.getElementById("historySort")?.addEventListener("change", updateHistory);
+    updateHistory();
+
+    // refresh sales and stock movements whenever History opens
+    const refreshHistory = () => loadDashboardData().then(() => {
+      if (!document.getElementById("transactionRows")) return;
+      const banner = document.getElementById("historyBanner");
+      if (banner) {
+        banner.outerHTML = historyBanner();
+        document.getElementById("retryHistoryBtn")?.addEventListener("click", refreshHistory);
+      }
+      updateHistory();
+    }).catch(() => {});
+    document.getElementById("retryHistoryBtn")?.addEventListener("click", refreshHistory);
+    refreshHistory();
+
     document.getElementById("printHistoryBtn")?.addEventListener("click", () => {
+      const area = document.getElementById("printArea");
+      if (!area) return;
+
+      area.innerHTML = renderHistoryPrintReport(activeFilteredTransactions, document.getElementById("historySort")?.value || "newest");
+
+      const cleanup = () => {
+        document.body.classList.remove("printing-history");
+        delete document.body.dataset.printHistory;
+      };
+
+      window.addEventListener("afterprint", cleanup, { once: true });
+      document.body.classList.add("printing-history");
       document.body.dataset.printHistory = "true";
+
       window.print();
-      setTimeout(() => delete document.body.dataset.printHistory, 0);
     });
-    bindNotes();
   }
 
   if (page === "reports") {
@@ -398,6 +603,14 @@ export function bindPageEvents(page) {
         : renderInventoryCapitalReport(activeReportRange);
 
       if (printBtn) printBtn.dataset.reportPrint = activeReportTab;
+
+      // Detailed Breakdown / Price Changes switch
+      content.querySelectorAll("[data-sales-view]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          setActiveSalesView(btn.dataset.salesView);
+          updateReportView();
+        });
+      });
     };
 
     document.querySelectorAll("[data-report-tab]").forEach(btn => {
@@ -410,10 +623,31 @@ export function bindPageEvents(page) {
 
     rangeSelect?.addEventListener("change", updateReportView);
 
+    // reports always use fresh data
+    loadDashboardData().then(() => {
+      if (document.getElementById("reportTabContent")) updateReportView();
+    }).catch(() => {});
+
     printBtn?.addEventListener("click", () => {
+      const area = document.getElementById("printArea");
+      if (!area) return;
+
+      if (activeReportTab === "inventory") {
+        area.innerHTML = renderInventoryCapitalPrintReport(activeReportRange);
+      } else {
+        area.innerHTML = renderSalesProfitPrintReport(activeReportRange);
+      }
+
+      const cleanup = () => {
+        document.body.classList.remove("printing-report");
+        delete document.body.dataset.printReport;
+      };
+
+      window.addEventListener("afterprint", cleanup, { once: true });
+      document.body.classList.add("printing-report");
       document.body.dataset.printReport = activeReportTab;
+
       window.print();
-      setTimeout(() => delete document.body.dataset.printReport, 0);
     });
   }
 }
@@ -423,3 +657,157 @@ document.addEventListener("change", event => {
   setActiveProfitType(event.target.value);
   updateStats();
 });
+
+// tooltip that lists every item of a multi-item order
+function getOrderItemsFromCell(cell) {
+  if (!cell) return [];
+  const raw = cell.dataset.orderItems;
+  if (!raw) return [];
+  try {
+    const decoded = decodeURIComponent(raw);
+    const parsed = JSON.parse(decoded);
+    if (Array.isArray(parsed)) return parsed.map(s => String(s).trim()).filter(Boolean);
+  } catch (e1) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map(s => String(s).trim()).filter(Boolean);
+    } catch (e2) {
+      if (typeof raw === "string") {
+        return raw.split(",").map(s => s.trim()).filter(Boolean);
+      }
+    }
+  }
+  return [];
+}
+
+function getOrCreateTooltip() {
+  let tt = document.getElementById("orderItemsTooltip");
+  if (!tt) {
+    tt = document.createElement("div");
+    tt.id = "orderItemsTooltip";
+    tt.className = "order-items-tooltip";
+    tt.style.cssText = "position: fixed; display: none; z-index: 99999; pointer-events: none;";
+    document.body.appendChild(tt);
+  }
+  return tt;
+}
+
+function positionTooltip(e, tt) {
+  if (!tt) return;
+  const cursorX = e.clientX;
+  const cursorY = e.clientY;
+
+  const boxWidth = tt.offsetWidth || 260;
+  const boxHeight = tt.offsetHeight || 120;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  let targetLeft = cursorX + 14;
+  let targetTop = cursorY + 14;
+
+  if (targetLeft + boxWidth > viewportWidth - 12) {
+    targetLeft = Math.max(12, cursorX - boxWidth - 14);
+  }
+  if (targetTop + boxHeight > viewportHeight - 12) {
+    targetTop = Math.max(12, cursorY - boxHeight - 14);
+  }
+
+  tt.style.left = `${targetLeft}px`;
+  tt.style.top = `${targetTop}px`;
+}
+
+function showTooltipForCell(e, cell) {
+  const items = getOrderItemsFromCell(cell);
+  if (!items || items.length <= 1) return;
+
+  const tt = getOrCreateTooltip();
+  tt.innerHTML = `
+    <div class="tooltip-title">ITEMS IN ORDER (${items.length})</div>
+    <ul class="tooltip-list">
+      ${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}
+    </ul>
+  `;
+  tt.style.display = "block";
+  positionTooltip(e, tt);
+}
+
+let hoverTimer = null;
+let currentHoverCell = null;
+let lastMouseEvent = null;
+
+function cancelHoverTimer() {
+  if (hoverTimer) {
+    clearTimeout(hoverTimer);
+    hoverTimer = null;
+  }
+}
+
+function hideTooltip() {
+  cancelHoverTimer();
+  currentHoverCell = null;
+  lastMouseEvent = null;
+  const tt = document.getElementById("orderItemsTooltip");
+  if (tt) tt.style.display = "none";
+}
+
+function startHoverTimer(e, cell) {
+  const items = getOrderItemsFromCell(cell);
+  if (!items || items.length <= 1) {
+    hideTooltip();
+    return;
+  }
+
+  lastMouseEvent = e;
+  if (currentHoverCell === cell) {
+    return;
+  }
+
+  cancelHoverTimer();
+  currentHoverCell = cell;
+
+  hoverTimer = setTimeout(() => {
+    hoverTimer = null;
+    if (currentHoverCell === cell && lastMouseEvent) {
+      showTooltipForCell(lastMouseEvent, cell);
+    }
+  }, 1000);
+}
+
+export function initOrderHoverTooltip() {
+  if (window._orderHoverDelegated) return;
+  window._orderHoverDelegated = true;
+
+  document.addEventListener("mouseover", e => {
+    const cell = e.target.closest(".order-hover-cell");
+    if (!cell) return;
+    startHoverTimer(e, cell);
+  });
+
+  document.addEventListener("mousemove", e => {
+    const cell = e.target.closest(".order-hover-cell");
+    const tt = document.getElementById("orderItemsTooltip");
+    if (cell) {
+      const items = getOrderItemsFromCell(cell);
+      if (!items || items.length <= 1) {
+        hideTooltip();
+        return;
+      }
+      lastMouseEvent = e;
+      if (tt && tt.style.display === "block" && currentHoverCell === cell) {
+        positionTooltip(e, tt);
+      } else {
+        startHoverTimer(e, cell);
+      }
+    } else {
+      hideTooltip();
+    }
+  });
+
+  document.addEventListener("mouseout", e => {
+    const cell = e.target.closest(".order-hover-cell");
+    if (!cell) return;
+    if (!e.relatedTarget || !cell.contains(e.relatedTarget)) {
+      hideTooltip();
+    }
+  });
+}

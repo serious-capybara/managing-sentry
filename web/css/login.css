@@ -1,6 +1,4 @@
-/* ============================================================
- * css/login.css — Authentication / Login Screen Styling
- * ============================================================ */
+/* login screen */
 
 .login-screen {
   min-height: 100vh;
@@ -11,24 +9,54 @@
 
 .login-visual {
   position: relative;
+  isolation: isolate;
   min-height: 100vh;
   overflow: hidden;
   background-size: cover;
   background-position: center;
   background-image: url("https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1500&q=85");
-  animation: slideBg 15s infinite;
 }
 
-@keyframes slideBg {
-  0%, 28% { background-image: url("https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1500&q=85"); }
-  33%, 61% { background-image: url("https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1500&q=85"); }
-  66%, 94% { background-image: url("https://images.unsplash.com/photo-1556742111-a301076d9d18?auto=format&fit=crop&w=1500&q=85"); }
-  100% { background-image: url("https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1500&q=85"); }
+/* Photos 2 and 3 sit on top of photo 1 and fade in and out. Fading opacity is cheap
+   (the graphics card does it); animating background-image repaints the whole panel. */
+.login-visual::before,
+.login-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  will-change: opacity;
+}
+
+.login-visual::before {
+  background-image: url("https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1500&q=85");
+  animation: fadePhotoTwo 15s infinite;
+}
+
+.login-visual::after {
+  background-image: url("https://images.unsplash.com/photo-1556742111-a301076d9d18?auto=format&fit=crop&w=1500&q=85");
+  animation: fadePhotoThree 15s infinite;
+}
+
+@keyframes fadePhotoTwo {
+  0%, 28% { opacity: 0; }
+  33%, 61% { opacity: 1; }
+  66%, 100% { opacity: 0; }
+}
+
+@keyframes fadePhotoThree {
+  0%, 61% { opacity: 0; }
+  66%, 94% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .visual-overlay {
   position: absolute;
   inset: 0;
+  z-index: 1;
   background: linear-gradient(135deg, rgba(17,24,68,0.92), rgba(10,15,43,0.85));
 }
 

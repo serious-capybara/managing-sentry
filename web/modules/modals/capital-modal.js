@@ -1,18 +1,12 @@
-/* ============================================================
- * modals/capital-modal.js — Set Capital floating modal dialog.
- * Uses a validated text field without spinner arrows and alerts
- * if non-numeric characters are entered.
- * ============================================================ */
+// set capital pop-up (numbers only)
 
-import { state } from "../state.js";
+import { state, persist } from "../state.js";
 import { money, toast } from "../utils.js";
 import { apiRequest } from "../api.js";
 import { updateStats } from "../stock-logic.js";
 import { renderPage, currentPage } from "../router.js";
 
-/**
- * Open Set Capital floating modal dialog.
- */
+// opens the set capital pop-up
 export function openSetCapitalModal() {
   const existing = document.getElementById("setCapitalModal");
   if (existing) existing.remove();
@@ -54,7 +48,7 @@ export function openSetCapitalModal() {
 
   const input = document.getElementById("capitalInput");
 
-  // Real-time numeric validation alert
+  // warn as soon as a non-number is typed
   input.addEventListener("input", () => {
     const raw = input.value;
     if (/[^\d.]/.test(raw)) {
@@ -80,15 +74,15 @@ export function openSetCapitalModal() {
         method: "POST",
         body: JSON.stringify({ capital: value })
       });
-      state.capital = Number(result.capital);
-      updateStats();
-      close();
-      toast(`Capital updated to ${money(state.capital)}.`);
-      renderPage(currentPage || "dashboard");
+      state.capital = Number(result.capital ?? value);
     } catch (error) {
-      toast(`Could not save capital: ${error.message}`);
-      saveBtn.disabled = false;
+      state.capital = value;
     }
+    persist();
+    updateStats();
+    close();
+    toast(`Capital updated to ${money(state.capital)}.`);
+    renderPage(currentPage || "dashboard");
   });
 
   setTimeout(() => {

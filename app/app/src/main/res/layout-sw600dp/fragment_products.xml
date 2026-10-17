@@ -18,6 +18,18 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <TextView
+        android:id="@+id/connection_status_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:text="Offline"
+        android:textSize="13sp"
+        android:textColor="@color/slate_600"
+        app:layout_constraintTop_toTopOf="@id/connection_status_dot"
+        app:layout_constraintBottom_toBottomOf="@id/connection_status_dot"
+        app:layout_constraintEnd_toStartOf="@id/connection_status_dot" />
+
     <View
         android:id="@+id/connection_status_dot"
         android:layout_width="16dp"

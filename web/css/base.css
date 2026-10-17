@@ -1,6 +1,4 @@
-/* ============================================================
- * css/base.css — Global resets, typography, and utility classes
- * ============================================================ */
+/* resets, body defaults and small utilities */
 
 * {
   box-sizing: border-box;
@@ -33,7 +31,7 @@ button {
   background: none;
 }
 
-/* Hide native browser top/bottom spinner arrows on number inputs */
+/* no up/down arrows on number inputs */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -49,11 +47,46 @@ input[type="number"] {
   display: none !important;
 }
 
+/* dropdown lists still scroll, just without a visible scrollbar */
+.styled-select-menu,
+.category-picker-menu,
+.remove-product-list,
+.dropdown-menu,
+.custom-select-menu,
+.select-menu,
+.picker-menu,
+[role="listbox"] {
+  scrollbar-width: none !important; /* firefox */
+  -ms-overflow-style: none !important; /* old edge */
+}
+
+.styled-select-menu::-webkit-scrollbar,
+.category-picker-menu::-webkit-scrollbar,
+.remove-product-list::-webkit-scrollbar,
+.dropdown-menu::-webkit-scrollbar,
+.custom-select-menu::-webkit-scrollbar,
+.select-menu::-webkit-scrollbar,
+.picker-menu::-webkit-scrollbar,
+[role="listbox"]::-webkit-scrollbar {
+  display: none !important; /* chrome, safari */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Set on <html> before the app boots while a session is still valid, so a
+   reload does not briefly show the login form (see index.html <head>). */
+.session-active #loginScreen {
+  display: none;
+}
+
 .toast {
   position: fixed;
-  right: 32px;
-  bottom: 32px;
+  top: 20px;
+  left: 50%;
   z-index: 300;
+  width: max-content;
+  max-width: min(560px, calc(100vw - 24px));
+  text-align: center;
   background: var(--navy);
   color: #FFFFFF;
   padding: 14px 20px;
@@ -62,14 +95,14 @@ input[type="number"] {
   font-weight: 600;
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
   opacity: 0;
-  transform: translateY(16px);
+  transform: translate(-50%, -16px);
   pointer-events: none;
-  transition: all 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .toast.show {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
 }
 
 .print-area {

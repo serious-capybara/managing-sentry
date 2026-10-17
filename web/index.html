@@ -4,15 +4,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Managing Sentry - POS & Inventory Management</title>
+  <meta name="description" content="Manage your inventory. Sell smarter. Monitor products, stock, sales and transactions in one place.">
+
+  <!-- link previews (Facebook, Messenger, Telegram, Discord...) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Managing Sentry">
+  <meta property="og:title" content="Managing Sentry - POS & Inventory Management">
+  <meta property="og:description" content="Manage your inventory. Sell smarter. Monitor products, stock, sales and transactions in one place.">
+  <meta property="og:url" content="https://managing-sentry-alekos-admin.vercel.app/">
+  <meta property="og:image" content="https://managing-sentry-alekos-admin.vercel.app/src/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1920">
+  <meta property="og:image:height" content="981">
+  <meta property="og:image:alt" content="Managing Sentry login screen: Manage your inventory. Sell smarter.">
+
+  <!-- X / Twitter card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Managing Sentry - POS & Inventory Management">
+  <meta name="twitter:description" content="Manage your inventory. Sell smarter. Monitor products, stock, sales and transactions in one place.">
+  <meta name="twitter:image" content="https://managing-sentry-alekos-admin.vercel.app/src/og-image.png">
   <link rel="icon" type="image/png" href="src/managing-sentry.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    /* Hide the login screen before first paint while the saved session is inside
+       its one-hour window, so refreshing keeps the user in the app. The window
+       must stay in sync with ONE_HOUR_MS in modules/state.js. */
+    try {
+      const saved = JSON.parse(localStorage.getItem("sentrySession") || "null");
+      if (saved?.loginTime && Date.now() - saved.loginTime < 3600000) {
+        document.documentElement.classList.add("session-active");
+        // Safety valve: if the app modules fail to boot, bring the login form back.
+        setTimeout(() => document.documentElement.classList.remove("session-active"), 2000);
+      }
+    } catch (err) {
+      /* unreadable session storage — fall through to the login screen */
+    }
+  </script>
 </head>
 <body>
 
-  <!-- LOGIN SCREEN -->
+  <!-- login -->
   <div id="loginScreen" class="login-screen">
     <div class="login-visual">
       <div class="visual-overlay"></div>
@@ -60,9 +94,9 @@
     </div>
   </div>
 
-  <!-- APP -->
+  <!-- app -->
   <div id="app" class="app hidden">
-    <!-- Backdrop overlay for mobile sidebar drawer -->
+    <!-- dark area behind the phone menu -->
     <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
     <aside id="sidebar" class="sidebar">
@@ -84,7 +118,6 @@
         <button class="nav-item active" data-page="dashboard" title="Dashboard"><img class="nav-icon" src="src/icon/white/dashboard.svg" alt=""> <span>Dashboard</span></button>
         <button class="nav-item" data-page="products" title="Products"><img class="nav-icon" src="src/icon/white/products.svg" alt=""> <span>Products</span></button>
         <button class="nav-item" data-page="stocks" title="Stocks"><img class="nav-icon" src="src/icon/white/stock.svg" alt=""> <span>Stocks</span> <i class="alert-dot hidden" id="sidebarLowStockDot" aria-label="Low stock alert"></i></button>
-        <button class="nav-item" data-page="low-stock" title="Low Stock Alert"><img class="nav-icon" src="src/icon/white/low-stock-alert.svg" alt=""> <span>Low Stock Alert</span> <i class="alert-dot hidden" id="sidebarLowStockAlertDot" aria-label="Low stock alert"></i></button>
         <button class="nav-item" data-page="price-checker" title="Price Checker"><img class="nav-icon" src="src/icon/white/price-checker.svg" alt=""> <span>Price Checker</span></button>
         <button class="nav-item" data-page="transactions" title="History"><img class="nav-icon" src="src/icon/white/histories.svg" alt=""> <span>History</span></button>
         <button class="nav-item" data-page="reports" title="Reports"><img class="nav-icon" src="src/icon/white/reports.svg" alt=""> <span>Reports</span></button>

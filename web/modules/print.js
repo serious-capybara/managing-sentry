@@ -1,14 +1,8 @@
-/* ============================================================
- * print.js — Receipt printing renderer.
- * Formats sales receipt and triggers browser window.print().
- * ============================================================ */
+// receipt printing
 
 import { renderReceipt } from "./receipt.js";
 
-/**
- * Render printable receipt in #printArea and trigger browser print dialog.
- * @param {object} data
- */
+// fills #printArea with the receipt and opens the print dialog
 export function printReceipt(data) {
   const area = document.getElementById("printArea");
   if (!area) return;

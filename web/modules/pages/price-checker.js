@@ -1,8 +1,4 @@
-/* ============================================================
- * pages/price-checker.js — Price Checker page renderer.
- * Shows an alphabetical/category product directory and an
- * instant-search panel with a highlighted price result.
- * ============================================================ */
+// Price Checker page
 
 import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";
@@ -10,14 +6,18 @@ import { money, escapeHtml } from "../utils.js";
 export function renderPriceChecker() {
   return `
     <div class="price-checker-new">
-      <div class="price-checker-toolbar">
-        <select class="price-sort-select" id="priceSort" aria-label="Sort products">
-          <option value="alphabetical">Alphabetical Order</option>
-          <option value="category">Category</option>
-        </select>
-        <div class="price-search-wrap">
-          <span><img class="inline-icon" src="src/icon/dark/price-checker.svg" alt=""></span>
-          <input id="priceSearch" placeholder="Search product..." autocomplete="off">
+      <div class="page-toolbar price-checker-toolbar">
+        <div class="toolbar-left">
+          <div class="toolbar-sort-wrap">
+            <span class="toolbar-label"><img class="inline-icon" src="src/icon/dark/sort-filter.svg" alt=""> Sort:</span>
+            <select class="compact-select styled-select-native" id="priceSort" aria-label="Sort products">
+              <option value="alphabetical">Alphabetical Order</option>
+              <option value="category">Category</option>
+            </select>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <input id="priceSearch" class="compact-input" placeholder="Search product..." autocomplete="off">
         </div>
       </div>
 

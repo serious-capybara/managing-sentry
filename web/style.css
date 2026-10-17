@@ -1,7 +1,4 @@
-/* ============================================================
- * Sentry Enterprise POS & Inventory Management - Style Index
- * Master stylesheet importing modular CSS architecture.
- * ============================================================ */
+/* main stylesheet, pulls in the files below */
 
 @import url('css/variables.css');
 @import url('css/base.css');
@@ -12,3 +9,4 @@
 @import url('css/modals.css');
 @import url('css/pos.css');
 @import url('css/responsive.css');
+@import url('css/print-report.css');

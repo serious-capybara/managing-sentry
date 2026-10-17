@@ -1,8 +1,4 @@
-/* ============================================================
- * pages/products.js — Products catalog page renderer.
- * Includes the sortable product table and toolbar with
- * "Add New Product" and "Remove Product" buttons.
- * ============================================================ */
+// Products page
 
 import { state }              from "../state.js";
 import { money, escapeHtml }  from "../utils.js";
@@ -22,8 +18,8 @@ export function renderProducts() {
           </div>
         </div>
         <div class="toolbar-right">
-          <button class="wire-btn" id="addProductBtn"><img class="btn-icon" src="src/icon/dark/add.svg" alt=""> Add New Product</button>
-          <button class="wire-btn" id="removeProductBtn"><img class="btn-icon" src="src/icon/dark/remove-stock-product.svg" alt=""> Remove Product</button>
+          <button class="wire-btn" id="addProductBtn">Add / Edit Product</button>
+          <button class="wire-btn" id="removeProductBtn">Remove Product</button>
         </div>
       </div>
       <div class="wire-table-wrap products-table-card">

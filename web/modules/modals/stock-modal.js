@@ -1,20 +1,23 @@
-/* ============================================================
- * modals/stock-modal.js — Stock In & Stock Out floating modals.
- * Allows adding or removing stock quantities for products via
- * floating dialog modals.
- * ============================================================ */
+// add stock / remove stock pop-ups
 
 import { state } from "../state.js";
-import { escapeHtml, toast } from "../utils.js";
+import { escapeHtml, money, toast } from "../utils.js";
 import { apiRequest } from "../api.js";
 import { loadDashboardData } from "../data-loader.js";
 import { updateStats } from "../stock-logic.js";
 import { renderPage, currentPage } from "../router.js";
+import { bindStyledSelects } from "../styled-select.js";
+import { renderProductPickerItem } from "./remove-product-modal.js";
 
-/**
- * Open Stock In (Add Stock) floating modal dialog.
- * @param {number|null} targetProductId - Optional pre-selected product ID
- */
+function stockProductOptions(products = state.products, selectedId = null) {
+  return products
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(p => renderProductPickerItem(p, selectedId))
+    .join("");
+}
+
+// add stock pop-up
 export function openStockInModal(targetProductId = null) {
   const existing = document.getElementById("stockInModal");
   if (existing) existing.remove();
@@ -24,15 +27,10 @@ export function openStockInModal(targetProductId = null) {
     return;
   }
 
+  const defaultId = targetProductId || state.products[0].id;
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
   overlay.id = "stockInModal";
-
-  const productOptions = state.products
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(p => `<option value="${p.id}" ${Number(p.id) === Number(targetProductId) ? "selected" : ""}>${escapeHtml(p.name)} — ${p.stock} units in stock</option>`)
-    .join("");
 
   overlay.innerHTML = `
     <div class="modal stock-modal">
@@ -47,20 +45,23 @@ export function openStockInModal(targetProductId = null) {
         <div class="modal-body">
           <div class="form-grid">
             <div class="form-group full">
-              <label for="stockInProduct">Select Product</label>
-              <select id="stockInProduct" name="product" required>${productOptions}</select>
+              <label>Select Product</label>
+              <div class="remove-search-wrap">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="stockInSearch" type="search" placeholder="Search products by name or category..." autocomplete="off">
+              </div>
+              <div class="remove-product-list" id="stockInProductList">
+                ${stockProductOptions(state.products, defaultId)}
+              </div>
+              <input type="hidden" id="stockInProduct" name="product" value="${defaultId}" required>
             </div>
             <div class="form-group">
               <label for="stockInQty">Quantity to Add</label>
               <input id="stockInQty" name="qty" type="number" min="1" value="1" required placeholder="1">
             </div>
             <div class="form-group">
-              <label for="stockInRef">Reference / Supplier</label>
-              <input id="stockInRef" name="ref" placeholder="Optional PO or Supplier Ref" autocomplete="off">
-            </div>
-            <div class="form-group">
               <label for="stockInHasExpiry">Expiry Date Available?</label>
-              <select name="hasExpiry" id="stockInHasExpiry">
+              <select name="hasExpiry" id="stockInHasExpiry" class="compact-select styled-select-native" aria-label="Expiry Date Available?">
                 <option value="no">No Expiration</option>
                 <option value="yes">Yes</option>
               </select>
@@ -70,26 +71,50 @@ export function openStockInModal(targetProductId = null) {
               <input id="stockInExpiry" name="expiry" type="date">
             </div>
             <div class="form-group full">
-              <label for="stockInNotes">Notes</label>
-              <textarea id="stockInNotes" name="notes" placeholder="Optional stock in details" rows="2"></textarea>
+              <label for="stockInNotes">Notes <small class="form-hint">(Max 50 words)</small></label>
+              <textarea id="stockInNotes" name="notes" placeholder="Optional stock in details or supplier notes (Max 50 words)" rows="4" maxlength="300" style="resize:none"></textarea>
             </div>
           </div>
         </div>
         <div class="modal-foot">
           <button class="ghost-btn" id="cancelStockIn" type="button">Cancel</button>
-          <button class="primary-btn" id="confirmStockIn" type="submit">
-            <img class="btn-icon" src="src/icon/white/add.svg" alt=""> Record Stock In
-          </button>
+          <button class="primary-btn" id="confirmStockIn" type="submit">Record Stock In</button>
         </div>
       </form>
     </div>`;
 
   document.body.appendChild(overlay);
+  bindStyledSelects(overlay);
 
   const close = () => overlay.remove();
   document.getElementById("closeStockIn").addEventListener("click", close);
   document.getElementById("cancelStockIn").addEventListener("click", close);
   overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+
+  let selectedProductId = defaultId;
+  const searchInput = document.getElementById("stockInSearch");
+  const productList = document.getElementById("stockInProductList");
+  const hiddenInput = document.getElementById("stockInProduct");
+
+  const renderStockOptions = () => {
+    const query = searchInput.value.trim().toLowerCase();
+    const filtered = state.products.filter(p => `${p.name} ${p.category}`.toLowerCase().includes(query));
+    productList.innerHTML = filtered.length
+      ? stockProductOptions(filtered, selectedProductId)
+      : `<div class="remove-empty" style="padding: 12px; text-align: center; color: var(--text-secondary);">No matching products found.</div>`;
+
+    productList.querySelectorAll(".remove-product-option").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedProductId = Number(btn.dataset.id);
+        hiddenInput.value = selectedProductId;
+        productList.querySelectorAll(".remove-product-option").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+      });
+    });
+  };
+
+  searchInput.addEventListener("input", renderStockOptions);
+  renderStockOptions();
 
   const hasExpiry = document.getElementById("stockInHasExpiry");
   const expiryWrap = document.getElementById("stockInExpiryWrap");
@@ -102,10 +127,20 @@ export function openStockInModal(targetProductId = null) {
     if (!on) expiryInput.value = "";
   });
 
+  const notesTextarea = document.getElementById("stockInNotes");
+  if (notesTextarea) {
+    notesTextarea.addEventListener("input", () => {
+      const words = notesTextarea.value.trim().split(/\s+/).filter(Boolean);
+      if (words.length > 50) {
+        notesTextarea.value = words.slice(0, 50).join(" ");
+      }
+    });
+  }
+
   document.getElementById("stockInForm").addEventListener("submit", async e => {
     e.preventDefault();
     const f = new FormData(e.target);
-    const productId = Number(f.get("product"));
+    const productId = Number(hiddenInput.value);
     const product = state.products.find(p => p.id === productId);
     if (!product) return toast("Please select a valid product.");
 
@@ -119,7 +154,6 @@ export function openStockInModal(targetProductId = null) {
           product_id: product.id,
           quantity: Number(f.get("qty")),
           type: "STOCK IN",
-          reference: f.get("ref"),
           notes: f.get("notes"),
           expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : ""
         })
@@ -135,13 +169,10 @@ export function openStockInModal(targetProductId = null) {
     }
   });
 
-  setTimeout(() => document.getElementById("stockInQty")?.focus(), 50);
+  setTimeout(() => searchInput?.focus(), 50);
 }
 
-/**
- * Open Stock Out (Remove Stock) floating modal dialog.
- * @param {number|null} targetProductId - Optional pre-selected product ID
- */
+// remove stock pop-up
 export function openStockOutModal(targetProductId = null) {
   const existing = document.getElementById("stockOutModal");
   if (existing) existing.remove();
@@ -151,15 +182,10 @@ export function openStockOutModal(targetProductId = null) {
     return;
   }
 
+  const defaultId = targetProductId || state.products[0].id;
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
   overlay.id = "stockOutModal";
-
-  const productOptions = state.products
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(p => `<option value="${p.id}" ${Number(p.id) === Number(targetProductId) ? "selected" : ""}>${escapeHtml(p.name)} — ${p.stock} units in stock</option>`)
-    .join("");
 
   overlay.innerHTML = `
     <div class="modal stock-modal">
@@ -174,28 +200,29 @@ export function openStockOutModal(targetProductId = null) {
         <div class="modal-body">
           <div class="form-grid">
             <div class="form-group full">
-              <label for="stockOutProduct">Select Product</label>
-              <select id="stockOutProduct" name="product" required>${productOptions}</select>
+              <label>Select Product</label>
+              <div class="remove-search-wrap">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="stockOutSearch" type="search" placeholder="Search products by name or category..." autocomplete="off">
+              </div>
+              <div class="remove-product-list" id="stockOutProductList">
+                ${stockProductOptions(state.products, defaultId)}
+              </div>
+              <input type="hidden" id="stockOutProduct" name="product" value="${defaultId}" required>
             </div>
-            <div class="form-group">
+            <div class="form-group full">
               <label for="stockOutQty">Quantity to Remove</label>
               <input id="stockOutQty" name="qty" type="number" min="1" value="1" required placeholder="1">
             </div>
-            <div class="form-group">
-              <label for="stockOutRef">Reason / Reference</label>
-              <input id="stockOutRef" name="ref" placeholder="e.g. Damaged / Returned / Adjustment" autocomplete="off">
-            </div>
             <div class="form-group full">
-              <label for="stockOutNotes">Notes</label>
-              <textarea id="stockOutNotes" name="notes" placeholder="Optional stock out details" rows="2"></textarea>
+              <label for="stockOutNotes">Notes <small class="form-hint">(Max 50 words)</small></label>
+              <textarea id="stockOutNotes" name="notes" placeholder="Optional stock out reason or details (Max 50 words)" rows="4" maxlength="300" style="resize:none"></textarea>
             </div>
           </div>
         </div>
         <div class="modal-foot">
           <button class="ghost-btn" id="cancelStockOut" type="button">Cancel</button>
-          <button class="primary-btn" id="confirmStockOut" type="submit">
-            <img class="btn-icon" src="src/icon/white/minus.svg" alt=""> Record Stock Out
-          </button>
+          <button class="primary-btn" id="confirmStockOut" type="submit">Record Stock Out</button>
         </div>
       </form>
     </div>`;
@@ -207,23 +234,55 @@ export function openStockOutModal(targetProductId = null) {
   document.getElementById("cancelStockOut").addEventListener("click", close);
   overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
 
-  const productSelect = document.getElementById("stockOutProduct");
+  let selectedProductId = defaultId;
+  const searchInput = document.getElementById("stockOutSearch");
+  const productList = document.getElementById("stockOutProductList");
+  const hiddenInput = document.getElementById("stockOutProduct");
   const qtyInput = document.getElementById("stockOutQty");
 
-  const syncMaxQty = () => {
-    const selected = state.products.find(p => p.id === Number(productSelect.value));
+  const syncMaxQty = (prodId) => {
+    const selected = state.products.find(p => p.id === Number(prodId));
     if (selected) {
       qtyInput.max = selected.stock;
     }
   };
 
-  productSelect.addEventListener("change", syncMaxQty);
-  syncMaxQty();
+  const renderStockOptions = () => {
+    const query = searchInput.value.trim().toLowerCase();
+    const filtered = state.products.filter(p => `${p.name} ${p.category}`.toLowerCase().includes(query));
+    productList.innerHTML = filtered.length
+      ? stockProductOptions(filtered, selectedProductId)
+      : `<div class="remove-empty" style="padding: 12px; text-align: center; color: var(--text-secondary);">No matching products found.</div>`;
+
+    productList.querySelectorAll(".remove-product-option").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedProductId = Number(btn.dataset.id);
+        hiddenInput.value = selectedProductId;
+        syncMaxQty(selectedProductId);
+        productList.querySelectorAll(".remove-product-option").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+      });
+    });
+  };
+
+  searchInput.addEventListener("input", renderStockOptions);
+  renderStockOptions();
+  syncMaxQty(selectedProductId);
+
+  const notesTextarea = document.getElementById("stockOutNotes");
+  if (notesTextarea) {
+    notesTextarea.addEventListener("input", () => {
+      const words = notesTextarea.value.trim().split(/\s+/).filter(Boolean);
+      if (words.length > 50) {
+        notesTextarea.value = words.slice(0, 50).join(" ");
+      }
+    });
+  }
 
   document.getElementById("stockOutForm").addEventListener("submit", async e => {
     e.preventDefault();
     const f = new FormData(e.target);
-    const productId = Number(f.get("product"));
+    const productId = Number(hiddenInput.value);
     const product = state.products.find(p => p.id === productId);
     const qty = Number(f.get("qty"));
 
@@ -240,7 +299,6 @@ export function openStockOutModal(targetProductId = null) {
           product_id: product.id,
           quantity: qty,
           type: "STOCK OUT",
-          reference: f.get("ref"),
           notes: f.get("notes")
         })
       });
@@ -255,5 +313,5 @@ export function openStockOutModal(targetProductId = null) {
     }
   });
 
-  setTimeout(() => document.getElementById("stockOutQty")?.focus(), 50);
+  setTimeout(() => searchInput?.focus(), 50);
 }

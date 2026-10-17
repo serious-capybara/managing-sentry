@@ -1,0 +1,342 @@
+-- Managing Sentry: full rebuild with the fixed Data Dictionary + all existing data.
+-- Drops and recreates the 7 tables and the user_role type, then re-inserts your data.
+-- Run the whole thing at once in the Supabase SQL editor. One transaction: all or nothing.
+BEGIN;
+
+DROP TABLE IF EXISTS public.histories, public.order_items, public.stock_adjustments,
+                     public.orders, public.products, public.users, public.capital_configs CASCADE;
+DROP TYPE IF EXISTS public.user_role;
+
+CREATE TYPE public.user_role AS ENUM ('Admin', 'Manager', 'Staff');
+
+CREATE TABLE public.users (
+  user_id       INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  full_name     VARCHAR(100) NOT NULL,
+  username      VARCHAR(50)  NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role          public.user_role NOT NULL
+);
+
+CREATE TABLE public.capital_configs (
+  config_id        INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  starting_capital NUMERIC(12,2) NOT NULL,
+  current_balance  NUMERIC(12,2) NOT NULL,
+  last_updated_at  TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'Asia/Manila')
+);
+
+CREATE TABLE public.products (
+  product_id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name                  VARCHAR(100)  NOT NULL,
+  category              VARCHAR(50)   NOT NULL,
+  base_cost             NUMERIC(10,2) NOT NULL,
+  markup_amount         NUMERIC(10,2) NOT NULL,
+  retail_price          NUMERIC(10,2) NOT NULL,
+  stock_quantity        INTEGER NOT NULL DEFAULT 0,
+  expiration_date       DATE,
+  low_stock_alert_level INTEGER NOT NULL DEFAULT 20
+);
+
+CREATE TABLE public.orders (
+  order_id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id               INTEGER NOT NULL REFERENCES public.users(user_id) ON DELETE RESTRICT,
+  transaction_timestamp TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'Asia/Manila'),
+  total_amount          NUMERIC(10,2) NOT NULL CHECK (total_amount >= 0),
+  amount_tendered       NUMERIC(10,2) NOT NULL,
+  change_given          NUMERIC(10,2) NOT NULL,
+  notes                 TEXT
+);
+
+CREATE TABLE public.order_items (
+  order_item_id  INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  order_id       INTEGER NOT NULL REFERENCES public.orders(order_id) ON DELETE CASCADE,
+  product_id     INTEGER NOT NULL REFERENCES public.products(product_id),
+  quantity       INTEGER NOT NULL CHECK (quantity > 0),
+  cost_snapshot  NUMERIC(10,2) NOT NULL,
+  price_snapshot NUMERIC(10,2) NOT NULL,
+  line_subtotal  NUMERIC(10,2) NOT NULL,
+  CONSTRAINT order_items_order_product_unique UNIQUE (order_id, product_id)
+);
+
+CREATE TABLE public.stock_adjustments (
+  adjustment_id    INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  product_id       INTEGER NOT NULL REFERENCES public.products(product_id),
+  user_id          INTEGER NOT NULL REFERENCES public.users(user_id) ON DELETE RESTRICT,
+  adjustment_type  VARCHAR(30) NOT NULL,
+  quantity_changed INTEGER NOT NULL,
+  unit_cost        NUMERIC(10,2),
+  transaction_date TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'Asia/Manila'),
+  audit_notes      VARCHAR(255)
+);
+
+CREATE TABLE public.histories (
+  history_id       INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  order_id         INTEGER NOT NULL REFERENCES public.orders(order_id) ON DELETE CASCADE,
+  status_timestamp TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'Asia/Manila'),
+  order_status     VARCHAR(20) NOT NULL DEFAULT 'COMPLETED'
+);
+
+-- ===== EXISTING DATA (parents first) =====
+
+-- users
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (4, 'Resty Aldave', 'cid', '$2y$12$ARqU8.iOVuLSwHMy6T.JZ.bKrlFp760.rVey3rPO4NnIvZVJ5NfW.', 'Admin');
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (1, 'Alekos Owner', 'admin', '$2y$12$8sTsxaXAU6otoT47UasF2u.OoNdSe5Wzr/892a5I6nTrMkl7DBYBu', 'Admin');
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (2, 'Maria Santos', 'cashier1', '$2y$12$8sTsxaXAU6otoT47UasF2u.OoNdSe5Wzr/892a5I6nTrMkl7DBYBu', 'Staff');
+INSERT INTO public.users OVERRIDING SYSTEM VALUE VALUES (3, 'Juan Dela Cruz', 'manager1', '$2y$12$8sTsxaXAU6otoT47UasF2u.OoNdSe5Wzr/892a5I6nTrMkl7DBYBu', 'Manager');
+
+-- capital_configs
+INSERT INTO public.capital_configs OVERRIDING SYSTEM VALUE VALUES (1, 50000.00, 50000.00, '2026-10-09 19:20:43.774696+00');
+
+-- products
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (4, 'Colgate Regular 150g', 'Personal Care', 66.50, 28.50, 95.00, 0, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (3, 'Safeguard White 130g', 'Personal Care', 33.60, 14.40, 48.00, 74, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (7, 'Bear Brand Milk 320g', 'Dairy', 80.50, 34.50, 115.00, 3, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (8, 'Century Tuna Oil 155g', 'Canned Goods', 26.60, 11.40, 38.00, 59, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (9, 'Pale Pilsen 330ml Can', 'Beverages', 45.50, 19.50, 65.00, 109, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (10, 'Poten-Cee Vitamin C', 'Medicine', 5.25, 2.25, 7.50, 85, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (2, 'Neozep Forte', 'Medicine', 4.20, 1.80, 6.00, 8, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (5, 'Kopiko Black 3-in-1', 'Beverages', 5.60, 2.40, 8.00, 197, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (6, 'Gardenia White Bread', 'Bakery', 52.50, 22.50, 75.00, 22, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (11, 'Lucky Me Pancit Canton 80g', 'Snacks', 10.50, 4.50, 15.00, 120, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (12, 'San Mig Light 330ml Can', 'Beverages', 49.00, 21.00, 70.00, 85, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (13, 'Milo Powder Drink 22g', 'Beverages', 7.00, 3.00, 10.00, 250, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (14, 'Alaxan FR 200mg', 'Medicine', 7.00, 3.00, 10.00, 90, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (15, 'Palmolive Shampoo 12ml Sachet', 'Personal Care', 4.90, 2.10, 7.00, 180, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (16, 'SkyFlakes Crackers 250g', 'Snacks', 35.00, 15.00, 50.00, 45, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (18, 'Datu Puti Soy Sauce 385ml', 'Condiments', 16.80, 7.20, 24.00, 40, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (19, 'Nature Spring Water 500ml', 'Beverages', 10.50, 4.50, 15.00, 140, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (22, 'Nescafe Classic 25g', 'Beverages', 15.40, 6.60, 22.00, 150, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (23, 'Surf Powder Detergent 80g', 'Household', 8.40, 3.60, 12.00, 200, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (24, 'San Marino Corned Tuna 180g', 'Canned Goods', 31.50, 13.50, 45.00, 50, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (25, 'Medicol Advance 200mg', 'Medicine', 5.95, 2.55, 8.50, 95, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (26, 'Piattos Cheese 85g', 'Snacks', 26.60, 11.40, 38.00, 65, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (28, 'Datu Puti Vinegar 385ml', 'Condiments', 14.00, 6.00, 20.00, 55, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (29, 'C2 Green Tea Apple 500ml', 'Beverages', 19.60, 8.40, 28.00, 90, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (30, 'Solmux 500mg Capsule', 'Medicine', 9.80, 4.20, 14.00, 80, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (31, 'Oishi Prawn Crackers 60g', 'Snacks', 12.60, 5.40, 18.00, 100, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (32, 'Downy Sunrise Fresh Sachet 28ml', 'Household', 5.60, 2.40, 8.00, 160, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (33, 'Selecta Fortified Milk 1L', 'Dairy', 64.40, 27.60, 92.00, 18, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (34, 'Red Horse Beer 330ml Can', 'Beverages', 47.60, 20.40, 68.00, 70, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (35, 'Tang Orange Juice Powder 20g', 'Beverages', 13.30, 5.70, 19.00, 130, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (1, 'Biogesic 500mg', 'Medicine', 3.85, 1.65, 5.50, 133, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (20, 'Bioflu Tablet', 'Medicine', 6.30, 2.70, 9.00, 108, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (36, 'Lucky Me Beef Na Beef Pancit Canton 55g', 'Snacks', 9.80, 4.20, 14.00, 140, '2027-03-15', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (37, 'Nissin Cup Noodles Seafood 40g', 'Snacks', 17.50, 7.50, 25.00, 90, '2027-02-10', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (38, 'Chippy BBQ 110g', 'Snacks', 15.40, 6.60, 22.00, 110, '2027-01-20', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (39, 'Cloud 9 Classic Chocolate Bar 34g', 'Snacks', 10.50, 4.50, 15.00, 160, '2027-04-30', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (40, 'Fita Biscuits 300g', 'Snacks', 30.80, 13.20, 44.00, 60, '2027-02-28', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (41, 'Mogu-Mogu Lychee 320ml', 'Beverages', 24.50, 10.50, 35.00, 75, '2027-05-12', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (42, 'Coca-Cola Sakto 200ml', 'Beverages', 8.40, 3.60, 12.00, 220, '2027-03-01', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (43, 'Sprite Sakto 200ml', 'Beverages', 8.40, 3.60, 12.00, 200, '2027-03-01', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (44, 'Royal Tru-Orange 237ml', 'Beverages', 9.80, 4.20, 14.00, 150, '2027-03-01', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (45, 'Great Taste White 3-in-1 30g', 'Beverages', 6.30, 2.70, 9.00, 260, '2027-06-30', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (46, 'Zesto Orange Juice 200ml', 'Beverages', 7.70, 3.30, 11.00, 170, '2027-01-15', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (47, 'Gatorade Blue Bolt 500ml', 'Beverages', 29.40, 12.60, 42.00, 48, '2027-04-04', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (48, 'Tanduay Ice Citrus 330ml', 'Beverages', 40.60, 17.40, 58.00, 64, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (49, 'Vitamilk Soy Original 250ml', 'Dairy', 19.60, 8.40, 28.00, 55, '2026-12-20', 15);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (52, 'Eden Cheese 165g', 'Dairy', 43.40, 18.60, 62.00, 40, '2026-12-05', 15);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (53, 'Ligo Sardines Tomato Sauce 155g', 'Canned Goods', 16.80, 7.20, 24.00, 130, '2027-08-01', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (55, 'Purefoods Corned Beef 150g', 'Canned Goods', 32.20, 13.80, 46.00, 60, '2027-09-10', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (56, 'Dingdong Mixed Nuts 100g', 'Snacks', 22.40, 9.60, 32.00, 8, '2027-01-31', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (57, 'Silver Swan Soy Sauce 385ml', 'Condiments', 15.40, 6.60, 22.00, 50, '2027-07-07', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (58, 'UFC Banana Ketchup 320g', 'Condiments', 22.40, 9.60, 32.00, 45, '2027-06-18', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (59, 'Knorr Sinigang Mix 22g', 'Condiments', 9.10, 3.90, 13.00, 150, '2027-05-05', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (60, 'Maggi Magic Sarap 8g', 'Condiments', 4.20, 1.80, 6.00, 300, '2027-05-05', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (62, 'Tide Powder Bar 130g', 'Household', 12.60, 5.40, 18.00, 100, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (63, 'Joy Dishwashing Liquid 250ml', 'Household', 36.40, 15.60, 52.00, 45, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (64, 'Zonrox Bleach 250ml', 'Household', 16.80, 7.20, 24.00, 70, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (65, 'Efficascent Oil 25ml', 'Medicine', 33.60, 14.40, 48.00, 40, '2028-01-01', 15);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (66, 'Tuseran Forte Tablet', 'Medicine', 8.40, 3.60, 12.00, 85, '2027-10-10', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (67, 'Diatabs Tablet', 'Medicine', 7.70, 3.30, 11.00, 5, '2027-09-09', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (68, 'Rexona Roll-On 25ml', 'Personal Care', 40.60, 17.40, 58.00, 38, '2027-11-11', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (69, 'Close-Up Red Hot 25g', 'Personal Care', 14.00, 6.00, 20.00, 90, '2027-12-01', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (70, 'Pagasa Pandesal Bag 10pcs', 'Bakery', 24.50, 10.50, 35.00, 14, '2026-10-12', 10);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (72, 'TEST', 'meow', 20.00, 5.00, 25.00, 344, '2026-10-09', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (71, 'test', 'test', 20.00, 5.00, 25.00, 19, NULL, 10);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (17, 'Argentina Corned Beef 150g', 'Canned Goods', 29.40, 12.60, 42.00, 60, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (73, 'test 2', 'mwws', 20.00, 14.00, 34.00, 122, '2026-10-11', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (74, '5kg Ganador Rice', 'Cook', 540.00, 60.00, 600.00, 10, NULL, 3);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (61, 'Ajinomoto Vetsin 50g', 'Condiments', 12.60, 5.40, 18.00, 110, '2026-10-14', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (50, 'Alaska Evaporada 370ml', 'Dairy', 33.60, 14.40, 48.00, 18, '2027-02-14', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (27, 'Mang Tomas All-Purpose Sauce 325g', 'Condiments', 25.20, 10.80, 36.00, 15, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (21, 'Cream Silk Conditioner 180ml', 'Personal Care', 84.00, 36.00, 120.00, 5, NULL, 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (54, '555 Sardines Tomato Sauce 155g', 'Canned Goods', 18.20, 7.80, 26.00, 2, '2027-08-01', 20);
+INSERT INTO public.products OVERRIDING SYSTEM VALUE VALUES (51, 'Birch Tree Fortified Milk 33g', 'Dairy', 9.80, 4.20, 14.00, 108, '2027-03-22', 20);
+
+-- orders
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (1, 4, '2026-09-13 21:40:19.414626+00', 150.00, 200.00, 50.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (2, 4, '2026-09-14 14:41:16.110696+00', 91.00, 91.00, 0.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (3, 4, '2026-09-14 15:00:27.001777+00', 42.00, 100.00, 58.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (4, 4, '2026-09-14 15:00:59.382545+00', 12.00, 20.00, 8.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (5, 4, '2026-09-14 15:02:33.888411+00', 18.00, 20.00, 2.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (6, 4, '2026-09-14 15:48:52.960411+00', 195.00, 200.00, 5.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (7, 4, '2026-09-16 11:15:44.44384+00', 460.00, 500.00, 40.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (8, 4, '2026-09-16 11:16:52.12506+00', 115.00, 120.00, 5.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (9, 4, '2026-09-16 11:16:52.136017+00', 115.00, 120.00, 5.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (10, 1, '2026-09-17 20:19:44.69911+00', 11.00, 15.00, 4.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (11, 1, '2026-09-17 20:19:44.765639+00', 24.00, 25.00, 1.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (12, 1, '2026-09-18 21:00:05.71289+00', 368.00, 400.00, 32.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (13, 1, '2026-09-18 21:24:03.192654+00', 89.00, 50.00, -39.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (14, 1, '2026-09-18 22:56:13.917552+00', 89.00, 80.00, -9.00, 'fgihcg');
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (15, 4, '2026-10-05 18:10:43.815354+00', 38.50, 40.00, 1.50, '');
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (16, 4, '2026-10-05 18:16:32.369515+00', 38.50, 40.00, 1.50, '');
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (17, 1, '2026-10-05 18:27:30.956886+00', 18.00, 20.00, 2.00, '');
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (18, 4, '2026-10-07 12:03:17.935016+00', 106.00, 120.00, 14.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (19, 4, '2026-10-07 12:30:39.987025+00', 210.00, 500.00, 290.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (20, 4, '2026-10-07 15:00:53.679132+00', 7427.00, 8000.00, 573.00, NULL);
+INSERT INTO public.orders OVERRIDING SYSTEM VALUE VALUES (21, 4, '2026-10-07 16:02:32.757277+00', 220.00, 300.00, 80.00, NULL);
+
+-- order_items
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (1, 1, 6, 2, 52.50, 75.00, 150.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (2, 2, 2, 3, 4.20, 6.00, 18.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (3, 2, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (4, 2, 9, 1, 45.50, 65.00, 65.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (5, 3, 2, 7, 4.20, 6.00, 42.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (6, 4, 2, 2, 4.20, 6.00, 12.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (7, 5, 2, 3, 4.20, 6.00, 18.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (8, 6, 9, 3, 45.50, 65.00, 195.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (9, 7, 7, 4, 80.50, 115.00, 460.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (10, 8, 7, 1, 80.50, 115.00, 115.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (11, 9, 7, 1, 80.50, 115.00, 115.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (12, 10, 1, 2, 3.85, 5.50, 11.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (13, 11, 2, 4, 4.20, 6.00, 24.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (14, 12, 1, 1, 3.85, 5.50, 5.50);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (15, 12, 2, 1, 4.20, 6.00, 6.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (16, 12, 3, 1, 33.60, 48.00, 48.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (17, 12, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (18, 12, 6, 1, 52.50, 75.00, 75.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (19, 12, 7, 1, 80.50, 115.00, 115.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (20, 12, 8, 1, 26.60, 38.00, 38.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (21, 12, 9, 1, 45.50, 65.00, 65.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (22, 12, 10, 1, 5.25, 7.50, 7.50);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (23, 13, 2, 1, 4.20, 6.00, 6.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (24, 13, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (25, 13, 6, 1, 52.50, 75.00, 75.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (26, 14, 2, 1, 4.20, 6.00, 6.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (27, 14, 5, 1, 5.60, 8.00, 8.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (28, 14, 6, 1, 52.50, 75.00, 75.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (29, 15, 1, 7, 3.85, 5.50, 38.50);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (30, 16, 1, 7, 3.85, 5.50, 38.50);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (31, 17, 20, 2, 6.30, 9.00, 18.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (32, 18, 54, 2, 18.20, 26.00, 52.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (33, 18, 61, 3, 12.60, 18.00, 54.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (34, 19, 17, 5, 29.40, 42.00, 210.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (35, 20, 71, 11, 20.00, 25.00, 275.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (36, 20, 54, 6, 18.20, 26.00, 156.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (37, 20, 50, 52, 33.60, 48.00, 2496.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (38, 20, 27, 25, 25.20, 36.00, 900.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (39, 20, 21, 30, 84.00, 120.00, 3600.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (40, 21, 54, 2, 18.20, 26.00, 52.00);
+INSERT INTO public.order_items OVERRIDING SYSTEM VALUE VALUES (41, 21, 51, 12, 9.80, 14.00, 168.00);
+
+-- stock_adjustments
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (1, 20, 2, 'RESTOCK', 50, 6.30, '2026-09-01 12:41:41.779319+00', 'Replenishment from wholesaler');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (2, 63, 2, 'RESTOCK', 12, 36.40, '2026-09-01 23:17:17.704644+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (3, 39, 3, 'EXPIRED', -6, 10.50, '2026-09-02 10:30:18.487234+00', 'Expired - removed from shelf');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (4, 27, 1, 'RESTOCK', 48, 25.20, '2026-09-02 20:19:59.495918+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (5, 66, 2, 'RESTOCK', 100, 8.40, '2026-09-03 04:48:24.22003+00', 'Weekly restock');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (6, 69, 2, 'RESTOCK', 48, 14.00, '2026-09-03 11:25:08.632674+00', 'Replenishment from wholesaler');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (7, 65, 2, 'RESTOCK', 100, 33.60, '2026-09-03 18:10:01.166792+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (8, 40, 2, 'RESTOCK', 24, 30.80, '2026-09-04 03:53:22.394375+00', 'Replenishment from wholesaler');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (9, 43, 2, 'RESTOCK', 50, 8.40, '2026-09-04 10:46:07.985536+00', 'Weekly restock');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (10, 39, 2, 'CORRECTION', 1, 10.50, '2026-09-04 21:46:04.411984+00', 'Recount - manual adjustment');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (11, 56, 1, 'RESTOCK', 48, 22.40, '2026-09-05 10:23:17.10665+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (12, 21, 2, 'RESTOCK', 36, 84.00, '2026-09-05 23:05:27.535783+00', 'Replenishment from wholesaler');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (13, 56, 3, 'RESTOCK', 12, 22.40, '2026-09-06 06:54:25.957794+00', 'Weekly restock');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (14, 54, 3, 'RESTOCK', 100, 18.20, '2026-09-06 17:59:48.145303+00', 'Replenishment from wholesaler');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (15, 18, 2, 'CORRECTION', -2, 16.80, '2026-09-07 03:02:26.360356+00', 'Miscount fixed after audit');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (16, 35, 3, 'EXPIRED', -4, 13.30, '2026-09-07 11:18:15.315449+00', 'Expired - removed from shelf');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (17, 23, 1, 'RESTOCK', 24, 8.40, '2026-09-07 22:00:13.524922+00', 'Delivery received - checked against invoice');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (18, 44, 2, 'RESTOCK', 100, 9.80, '2026-09-08 08:14:08.574394+00', 'Weekly restock');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (19, 13, 1, 'RESTOCK', 50, 7.00, '2026-09-08 15:19:23.270907+00', 'Weekly restock');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (20, 51, 3, 'CORRECTION', 3, 9.80, '2026-09-08 22:06:33.220206+00', 'Recount - manual adjustment');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (21, 65, 3, 'EXPIRED', -3, 33.60, '2026-09-09 06:27:23.131988+00', 'Near-expiry write-off');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (22, 29, 2, 'DAMAGED', -1, 19.60, '2026-09-09 17:00:57.260522+00', 'Crushed during delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (23, 41, 1, 'RESTOCK', 12, 24.50, '2026-09-10 02:41:02.445854+00', 'Delivery received - checked against invoice');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (24, 52, 2, 'RESTOCK', 100, 43.40, '2026-09-10 13:12:15.821147+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (25, 15, 1, 'RESTOCK', 100, 4.90, '2026-09-10 20:21:35.814598+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (26, 6, 1, 'RESTOCK', 48, 52.50, '2026-09-11 03:11:40.264025+00', 'Delivery received - checked against invoice');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (27, 11, 3, 'RESTOCK', 48, 10.50, '2026-09-11 14:59:37.201013+00', 'Delivery received - checked against invoice');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (28, 1, 3, 'CORRECTION', -5, 3.85, '2026-09-11 23:13:19.483069+00', 'Miscount fixed after audit');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (29, 33, 3, 'CORRECTION', 4, 64.40, '2026-09-12 07:54:15.573573+00', 'Inventory audit variance');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (30, 41, 1, 'EXPIRED', -1, 24.50, '2026-09-12 14:20:12.522516+00', 'Near-expiry write-off');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (31, 31, 2, 'RESTOCK', 60, 12.60, '2026-09-13 01:46:14.516888+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (32, 48, 2, 'EXPIRED', -6, 40.60, '2026-09-13 13:07:12.007081+00', 'Expired - removed from shelf');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (33, 28, 1, 'DAMAGED', -4, 14.00, '2026-09-14 01:01:19.803059+00', 'Dented can');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (34, 39, 3, 'RESTOCK', 24, 10.50, '2026-09-14 08:30:31.639734+00', 'Weekly restock');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (35, 9, 2, 'RESTOCK', 24, 45.50, '2026-09-14 16:01:03.223293+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (36, 9, 2, 'RESTOCK', 24, 45.50, '2026-09-15 02:10:28.941796+00', 'Replenishment from wholesaler');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (37, 23, 1, 'RETURN', 2, 8.40, '2026-09-15 13:17:11.684162+00', 'Returned unopened item');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (38, 50, 2, 'EXPIRED', -3, 33.60, '2026-09-15 19:36:28.177482+00', 'Past expiration date');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (39, 46, 1, 'RESTOCK', 60, 7.70, '2026-09-16 01:41:35.795664+00', 'Weekly restock');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (40, 41, 1, 'CORRECTION', 3, 24.50, '2026-09-16 11:03:03.739515+00', 'Recount - manual adjustment');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (41, 59, 2, 'DAMAGED', -2, 9.10, '2026-09-16 18:26:23.773135+00', 'Crushed during delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (42, 53, 2, 'RESTOCK', 12, 16.80, '2026-09-17 01:06:02.486592+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (43, 26, 3, 'RESTOCK', 24, 26.60, '2026-09-17 14:04:21.380606+00', 'Replenishment from wholesaler');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (44, 42, 2, 'RESTOCK', 48, 8.40, '2026-09-17 22:43:00.756623+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (45, 62, 2, 'RESTOCK', 100, 12.60, '2026-09-18 05:35:50.263241+00', 'Delivery received - checked against invoice');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (46, 65, 1, 'RESTOCK', 24, 33.60, '2026-09-18 18:06:51.976283+00', 'Replenishment from wholesaler');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (47, 32, 2, 'CORRECTION', 2, 5.60, '2026-09-19 06:50:29.379436+00', 'Stock count correction');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (48, 22, 2, 'RESTOCK', 36, 15.40, '2026-09-19 17:02:04.681098+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (49, 22, 1, 'DAMAGED', -4, 15.40, '2026-09-20 02:37:04.277758+00', 'Damaged packaging');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (50, 59, 1, 'RESTOCK', 24, 9.10, '2026-09-20 09:43:08.437089+00', 'Delivery received - checked against invoice');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (51, 70, 1, 'EXPIRED', -6, 24.50, '2026-09-20 20:40:49.881717+00', 'Expired - removed from shelf');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (52, 49, 3, 'DAMAGED', -3, 19.60, '2026-09-21 04:57:16.208865+00', 'Crushed during delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (53, 21, 3, 'RESTOCK', 48, 84.00, '2026-09-21 12:08:12.34219+00', 'Supplier delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (54, 66, 1, 'RETURN', 3, 8.40, '2026-09-21 21:24:41.847713+00', 'Customer return - resellable');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (55, 15, 2, 'RETURN', 1, 4.90, '2026-09-22 08:53:56.858891+00', 'Customer return - resellable');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (56, 7, 1, 'CORRECTION', 1, 80.50, '2026-09-22 21:21:07.052838+00', 'Inventory audit variance');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (57, 11, 3, 'DAMAGED', -3, 10.50, '2026-09-23 08:13:55.186393+00', 'Crushed during delivery');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (58, 1, 3, 'CORRECTION', -3, 3.85, '2026-09-23 18:29:38.74418+00', 'Miscount fixed after audit');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (59, 20, 1, 'RESTOCK', 12, 6.30, '2026-09-24 01:31:16.040093+00', 'Weekly restock');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (60, 54, 1, 'CORRECTION', 2, 18.20, '2026-09-24 13:31:39.32736+00', 'Stock count correction');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (61, 63, 2, 'CORRECTION', -3, 36.40, '2026-09-24 20:33:06.834502+00', 'Recount - manual adjustment');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (62, 70, 3, 'RESTOCK', 24, 24.50, '2026-09-25 08:08:10.417094+00', 'Replenishment from wholesaler');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (63, 55, 2, 'EXPIRED', -1, 32.20, '2026-09-25 17:26:47.594039+00', 'Expired - removed from shelf');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (64, 48, 2, 'RESTOCK', 36, 40.60, '2026-09-26 02:52:46.424645+00', 'Weekly restock');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (65, 56, 1, 'CORRECTION', -3, 22.40, '2026-09-26 09:19:25.605862+00', 'Miscount fixed after audit');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (66, 2, 3, 'RESTOCK', 12, 4.20, '2026-09-26 19:08:09.671787+00', 'Delivery received - checked against invoice');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (67, 49, 3, 'DAMAGED', -6, 19.60, '2026-09-27 01:44:10.152973+00', 'Leaking bottle');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (68, 10, 2, 'DAMAGED', -1, 5.25, '2026-09-27 09:54:31.79016+00', 'Dented can');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (69, 7, 2, 'CORRECTION', 4, 80.50, '2026-09-27 18:02:03.637161+00', 'Recount - manual adjustment');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (70, 22, 1, 'EXPIRED', -6, 15.40, '2026-09-28 00:59:39.424132+00', 'Near-expiry write-off');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (72, 71, 4, 'STOCK IN', 27, 20.00, '2026-10-07 14:36:17.85992+00', 'Product added to inventory');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (73, 71, 4, 'STOCK IN', 3, 20.00, '2026-10-07 14:39:19.425468+00', NULL);
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (74, 61, 4, 'STOCK OUT', -3, 12.60, '2026-10-07 14:42:16.435638+00', NULL);
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (75, 72, 4, 'STOCK IN', 344, 20.00, '2026-10-07 15:15:36.378754+00', 'Product added to inventory');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (76, 73, 4, 'STOCK IN', 122, 20.00, '2026-10-07 16:00:17.572333+00', 'Product added to inventory');
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (85, 61, 4, 'STOCK IN', 100, 12.60, '2026-10-07 16:36:12.450445+00', NULL);
+INSERT INTO public.stock_adjustments OVERRIDING SYSTEM VALUE VALUES (87, 74, 4, 'STOCK IN', 10, 540.00, '2026-10-09 18:13:31.511549+00', 'Product added to inventory');
+
+-- histories
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (1, 1, '2026-09-13 21:40:19.414626+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (2, 2, '2026-09-14 14:41:16.110696+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (3, 3, '2026-09-14 15:00:27.001777+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (4, 4, '2026-09-14 15:00:59.382545+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (5, 5, '2026-09-14 15:02:33.888411+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (6, 6, '2026-09-14 15:48:52.960411+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (7, 7, '2026-09-16 11:15:44.44384+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (8, 8, '2026-09-16 11:16:52.12506+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (9, 9, '2026-09-16 11:16:52.136017+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (10, 10, '2026-09-17 20:19:44.69911+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (11, 11, '2026-09-17 20:19:44.765639+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (12, 12, '2026-09-18 21:00:05.71289+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (13, 13, '2026-09-18 21:24:03.192654+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (14, 14, '2026-09-18 22:56:13.917552+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (15, 15, '2026-10-05 18:10:43.815354+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (16, 16, '2026-10-05 18:16:32.369515+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (17, 17, '2026-10-05 18:27:30.956886+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (18, 18, '2026-10-07 12:03:17.935016+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (19, 19, '2026-10-07 12:30:39.987025+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (20, 20, '2026-10-07 15:00:53.679132+00', 'COMPLETED');
+INSERT INTO public.histories OVERRIDING SYSTEM VALUE VALUES (21, 21, '2026-10-07 16:02:32.757277+00', 'COMPLETED');
+
+-- ===== Re-sync the auto-increment counters to the highest existing id =====
+SELECT setval(pg_get_serial_sequence('public.users','user_id'),               (SELECT MAX(user_id) FROM public.users));
+SELECT setval(pg_get_serial_sequence('public.capital_configs','config_id'),   (SELECT MAX(config_id) FROM public.capital_configs));
+SELECT setval(pg_get_serial_sequence('public.products','product_id'),         (SELECT MAX(product_id) FROM public.products));
+SELECT setval(pg_get_serial_sequence('public.orders','order_id'),             (SELECT MAX(order_id) FROM public.orders));
+SELECT setval(pg_get_serial_sequence('public.order_items','order_item_id'),   (SELECT MAX(order_item_id) FROM public.order_items));
+SELECT setval(pg_get_serial_sequence('public.stock_adjustments','adjustment_id'), (SELECT MAX(adjustment_id) FROM public.stock_adjustments));
+SELECT setval(pg_get_serial_sequence('public.histories','history_id'),        (SELECT MAX(history_id) FROM public.histories));
+
+COMMIT;

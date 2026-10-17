@@ -1,10 +1,7 @@
-/* ============================================================
- * state.js — Application state, default values, persistence, and session management.
- * Handles 7-day session persistence across browser refreshes and reloads.
- * ============================================================ */
+// app state, saving to the browser and the one-hour login session
 
 export const defaultState = {
-  capital: 20000,
+  capital: 0,
   salesToday: 0,
   totalSales: 0,
   profit: 0,
@@ -18,47 +15,68 @@ export const defaultState = {
 
 const savedState = JSON.parse(localStorage.getItem("inventorySuperAdmin") || "null");
 
-/** Shared reactive state object used across all modules. */
+// the shared app state
 export const state = { ...structuredClone(defaultState), ...(savedState || {}) };
 
-/** Persist cart to localStorage so it survives page reloads. */
-export function persist() {
-  localStorage.setItem("inventorySuperAdmin", JSON.stringify({ cart: state.cart }));
+// saves the app data in the browser so a refresh keeps it
+function writeStateToStorage() {
+  localStorage.setItem("inventorySuperAdmin", JSON.stringify({
+    cart: state.cart,
+    products: state.products,
+    transactions: state.transactions,
+    startingCapital: state.startingCapital,
+    capital: state.capital,
+    operatingExpenses: state.operatingExpenses,
+    interest: state.interest,
+    taxes: state.taxes
+  }));
 }
 
-/* ============================================================
- * SESSION & ROUTE PERSISTENCE (7-DAY EXPIRATION)
- * ============================================================ */
+let persistTimer = null;
+
+// batched save: quick changes (like tapping Add a few times) cause one save
+export function persist() {
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    writeStateToStorage();
+  }, 300);
+}
+
+// save now (used when the page closes or hides)
+export function flushPersist() {
+  if (!persistTimer) return;
+  clearTimeout(persistTimer);
+  persistTimer = null;
+  writeStateToStorage();
+}
+
+window.addEventListener("pagehide", flushPersist);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flushPersist();
+});
+
+// login session (valid for 1 hour) and last page
 const SESSION_KEY = "sentrySession";
 const ACTIVE_PAGE_KEY = "sentryActivePage";
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
-/**
- * Save logged-in user session for 7 days.
- * @param {string} username
- * @param {string} fullName
- */
+// stores the login, valid for one hour
 export function saveSession(username = "admin", fullName = username) {
-  const session = {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({
     username,
     fullName,
-    loginTime: Date.now(),
-    expiryTime: Date.now() + SEVEN_DAYS_MS
-  };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    loginTime: Date.now()
+  }));
 }
 
-/**
- * Get saved session if valid, or clear and return null if expired (>= 7 days).
- * @returns {object|null}
- */
+// the saved login, or null once it is over an hour old
 export function getSession() {
   try {
     const data = localStorage.getItem(SESSION_KEY);
     if (!data) return null;
     const session = JSON.parse(data);
-    if (!session || !session.expiryTime) return null;
-    if (Date.now() >= session.expiryTime) {
+    if (!session?.loginTime || Date.now() - session.loginTime >= ONE_HOUR_MS) {
       clearSession();
       return null;
     }
@@ -69,27 +87,24 @@ export function getSession() {
   }
 }
 
-/** Clear session from localStorage on logout or expiration. */
+// forget the login
 export function clearSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
-/**
- * Check if active session exists and is within the 7-day window.
- * @returns {boolean}
- */
+// true while the login is still valid
 export function isSessionValid() {
   return getSession() !== null;
 }
 
-/** Save currently active page view for stateful page reloads. */
+// remember the current page for refreshes
 export function saveActivePage(page) {
   if (page && page !== "add-product") {
     localStorage.setItem(ACTIVE_PAGE_KEY, page);
   }
 }
 
-/** Get saved active page or default to 'dashboard'. */
+// last page, dashboard by default
 export function getActivePage() {
   return localStorage.getItem(ACTIVE_PAGE_KEY) || "dashboard";
 }

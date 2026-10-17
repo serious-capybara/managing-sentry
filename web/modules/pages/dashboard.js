@@ -1,19 +1,15 @@
-/* ============================================================
- * pages/dashboard.js — Dashboard overview page renderer.
- * Renders stat cards, inventory table, and expiring/low-stock
- * panels as well as the sell tab container.
- * ============================================================ */
+// Dashboard page: KPI cards, main table and the bottom panel
 
-import { state }     from "../state.js";
+import { state } from "../state.js";
 import { money, escapeHtml } from "../utils.js";
-import { isLowStock, lowStockLabel } from "../stock-logic.js";
 import { renderSellTab } from "../cart.js";
 import { getProfitBreakdown, getSalesRevenue } from "../finance.js";
+import { sheetHandleHtml } from "../mobile-sheet.js";
 
 export let activeDashTab = "expiring";
 export function setActiveDashTab(tab) { activeDashTab = tab; }
 
-export let activeProfitType = (function() {
+export let activeProfitType = (function () {
   try {
     const savedType = localStorage.getItem("sentryDashboardProfitDisplay");
     return ["gross", "net"].includes(savedType) ? savedType : "net";
@@ -25,10 +21,10 @@ export let activeProfitType = (function() {
 export function setActiveProfitType(type) {
   if (!["gross", "net"].includes(type)) return;
   activeProfitType = type;
-  try { localStorage.setItem("sentryDashboardProfitDisplay", type); } catch (e) {}
+  try { localStorage.setItem("sentryDashboardProfitDisplay", type); } catch (e) { }
 }
 
-/* ── stat cards (shown only on the dashboard) ─────────────── */
+// KPI cards
 export function dashboardStats() {
   const profit = getProfitBreakdown();
   const isNetProfit = activeProfitType === "net";
@@ -62,7 +58,7 @@ export function dashboardStats() {
     </div>`;
 }
 
-/* ── main inventory table ──────────────────────────────────── */
+// main table
 export function dashboardRows(products = state.products) {
   if (!products.length) {
     return `<tr><td colspan="9" class="table-empty">No products yet. Add a product from the Products menu.</td></tr>`;
@@ -93,76 +89,33 @@ export function expiringRows(list) {
       <td>${escapeHtml(p.category)}</td>
       <td>${available} in stock</td>
       <td>${money(p.price)}</td>
-      <td><span class="badge ${isExpired ? "red" : "orange"}">${isExpired ? "EXPIRED" : `Expires in ${days}d`}</span><br><small>${p.expiry}</small></td>
+      <td>${p.expiry || "—"}</td>
+      <td><span class="badge ${isExpired ? "red" : "orange"}">${isExpired ? "EXPIRED" : `Expires in ${days}d`}</span></td>
     </tr>`;
   }).join("");
 }
 
-export function dashLowStockRows(list) {
-  return list.map((p, i) => {
-    const inCart = state.cart.find(c => c.id === p.id)?.qty || 0;
-    const available = Math.max(0, p.stock - inCart);
-    const disabled = available <= 0 ? "disabled" : "";
-    return `<tr>
-      <td>${i + 1}</td>
-      <td><strong>${escapeHtml(p.name)}</strong></td>
-      <td>${escapeHtml(p.category)}</td>
-      <td><span class="badge red">${available} units</span></td>
-      <td>${money(p.price)}</td>
-      <td><small>${lowStockLabel(p)}</small></td>
-      <td style="text-align:right">
-        <button class="sell-add-btn" type="button" data-add="${p.id}" ${disabled}>${available <= 0 ? "Out" : "Add"}</button>
-      </td>
-    </tr>`;
-  }).join("");
-}
-
-/* ── expiring-soon panel ───────────────────────────────────── */
+// expiring soon panel
 export function expiringPanel() {
-  const now  = new Date();
+  const now = new Date();
   const soon = state.products.filter(p => {
     if (!p.expiry) return false;
     const days = Math.ceil((new Date(p.expiry) - now) / 86400000);
     return days <= 7;
   });
   return `
-    <div class="panel dash-panel-card">
-      <div class="panel-title"><img class="panel-icon" src="src/icon/white/low-stock-alert.svg" alt=""> Expiring Soon / Expired (within 7 days)</div>
-      <div class="panel-body panel-table-body">
-        <div class="wire-table-wrap panel-table-wrap">
-          <table class="panel-inventory-table">
-            <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Stock</th><th>SRP</th><th>Expiration</th></tr></thead>
-            <tbody>${soon.length
-              ? expiringRows(soon)
-              : `<tr><td colspan="6" class="table-empty">✓ No expiring items within the next 7 days.</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <div class="wire-table-wrap dash-expiring-table-wrap">
+      <table class="dashboard-inventory-table">
+        <thead><tr><th>ID</th><th>NAME</th><th>CATEGORY</th><th>STOCK</th><th>SRP</th><th>EXPIRATION DATE</th><th>STATUS</th></tr></thead>
+        <tbody>${soon.length
+      ? expiringRows(soon)
+      : `<tr><td colspan="7" class="table-empty">✓ No expiring items within the next 7 days.</td></tr>`}
+        </tbody>
+      </table>
     </div>`;
 }
 
-/* ── low-stock panel ───────────────────────────────────────── */
-export function lowStockPanel() {
-  const low = state.products.filter(isLowStock);
-  return `
-    <div class="panel dash-panel-card">
-      <div class="panel-title"><img class="panel-icon" src="src/icon/white/low-stock-alert.svg" alt=""> Low Stock Alerts ${low.length ? `<span class="alert-dot"></span>` : ""}</div>
-      <div class="panel-body panel-table-body">
-        <div class="wire-table-wrap panel-table-wrap">
-          <table class="panel-inventory-table">
-            <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Current Stock</th><th>SRP</th><th>Status</th><th style="text-align:right">Action</th></tr></thead>
-            <tbody>${low.length
-              ? dashLowStockRows(low)
-              : `<tr><td colspan="7" class="table-empty">✓ No low stock items right now.</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>`;
-}
-
-/* ── dashboard tab content ─────────────────────────────────── */
+// bottom panel tabs
 export function cartCount() {
   return state.cart.reduce((s, i) => s + i.qty, 0);
 }
@@ -171,10 +124,10 @@ export function dashTabHtml(tab) {
   if (tab === "sell") {
     return renderSellTab();
   }
-  return expiringPanel() + lowStockPanel();
+  return expiringPanel();
 }
 
-/* ── full dashboard page ───────────────────────────────────── */
+// the whole page
 export function renderDashboard() {
   return `
     <div class="dashboard-overview">
@@ -191,10 +144,10 @@ export function renderDashboard() {
             </select>
           </div>
           <div class="toolbar-right">
-            <div class="dashboard-profit-controls">
-              <button class="wire-btn" id="setExpenseTotalsBtn" type="button">Set Expense Totals</button>
-            </div>
             <input class="compact-input" id="dashboardSearch" placeholder="Search Products">
+            <div class="dashboard-profit-controls">
+              <button class="wire-btn" id="setExpenseTotalsBtn" type="button" title="Set Expense Totals" aria-label="Set Expense Totals"><img class="btn-icon btn-icon-phone" src="src/icon/dark/set-capital.svg" alt=""><span class="btn-text">Set Expense Totals</span></button>
+            </div>
           </div>
         </div>
       </div>
@@ -212,6 +165,9 @@ export function renderDashboard() {
     </div>
 
     <div class="dashboard-bottom-section" id="dashboardBottomSection">
+      <div class="dashboard-resizer-bar" id="dashboardResizerBar" title="Drag up or down to adjust section height">
+        <span class="dashboard-resizer-grip"></span>
+      </div>
       <div class="dashboard-tabs-header">
         <div class="dashboard-tabs">
           <button class="tab-btn ${activeDashTab === "expiring" ? "active" : ""}" data-tab="expiring">
@@ -225,12 +181,15 @@ export function renderDashboard() {
           <img id="dashboardToggleIcon" class="btn-icon" src="src/icon/dark/dropdown-close-expand.svg" alt="Toggle Section">
         </button>
       </div>
-      <div id="dashboardTab" class="dashboard-tab-body">${dashTabHtml(activeDashTab)}</div>
+      <div class="dashboard-tab-body" id="dashboardTabBody">
+        ${sheetHandleHtml("dashSheetHandle", true)}
+        <div id="dashboardTab" class="dashboard-tab-content">${dashTabHtml(activeDashTab)}</div>
+      </div>
     </div>
   `;
 }
 
-/** Sort a product list by the chosen mode. */
+// sorts products by the chosen option
 export function sortProducts(list, mode) {
   const copy = [...list];
   if (mode === "name") {

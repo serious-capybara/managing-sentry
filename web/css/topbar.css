@@ -1,6 +1,4 @@
-/* ============================================================
- * css/topbar.css — Topbar Header & Main Area Layout
- * ============================================================ */
+/* top bar and the main area */
 
 .main {
   width: calc(100% - var(--sidebar-width));
@@ -46,7 +44,7 @@
   background: #E2E8F0;
 }
 
-/* Clean Page Title - Bold 24px Slate 900 */
+/* page title */
 .topbar h2 {
   font-size: 24px;
   font-weight: 700;
@@ -83,11 +81,11 @@
 }
 
 .content {
-  padding: 28px 32px 40px;
+  padding: 20px 20px 32px;
   flex: 1;
 }
 
-/* Hide duplicate header text inside page content */
+/* the title is already in the top bar, so hide it inside the page */
 .content .page-head > div > h3,
 .content .page-toolbar .toolbar-left h3 {
   display: none;

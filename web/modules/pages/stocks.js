@@ -1,15 +1,11 @@
-/* ============================================================
- * pages/stocks.js — Stocks overview, Stock In, Stock Out, and
- * Low Stock Alert page renderers.
- * ============================================================ */
+// Stocks page, stock forms and the low stock page
 
 import { state }             from "../state.js";
 import { money, escapeHtml } from "../utils.js";
-import { isLowStock, lowStockLabel, expiryButton } from "../stock-logic.js";
+import { sheetHandleHtml } from "../mobile-sheet.js";
+import { isLowStock, lowStockLabel, expiryDateCell, expiryStatusCell } from "../stock-logic.js";
 
-// ---------------------------------------------------------------------------
-// Stocks overview page
-// ---------------------------------------------------------------------------
+// stocks page
 
 export function renderStocks() {
   const low = state.products.filter(isLowStock);
@@ -27,31 +23,39 @@ export function renderStocks() {
           </div>
         </div>
         <div class="toolbar-right">
-          <button class="wire-btn" data-go="stock-in"><img class="btn-icon" src="src/icon/dark/add.svg" alt=""> Add Stock</button>
-          <button class="wire-btn" data-go="stock-out"><img class="btn-icon" src="src/icon/dark/minus.svg" alt=""> Remove Stock</button>
+          <button class="wire-btn" data-go="stock-in">Add Stock</button>
+          <button class="wire-btn" data-go="stock-out">Remove Stock</button>
         </div>
       </div>
 
       <div class="wire-table-wrap stocks-table-card">
         <div class="stocks-table-scroll">
           <table class="stocks-inventory-table">
-            <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th></tr></thead>
+            <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th><th>Status</th></tr></thead>
             <tbody id="stockRows">${stockRows([...state.products].sort((a, b) => String(a.name).localeCompare(String(b.name))))}</tbody>
           </table>
         </div>
       </div>
 
-      <div class="panel stocks-low-panel" id="stocksLowPanel">
-        <div class="panel-title stocks-low-title">
-          <div class="panel-title-text"><img class="panel-icon" src="src/icon/white/low-stock-alert.svg" alt=""> Low On Stock ${low.length ? `<span class="alert-dot"></span>` : ""}</div>
+      <div class="stocks-low-section" id="stocksLowPanel">
+        <div class="stocks-resizer-bar" id="stocksResizerBar" title="Drag up or down to adjust table height">
+          <span class="stocks-resizer-grip"></span>
+        </div>
+        <div class="dashboard-tabs-header stocks-low-header">
+          <div class="dashboard-tabs">
+            <button class="tab-btn active" type="button" id="stocksLowTab">
+              <img class="tab-icon" src="src/icon/white/low-stock-alert.svg" alt=""> Low On Stock ${low.length ? `<span class="alert-dot"></span>` : ""}
+            </button>
+          </div>
           <button class="dashboard-toggle-btn" id="stocksSectionToggle" title="Toggle Low Stock Section Visibility">
             <img id="stocksToggleIcon" class="btn-icon" src="src/icon/dark/dropdown-close-expand.svg" alt="Toggle Section">
           </button>
         </div>
-        <div class="panel-body stocks-low-body" id="stocksLowBody">
+        <div class="stocks-low-body" id="stocksLowBody">
+          ${sheetHandleHtml("stocksSheetHandle", false)}
           <div class="wire-table-wrap stocks-low-table-wrap">
             <table class="stocks-low-table">
-              <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th></tr></thead>
+              <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Base</th><th>SRP</th><th>Stock</th><th>Expiration</th><th>Status</th></tr></thead>
               <tbody id="stockLowRows">${stockRows([...low].sort((a, b) => String(a.name).localeCompare(String(b.name))))}</tbody>
             </table>
           </div>
@@ -62,17 +66,17 @@ export function renderStocks() {
 
 export function stockRows(products = state.products) {
   if (!products.length) {
-    return `<tr><td colspan="7" class="table-empty">No products available.</td></tr>`;
+    return `<tr><td colspan="8" class="table-empty">No products available.</td></tr>`;
   }
   return products.map((p, i) => `<tr>
     <td>${i + 1}</td><td><strong>${escapeHtml(p.name)}</strong></td><td>${escapeHtml(p.category)}</td>
-    <td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${p.stock}</td><td>${expiryButton(p)}</td>
+    <td>${money(p.cost)}</td><td>${money(p.price)}</td><td>${p.stock}</td>
+    <td>${expiryDateCell(p)}</td>
+    <td>${expiryStatusCell(p)}</td>
   </tr>`).join("");
 }
 
-// ---------------------------------------------------------------------------
-// Low Stock Alert page
-// ---------------------------------------------------------------------------
+// low stock page
 
 export function renderLowStock() {
   const low = state.products.filter(isLowStock);
@@ -92,9 +96,7 @@ export function renderLowStock() {
     </div>`;
 }
 
-// ---------------------------------------------------------------------------
-// Stock In / Stock Out shared form
-// ---------------------------------------------------------------------------
+// stock in / out form
 
 export function stockForm(type) {
   const isIn = type === "In";
@@ -103,7 +105,7 @@ export function stockForm(type) {
       <div class="form-group"><label>Quantity</label><input name="qty" type="number" min="1" required></div>
       <div class="form-group"><label>Reference / Supplier</label><input name="ref" placeholder="Optional"></div>
       ${isIn ? `
-      <div class="form-group"><label>Expiry Date Available?</label><select name="hasExpiry" id="hasExpiry"><option value="no">No Expiration</option><option value="yes">Yes</option></select></div>
+      <div class="form-group"><label for="hasExpiry">Expiry Date Available?</label><select name="hasExpiry" id="hasExpiry" class="compact-select styled-select-native" aria-label="Expiry Date Available?"><option value="no">No Expiration</option><option value="yes">Yes</option></select></div>
       <div class="form-group" id="expiryWrap" style="display:none"><label>Expiry Date</label><input name="expiry" type="date"></div>` : ""}
       <div class="form-group full"><label>Notes</label><textarea name="notes"></textarea></div>
     </div><button class="action-btn" style="margin-top:20px"><img class="btn-icon" src="src/icon/white/${isIn ? "add" : "minus"}.svg" alt=""> Record Stock ${type}</button></form></div>`;
