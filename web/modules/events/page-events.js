@@ -254,8 +254,7 @@ export function bindPageEvents(page) {
           } else {
             dashBody.classList.toggle("is-sell", btn.dataset.tab === "sell");
             dashSheet.open({ locked: btn.dataset.tab === "sell" });
-            // build the content next frame so the sheet opens without waiting
-            requestAnimationFrame(() => setTimeout(renderActiveTab, 0));
+            renderActiveTab();
           }
           paintDashTabs(pageContent);
           return;
