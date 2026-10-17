@@ -221,6 +221,7 @@ export function openStockOutModal(targetProductId = null) {
     </div>`;
 
   document.body.appendChild(overlay);
+  bindStyledSelects(overlay);
 
   const close = () => overlay.remove();
   document.getElementById("closeStockOut").addEventListener("click", close);
@@ -239,11 +240,20 @@ export function openStockOutModal(targetProductId = null) {
     if (!selected || !batchSelect) return;
     const batches = activeExpiryBatches(selected);
     let html = `<option value="">Oldest Batch First (FIFO)</option>`;
+    const seenExpiries = new Set();
+
     for (const b of batches) {
-      if (b.expiry) {
-        html += `<option value="${escapeHtml(b.expiry)}">Expiry: ${escapeHtml(b.expiry)} (${b.qty} units available)</option>`;
+      if (b.expiry && !seenExpiries.has(b.expiry)) {
+        seenExpiries.add(b.expiry);
+        html += `<option value="${escapeHtml(b.expiry)}">Expiry: ${escapeHtml(b.expiry)} (${b.qty || selected.stock} units)</option>`;
       }
     }
+
+    const defaultExp = selected.expiry || selected.expiration_date;
+    if (defaultExp && !seenExpiries.has(defaultExp)) {
+      html += `<option value="${escapeHtml(defaultExp)}">Expiry: ${escapeHtml(defaultExp)} (${selected.stock} units)</option>`;
+    }
+
     batchSelect.innerHTML = html;
   };
 
