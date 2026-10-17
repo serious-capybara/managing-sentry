@@ -843,19 +843,21 @@ table:has(.table-empty) tbody tr {
 }
 
 .dash-expiring-table-wrap .dashboard-inventory-table th:nth-child(1),
-.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(1) { width: 55px; text-align: center; }
+.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(1) { width: 50px; text-align: center; }
 .dash-expiring-table-wrap .dashboard-inventory-table th:nth-child(2),
-.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(2) { width: 28%; }
+.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(2) { width: 20%; }
 .dash-expiring-table-wrap .dashboard-inventory-table th:nth-child(3),
-.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(3) { width: 18%; }
+.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(3) { width: 13%; }
 .dash-expiring-table-wrap .dashboard-inventory-table th:nth-child(4),
-.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(4) { width: 14%; }
+.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(4) { width: 12%; }
 .dash-expiring-table-wrap .dashboard-inventory-table th:nth-child(5),
-.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(5) { width: 12%; }
+.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(5) { width: 10%; }
 .dash-expiring-table-wrap .dashboard-inventory-table th:nth-child(6),
-.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(6) { width: 16%; }
+.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(6) { width: 14%; }
 .dash-expiring-table-wrap .dashboard-inventory-table th:nth-child(7),
-.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(7) { width: 12%; }
+.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(7) { width: 11%; }
+.dash-expiring-table-wrap .dashboard-inventory-table th:nth-child(8),
+.dash-expiring-table-wrap .dashboard-inventory-table td:not(.table-empty):nth-child(8) { width: 16%; text-align: right; }
 
 /* products table */
 .products-overview .products-inventory-table {
