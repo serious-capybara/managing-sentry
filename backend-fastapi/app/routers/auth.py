@@ -32,6 +32,7 @@ async def login(credentials: LoginRequest, request: Request):
             print(f"Could not upgrade the password hash: {err}")
 
     user = dict(row)
+    user["full_name"] = user.get("full_name") or ""
     del user["password_hash"]
     token = sign_in(request, user)
     user["token"] = token

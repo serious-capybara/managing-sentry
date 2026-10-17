@@ -29,8 +29,8 @@ async def get_history(request: Request):
         async with request.app.state.pool.acquire() as conn:
             rows = await conn.fetch(query)
             item_rows = await conn.fetch(items_query)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
     items_by_order = {}
     for item in item_rows:
@@ -44,16 +44,25 @@ async def get_history(request: Request):
             continue
         seen.add(row["order_id"])
         items = items_by_order.get(row["order_id"], [])
+
+        ts_raw = row["transaction_timestamp"]
+        if hasattr(ts_raw, "strftime"):
+            ts_str = ts_raw.strftime("%Y-%m-%d %H:%M")
+        elif ts_raw:
+            ts_str = str(ts_raw)[:16]
+        else:
+            ts_str = ""
+
         result.append({
-            "transaction_timestamp": row["transaction_timestamp"].strftime("%Y-%m-%d %H:%M"),
+            "transaction_timestamp": ts_str,
             "order_id": row["order_id"],
             "total_quantity": sum(i["qty"] for i in items),
-            "total_amount": float(row["total_amount"]),
-            "order_status": row["order_status"] or "PENDING",
+            "total_amount": float(row["total_amount"] or 0),
+            "order_status": str(row["order_status"] or "COMPLETED"),
             "notes": re.sub(r"\s*\[(?:web|app)-[a-z0-9]+\]", "", row["notes"] or "").strip(),
             "items_json": json.dumps(items),
             "amount_tendered": float(row["amount_tendered"] or 0),
             "change_given": float(row["change_given"] or 0),
-            "cashier": row["cashier"] or "",
+            "cashier": str(row["cashier"] or ""),
         })
     return result
