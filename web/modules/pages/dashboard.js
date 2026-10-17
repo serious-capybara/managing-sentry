@@ -99,7 +99,7 @@ export function expiringRows(list) {
       <td><span class="badge ${isExpired ? "red" : "orange"}">${isExpired ? "EXPIRED" : days === 0 ? "Expires Today" : `Expires in ${days}d`}</span></td>
       <td>
         ${isExpired
-          ? `<button class="primary-btn sm danger-btn" type="button" data-confirm-expired-removal="${p.id}">Confirm Removal</button>`
+          ? `<button class="primary-btn sm danger-btn" type="button" data-confirm-expired-removal="${p.id}" style="padding: 4px 10px; font-size: 11px;">Confirm Removal</button>`
           : `<span style="color:var(--text-secondary); font-size:12px;">Active Batch</span>`}
       </td>
     </tr>`;

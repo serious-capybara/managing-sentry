@@ -177,29 +177,25 @@ export function renderSellTab() {
   </div>`;
 }
 
-export function sellProductRows(products = state.products.filter(p => p.stock > 0)) {
-  if (!products.length) {
-    return `<tr><td colspan="4" class="table-empty">No products found.</td></tr>`;
+export function sellProductRows(products = state.products) {
+  const sellableProducts = products.filter(p => p.stock > 0 && !isProductExpired(p));
+  if (!sellableProducts.length) {
+    return `<tr><td colspan="4" class="table-empty">No products available for sale.</td></tr>`;
   }
-  return products.map(p => {
-    const expired   = isProductExpired(p);
+  return sellableProducts.map(p => {
     const inCart    = state.cart.find(i => i.id === p.id)?.qty || 0;
     const available = Math.max(0, p.stock - inCart);
-    const canAdd    = available > 0 && !expired;
 
     return `<tr>
       <td title="${escapeHtml(p.name)}">
         <div class="sell-prod-cell">
           <span class="sell-prod-name">${escapeHtml(p.name)}</span>
           ${p.category ? `<span class="sell-prod-cat">${escapeHtml(p.category)}</span>` : ""}
-          ${expired ? `<span class="badge red" style="font-size:10px; margin-top:2px;">Expired</span>` : ""}
         </div>
       </td>
       <td><span class="sell-prod-srp">${money(p.price)}</span></td>
       <td style="text-align:center">
-        ${expired
-          ? `<span class="sell-stock-tag out">Expired</span>`
-          : available <= 5 && available > 0
+        ${available <= 5 && available > 0
           ? `<span class="sell-stock-tag low" title="Low stock: ${available} left">${available} left</span>`
           : available > 5
           ? `<span class="sell-stock-tag normal">${available}</span>`
@@ -207,8 +203,8 @@ export function sellProductRows(products = state.products.filter(p => p.stock > 
         }
       </td>
       <td style="text-align:right">
-        <button class="sell-add-btn" type="button" data-add="${p.id}" ${canAdd ? "" : "disabled"}>
-          ${expired ? "Expired" : canAdd ? `<img class="btn-sm-icon" src="src/icon/white/add.svg" alt=""> Add` : "Out"}
+        <button class="sell-add-btn" type="button" data-add="${p.id}" ${available > 0 ? "" : "disabled"}>
+          ${available > 0 ? `<img class="btn-sm-icon" src="src/icon/white/add.svg" alt=""> Add` : "Out"}
         </button>
       </td>
     </tr>`;
