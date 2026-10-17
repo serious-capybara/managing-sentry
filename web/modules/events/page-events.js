@@ -128,14 +128,31 @@ export function bindTabActions(target) {
       const product = state.products.find(p => p.id === prodId);
       if (!product) return;
       const confirmed = await askYesNo(`Confirm removal/disposal of expired stock for "${product.name}"?`, {
-        title: "Confirm Expired Removal",
+        title: "Confirm Expired Disposal",
         yesText: "Confirm & Dispose",
         noText: "Cancel"
       });
       if (!confirmed) return;
-      const { moveStockInBackground } = await import("../optimistic.js");
-      moveStockInBackground(product, "STOCK OUT", product.stock, { userNote: "Confirmed disposal of expired batch" });
-      toast(`Disposed expired stock for ${product.name}.`);
+      if (Number(product.stock || 0) > 0) {
+        const { moveStockInBackground } = await import("../optimistic.js");
+        moveStockInBackground(product, "STOCK OUT", Number(product.stock), { userNote: "Confirmed disposal of expired stock batch" });
+      } else {
+        product.expiry = "";
+        product.expiration_date = null;
+        product.expiryBatches = [];
+        const { updateProductInBackground } = await import("../optimistic.js");
+        updateProductInBackground(product, {
+          name: product.name,
+          category: product.category,
+          stock: 0,
+          price: product.price,
+          cost: product.cost,
+          alertLevel: product.lowStockAlertLevel || 20,
+          expiry: "",
+          notes: "Cleared expired batch with 0 stock"
+        });
+      }
+      toast(`Disposed expired batch for ${product.name}.`);
       renderPage("dashboard");
     });
   });
