@@ -97,18 +97,16 @@ public class SessionManager {
     public boolean isSessionActive() {
         int userId = prefs.getInt(KEY_USER_ID, -1);
         long lastUse = prefs.getLong(KEY_LAST_USE, 0);
+        String token = getToken();
 
-        if (userId == -1) {
+        if (userId == -1 || token == null || token.trim().isEmpty()) {
             return false;
         }
 
         long expiryTime = SESSION_TIMEOUT_DAYS * 24 * 60 * 60 * 1000;
         boolean active = (System.currentTimeMillis() - lastUse) < expiryTime;
         if (active) {
-            String savedToken = getToken();
-            if (savedToken != null && !savedToken.isEmpty()) {
-                RetrofitClient.setAuthToken(savedToken);
-            }
+            RetrofitClient.setAuthToken(token);
         }
         return active;
     }

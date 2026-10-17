@@ -4,7 +4,6 @@ import com.sentry.app.R;
 import com.sentry.app.ui.base.BaseFragment;
 import com.sentry.app.data.local.entity.History;
 import com.sentry.app.data.repository.DataRepository;
-import com.sentry.app.ui.products.NotesModal;
 import com.sentry.app.ui.common.NotificationHelper;
 
 import android.os.Bundle;
@@ -18,7 +17,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.util.Calendar;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -228,7 +226,7 @@ public class HistoryFragment extends BaseFragment {
         if (header == null) return;
         hideViews(header, R.id.header_name, R.id.header_category, R.id.header_srp, R.id.header_subtotal, R.id.header_checkout);
         showViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_quantity, R.id.header_sales, R.id.header_status);
-        setText(header, R.id.header_status, "Receipt");
+        setText(header, R.id.header_status, "Action");
     }
 
     @SuppressWarnings("all")
@@ -319,5 +317,6 @@ public class HistoryFragment extends BaseFragment {
         View statusView = row.findViewById(R.id.row_status_container);
         if (statusView != null) statusView.setOnClickListener(openReceipt);
         row.setOnClickListener(openReceipt);
+        row.setVisibility(View.VISIBLE);
     }
 }

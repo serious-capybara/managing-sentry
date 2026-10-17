@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from core import config
 from core.docs_auth import add_protected_docs
 from database.connection import lifespan
-from routers import auth, health, products, history, sales, reset
+from routers import auth, health, products, history, sales, reset, capital
 
 app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -32,6 +32,7 @@ app.include_router(products.router)
 app.include_router(history.router)
 app.include_router(sales.router)
 app.include_router(reset.router)
+app.include_router(capital.router)
 add_protected_docs(app)
 
 

@@ -16,6 +16,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -290,6 +291,15 @@ public class DashboardFragment extends BaseFragment {
         if (checkoutBtn != null) {
             checkoutBtn.setOnClickListener(v -> {
                 if (cart.isEmpty()) return;
+
+                for (Map.Entry<Integer, Integer> entry : cart.entrySet()) {
+                    Product p = findProduct(entry.getKey());
+                    if (p != null && p.isExpired()) {
+                        Toast.makeText(getContext(), "Cannot checkout with expired item: " + p.getName(), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+
                 double checkoutTotalAmount = calculateTotal();
                 ArrayList<SaleItem> items = new ArrayList<>();
                 cart.forEach((pid, qty) -> {
@@ -423,14 +433,19 @@ public class DashboardFragment extends BaseFragment {
         
         View checkoutBtn = row.findViewById(R.id.row_checkout);
         if (checkoutBtn != null) {
-            checkoutBtn.setEnabled(p.getStockQuantity() > 0);
-            checkoutBtn.setAlpha(p.getStockQuantity() > 0 ? 1.0f : 0.5f);
+            boolean canAdd = p.getStockQuantity() > 0 && !p.isExpired();
+            checkoutBtn.setEnabled(canAdd);
+            checkoutBtn.setAlpha(canAdd ? 1.0f : 0.5f);
             checkoutBtn.setOnClickListener(v -> addToCart(p));
         }
         row.setVisibility(View.VISIBLE);
     }
 
     private void addToCart(Product p) {
+        if (p.isExpired()) {
+            Toast.makeText(getContext(), "Cannot sell expired item: " + p.getName(), Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (p.getStockQuantity() > 0) {
             p.setStockQuantity(p.getStockQuantity() - 1);
             int qty = Objects.requireNonNullElse(cart.get(p.getProductId()), 0);
@@ -486,8 +501,12 @@ public class DashboardFragment extends BaseFragment {
             View btnPlus = row.findViewById(R.id.btn_plus);
             View btnMinus = row.findViewById(R.id.btn_minus);
             if (btnPlus != null && p != null) {
-                btnPlus.setEnabled(p.getStockQuantity() > 0);
+                btnPlus.setEnabled(p.getStockQuantity() > 0 && !p.isExpired());
                 btnPlus.setOnClickListener(v -> {
+                    if (p.isExpired()) {
+                        Toast.makeText(getContext(), "Cannot sell expired item: " + p.getName(), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     if (p.getStockQuantity() > 0) {
                         p.setStockQuantity(p.getStockQuantity() - 1);
                         cart.put(pid, qty + 1);
