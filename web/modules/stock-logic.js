@@ -87,6 +87,33 @@ export function earliestExpiry(product) {
   return batches[0] || null;
 }
 
+export function getExpiredStock(product) {
+  if (!product) return 0;
+  const batches = activeExpiryBatches(product);
+  if (!batches.length) {
+    if (product.expiry) {
+      const info = expiryDateInfo(product.expiry);
+      if (info.days !== null && info.days < 0) return Math.max(0, Number(product.stock || 0));
+    }
+    return 0;
+  }
+  let expiredQty = 0;
+  for (const b of batches) {
+    const info = expiryDateInfo(b.expiry);
+    if (info.days !== null && info.days < 0) {
+      expiredQty += Math.max(0, Number(b.qty || 0));
+    }
+  }
+  return expiredQty;
+}
+
+export function getSellableStock(product) {
+  if (!product) return 0;
+  const total = Math.max(0, Number(product.stock || 0));
+  const expired = getExpiredStock(product);
+  return Math.max(0, total - expired);
+}
+
 export function consumeExpiryBatches(product, qty) {
   let remaining = Math.max(0, Number(qty || 0));
   ensureExpiryBatches(product);

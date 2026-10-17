@@ -125,21 +125,24 @@ export function bindTabActions(target) {
   target.querySelectorAll("[data-confirm-expired-removal]").forEach(b => {
     b.addEventListener("click", async () => {
       const prodId = Number(b.dataset.confirmExpiredRemoval);
+      const batchQty = Number(b.dataset.batchQty || 0);
+      const batchExpiry = String(b.dataset.batchExpiry || "").trim();
       const product = state.products.find(p => p.id === prodId);
       if (!product) return;
-      const confirmed = await askYesNo(`Confirm removal/disposal of expired stock for "${product.name}"?`, {
+      const removeQty = batchQty > 0 ? Math.min(batchQty, Number(product.stock || 0)) : Number(product.stock || 0);
+      const confirmed = await askYesNo(`Confirm disposal of expired stock (${removeQty > 0 ? removeQty + ' units' : 'batch'}) for "${product.name}"?`, {
         title: "Confirm Expired Disposal",
         yesText: "Confirm & Dispose",
         noText: "Cancel"
       });
       if (!confirmed) return;
-      if (Number(product.stock || 0) > 0) {
+      if (removeQty > 0) {
         const { moveStockInBackground } = await import("../optimistic.js");
-        moveStockInBackground(product, "STOCK OUT", Number(product.stock), { userNote: "Confirmed disposal of expired stock batch" });
+        moveStockInBackground(product, "STOCK OUT", removeQty, { expiry: batchExpiry, userNote: `Confirmed disposal of expired batch (${batchExpiry})` });
       } else {
         product.expiry = "";
         product.expiration_date = null;
-        product.expiryBatches = [];
+        product.expiryBatches = (product.expiryBatches || []).filter(eb => eb.expiry !== batchExpiry);
         const { updateProductInBackground } = await import("../optimistic.js");
         updateProductInBackground(product, {
           name: product.name,
@@ -149,7 +152,7 @@ export function bindTabActions(target) {
           cost: product.cost,
           alertLevel: product.lowStockAlertLevel || 20,
           expiry: "",
-          notes: "Cleared expired batch with 0 stock"
+          notes: "Cleared expired batch record"
         });
       }
       toast(`Disposed expired batch for ${product.name}.`);
