@@ -1181,7 +1181,13 @@ img, svg, video { max-width: 100%; }
   .dashboard-toggle-btn { display: none !important; }
 
   .dashboard-tabs-header,
-  .stocks-low-header { margin: 0; flex-wrap: nowrap; justify-content: stretch; }
+  .stocks-low-header {
+    margin: 0;
+    flex-wrap: nowrap;
+    justify-content: stretch;
+    position: relative;
+    z-index: 70;
+  }
   .dashboard-tabs-header .dashboard-tabs,
   .stocks-low-header .dashboard-tabs { width: 100%; margin: 0; gap: 8px; flex-wrap: nowrap; }
   .dashboard-bottom-section .tab-btn,
