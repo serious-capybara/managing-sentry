@@ -3,12 +3,9 @@
 require_once __DIR__ . '/../init.php';
 
 use config\Database;
-use core\Auth;
 use core\Response;
 use Exception;
 use PDO;
-
-Auth::requireAppAccess();
 
 $action = $_GET['action'] ?? 'list';
 $database = new Database();
