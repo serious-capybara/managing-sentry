@@ -47,6 +47,11 @@ export function setAuthView(loggedIn) {
     loginScreen.style.removeProperty("display");
     loginScreen.classList.toggle("hidden", loggedIn);
   }
+  if (loggedIn) {
+    const shell = document.querySelector(".app, .layout, #appShell") || document.querySelector(".sidebar")?.parentElement;
+    shell?.classList.add("app-enter");
+    setTimeout(() => shell?.classList.remove("app-enter"), 600);
+  }
   if (!loggedIn) document.getElementById("loginForm")?.reset();
 }
 

@@ -2,8 +2,7 @@
 
 import { state } from "../state.js";
 import { escapeHtml, money, toast } from "../utils.js";
-import { apiRequest } from "../api.js";
-import { loadDashboardData } from "../data-loader.js";
+import { moveStockInBackground } from "../optimistic.js";
 import { updateStats } from "../stock-logic.js";
 import { renderPage, currentPage } from "../router.js";
 import { bindStyledSelects } from "../styled-select.js";
@@ -147,26 +146,14 @@ export function openStockInModal(targetProductId = null) {
     const submitBtn = document.getElementById("confirmStockIn");
     submitBtn.disabled = true;
 
-    try {
-      await apiRequest("products.php?action=stock", {
-        method: "POST",
-        body: JSON.stringify({
-          product_id: product.id,
-          quantity: Number(f.get("qty")),
-          type: "STOCK IN",
-          notes: f.get("notes"),
-          expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : ""
-        })
-      });
-      await loadDashboardData();
-      updateStats();
-      close();
-      toast(`Added ${f.get("qty")} units to ${product.name}.`);
-      renderPage(currentPage || "stocks");
-    } catch (error) {
-      toast(`Could not update stock: ${error.message}`);
-      submitBtn.disabled = false;
-    }
+    const qtyIn = Number(f.get("qty"));
+    moveStockInBackground(product, "STOCK IN", qtyIn, {
+      expiry: f.get("hasExpiry") === "yes" ? f.get("expiry") : "",
+      userNote: String(f.get("notes") || "").trim()
+    });
+    close();
+    toast(`Added ${qtyIn} units to ${product.name}.`);
+    renderPage(currentPage || "stocks");
   });
 
   setTimeout(() => searchInput?.focus(), 50);
@@ -292,25 +279,10 @@ export function openStockOutModal(targetProductId = null) {
     const submitBtn = document.getElementById("confirmStockOut");
     submitBtn.disabled = true;
 
-    try {
-      await apiRequest("products.php?action=stock", {
-        method: "POST",
-        body: JSON.stringify({
-          product_id: product.id,
-          quantity: qty,
-          type: "STOCK OUT",
-          notes: f.get("notes")
-        })
-      });
-      await loadDashboardData();
-      updateStats();
-      close();
-      toast(`Deducted ${qty} units from ${product.name}.`);
-      renderPage(currentPage || "stocks");
-    } catch (error) {
-      toast(`Could not update stock: ${error.message}`);
-      submitBtn.disabled = false;
-    }
+    moveStockInBackground(product, "STOCK OUT", qty, { userNote: String(f.get("notes") || "").trim() });
+    close();
+    toast(`Deducted ${qty} units from ${product.name}.`);
+    renderPage(currentPage || "stocks");
   });
 
   setTimeout(() => searchInput?.focus(), 50);

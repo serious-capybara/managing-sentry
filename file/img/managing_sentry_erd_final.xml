@@ -227,13 +227,13 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- orders has histories: straight horizontal -->
-        <mxCell id="e2" value="has" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERmandOne;startFill=0;endArrow=ERmany;endFill=0;startSize=12;endSize=12;strokeWidth=1.5;strokeColor=#222222;fontFamily=Helvetica;fontSize=11;fontStyle=2;fontColor=#666666;verticalAlign=bottom;spacingBottom=4;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="r_orders_order_id" target="r_hist_order_id">
+        <!-- orders has histories: straight horizontal (UPDATED TO MANDATORY MANY: ERmandMany) -->
+        <mxCell id="e2" value="has" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERmandOne;startFill=0;endArrow=ERmandMany;endFill=0;startSize=12;endSize=12;strokeWidth=1.5;strokeColor=#222222;fontFamily=Helvetica;fontSize=11;fontStyle=2;fontColor=#666666;verticalAlign=bottom;spacingBottom=4;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="r_orders_order_id" target="r_hist_order_id">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- orders contains order_items: down, across the clear gap between rows, down -->
-        <mxCell id="e3" value="contains" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERmandOne;startFill=0;endArrow=ERmany;endFill=0;startSize=12;endSize=12;strokeWidth=1.5;strokeColor=#222222;fontFamily=Helvetica;fontSize=11;fontStyle=2;fontColor=#666666;verticalAlign=bottom;spacingBottom=4;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="t_orders" target="t_order_items">
+        <!-- orders contains order_items: down, across the clear gap between rows, down (UPDATED TO MANDATORY MANY: ERmandMany) -->
+        <mxCell id="e3" value="contains" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=ERmandOne;startFill=0;endArrow=ERmandMany;endFill=0;startSize=12;endSize=12;strokeWidth=1.5;strokeColor=#222222;fontFamily=Helvetica;fontSize=11;fontStyle=2;fontColor=#666666;verticalAlign=bottom;spacingBottom=4;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="t_orders" target="t_order_items">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 

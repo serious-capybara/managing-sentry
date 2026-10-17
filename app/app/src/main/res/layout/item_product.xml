@@ -201,4 +201,16 @@
             android:visibility="gone" />
     </FrameLayout>
 
+    <TextView
+        android:id="@+id/row_expiry"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1.2"
+        android:layout_marginEnd="1dp"
+        android:background="@drawable/cell_white_bg"
+        android:text=""
+        android:textSize="@dimen/body_three"
+        android:textColor="@color/slate_600"
+        android:gravity="center" 
+        android:visibility="gone" />
 </LinearLayout>

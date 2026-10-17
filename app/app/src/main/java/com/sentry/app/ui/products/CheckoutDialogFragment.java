@@ -182,7 +182,7 @@ public class CheckoutDialogFragment extends DialogFragment {
         receiptContainer.removeAllViews();
 
         SessionManager sessionManager = new SessionManager(requireContext());
-        String cashierName = sessionManager.getUsername() != null ? sessionManager.getUsername() : "Cashier";
+        String cashierName = sessionManager.getFullName() != null ? sessionManager.getFullName() : "Cashier";
         String dateStr = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(new Date());
 
         addVerticalSpace(24);

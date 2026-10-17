@@ -206,7 +206,8 @@ public class ProductsFragment extends BaseFragment {
     private void setupHeader(View header) {
         if (header == null) return;
         hideViews(header, R.id.header_timestamp, R.id.header_order, R.id.header_category, R.id.header_sales, R.id.header_subtotal, R.id.header_checkout, R.id.header_status);
-        showViews(header, R.id.header_name, R.id.header_quantity, R.id.header_srp, R.id.header_status);
+        showViews(header, R.id.header_name, R.id.header_quantity, R.id.header_srp, R.id.header_status, R.id.header_expiry);
+        setText(header, R.id.header_expiry, "Expiry");
         setText(header, R.id.header_quantity, "Stock");
         setText(header, R.id.header_status, "Status");
     }
@@ -284,13 +285,18 @@ public class ProductsFragment extends BaseFragment {
     }
 
     private void bindProductRow(View row, Product p) {
-        showViews(row, R.id.row_name, R.id.row_quantity, R.id.row_srp, R.id.row_status_container);
+        showViews(row, R.id.row_name, R.id.row_quantity, R.id.row_srp, R.id.row_status_container, R.id.row_expiry);
         hideViews(row, R.id.row_timestamp, R.id.row_order, R.id.row_category, R.id.row_sales, R.id.row_subtotal, R.id.row_checkout, R.id.row_action_container, R.id.row_cart_actions);
         
         setText(row, R.id.row_name, p.getName());
         setText(row, R.id.row_quantity, String.valueOf(p.getStockQuantity()));
         setText(row, R.id.row_srp, String.format(Locale.US, "₱ %.2f", p.getRetailPrice()));
         setText(row, R.id.row_status, p.getStatus());
+        setText(row, R.id.row_expiry, p.getExpiryText());
+        android.widget.TextView expiryView = row.findViewById(R.id.row_expiry);
+        if (expiryView != null) {
+            expiryView.setTextColor(p.isExpiredOrDueSoon() ? 0xFFB91C1C : 0xFF0F172A);
+        }
         row.setVisibility(View.VISIBLE);
     }
 }

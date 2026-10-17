@@ -54,6 +54,7 @@ class StockMovement(BaseModel):
     expiry: str | None = None
     reference: str | None = Field(default=None, validation_alias=AliasChoices("reference", "ref"))
     notes: str | None = None
+    client_ref: str | None = None
 
 
 class ProductDelete(BaseModel):

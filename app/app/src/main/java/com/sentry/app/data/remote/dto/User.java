@@ -14,6 +14,8 @@ public class User {
     
     private String role;
 
+    private String token;
+
     public int getUserId() {
         return userId;
     }
@@ -28,5 +30,9 @@ public class User {
 
     public String getRole() {
         return role;
+    }
+
+    public String getToken() {
+        return token;
     }
 }

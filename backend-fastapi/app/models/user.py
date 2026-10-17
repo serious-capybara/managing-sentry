@@ -12,3 +12,4 @@ class LoginResponse(BaseModel):
     full_name: str
     username: str
     role: str
+    token: str

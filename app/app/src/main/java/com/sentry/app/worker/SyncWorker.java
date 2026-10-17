@@ -62,7 +62,10 @@ public class SyncWorker extends Worker {
                 Response<List<com.sentry.app.data.local.entity.Product>> productsResponse =
                         RetrofitClient.getApiService().getProducts().execute();
                 if (productsResponse.isSuccessful() && productsResponse.body() != null) {
-                    db.productDao().insertProducts(productsResponse.body());
+                    db.runInTransaction(() -> {
+                        db.productDao().deleteAll();
+                        db.productDao().insertProducts(productsResponse.body());
+                    });
                 }
             } catch (Exception ignored) {
             }

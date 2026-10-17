@@ -1,6 +1,7 @@
 // switches pages and sets up the layout for each one
 
 import { saveActivePage } from "./state.js";
+import { loadAllHistory } from "./data-loader.js";
 import { updateStats } from "./stock-logic.js";
 import { openAddProductModal } from "./modals/add-product-modal.js";
 import { openStockInModal, openStockOutModal } from "./modals/stock-modal.js";
@@ -40,6 +41,8 @@ export function setActiveDashTab(tab) {
 }
 
 export function renderPage(page) {
+  // Dashboard totals and reports are built from every sale, so make sure all of them get loaded.
+  if (page === "dashboard" || page === "reports") loadAllHistory();
   if (page === "add-product") {
     renderPage("products");
     openAddProductModal();

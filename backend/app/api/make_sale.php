@@ -3,9 +3,11 @@
 require_once __DIR__ . '/../init.php';
 
 use config\Database;
+use core\Auth;
 use core\Response;
 use Exception;
 
+$authUser = Auth::requireAppAccess();
 $data = json_decode(file_get_contents("php://input"), true);
 
 if (!$data || !isset($data['items']) || empty($data['items'])) {
@@ -18,10 +20,12 @@ $conn = $database->getConnection();
 $conn->beginTransaction();
 
 try {
+    $userId = (int)($authUser['user_id'] ?? $data['user_id'] ?? 0);
+
     // 1. Create the main Order record
     $stmt = $conn->prepare("INSERT INTO orders (user_id, total_amount, amount_tendered, change_given, notes) VALUES (?, ?, ?, ?, ?)");
     $stmt->execute([
-        $data['user_id'],
+        $userId,
         $data['total_amount'],
         $data['amount_tendered'],
         $data['change_given'],

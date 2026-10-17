@@ -55,4 +55,29 @@ public class Product {
         if (stockQuantity <= lowStockAlertLevel) return "Low Stock";
         return "In Stock";
     }
+
+    /** Whole days until the expiration date (negative when already expired), or null if none is set. */
+    public Integer getDaysLeft() {
+        if (expirationDate == null || expirationDate.trim().isEmpty()) return null;
+        try {
+            java.util.Date expiry = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                    .parse(expirationDate.trim().substring(0, 10));
+            long today = new java.util.Date().getTime() / 86400000L;
+            return (int) (expiry.getTime() / 86400000L - today);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** The exact number of days left, for example "12 days", "1 day", "0 days" or "-3 days". */
+    public String getExpiryText() {
+        Integer days = getDaysLeft();
+        if (days == null) return "—";
+        return days + (Math.abs(days) == 1 ? " day" : " days");
+    }
+
+    public boolean isExpiredOrDueSoon() {
+        Integer days = getDaysLeft();
+        return days != null && days <= 1;
+    }
 }

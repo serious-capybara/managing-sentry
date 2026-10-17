@@ -7,6 +7,7 @@ import androidx.security.crypto.MasterKey;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
+import com.sentry.app.data.remote.api.RetrofitClient;
 import com.sentry.app.data.remote.dto.User;
 
 /**
@@ -18,6 +19,7 @@ public class SessionManager {
     private static final String KEY_FULL_NAME = "full_name";
     private static final String KEY_USER_NAME = "username";
     private static final String KEY_ROLE = "role";
+    private static final String KEY_TOKEN = "auth_token";
     private static final String KEY_LAST_USE = "last_use_timestamp";
     private static final long SESSION_TIMEOUT_DAYS = 7L;
 
@@ -41,6 +43,11 @@ public class SessionManager {
             // Fallback to standard SharedPreferences if encryption fails (should be logged)
             this.prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         }
+
+        String savedToken = getToken();
+        if (savedToken != null && !savedToken.isEmpty()) {
+            RetrofitClient.setAuthToken(savedToken);
+        }
     }
 
     public void saveUser(User user) {
@@ -52,6 +59,10 @@ public class SessionManager {
         if (user.getFullName() != null) editor.putString(KEY_FULL_NAME, user.getFullName());
         if (user.getUsername() != null) editor.putString(KEY_USER_NAME, user.getUsername());
         if (user.getRole() != null) editor.putString(KEY_ROLE, user.getRole());
+        if (user.getToken() != null) {
+            editor.putString(KEY_TOKEN, user.getToken());
+            RetrofitClient.setAuthToken(user.getToken());
+        }
         
         editor.putLong(KEY_LAST_USE, System.currentTimeMillis());
         editor.apply();
@@ -63,6 +74,7 @@ public class SessionManager {
 
     public void clear() {
         prefs.edit().clear().apply();
+        RetrofitClient.setAuthToken(null);
     }
 
     public int getUserId() {
@@ -77,6 +89,10 @@ public class SessionManager {
         return prefs.getString(KEY_USER_NAME, "username");
     }
 
+    public String getToken() {
+        return prefs.getString(KEY_TOKEN, null);
+    }
+
     @SuppressWarnings("IfCanBeSwitch")
     public boolean isSessionActive() {
         int userId = prefs.getInt(KEY_USER_ID, -1);
@@ -87,6 +103,13 @@ public class SessionManager {
         }
 
         long expiryTime = SESSION_TIMEOUT_DAYS * 24 * 60 * 60 * 1000;
-        return (System.currentTimeMillis() - lastUse) < expiryTime;
+        boolean active = (System.currentTimeMillis() - lastUse) < expiryTime;
+        if (active) {
+            String savedToken = getToken();
+            if (savedToken != null && !savedToken.isEmpty()) {
+                RetrofitClient.setAuthToken(savedToken);
+            }
+        }
+        return active;
     }
 }

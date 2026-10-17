@@ -18,6 +18,8 @@ class HistoryResponse(BaseModel):
     total_amount: float
     transaction_timestamp: str | None
     ref: str = ""
+    client_ref: str = ""
+    cashier: str = ""
     items: list[dict] = []
     amount_received: float | None = None
     change_given: float | None = None
