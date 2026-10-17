@@ -7,9 +7,15 @@ class LoginRequest(BaseModel):
     username: str = Field(min_length=1, max_length=50)
     password: str = Field(min_length=1)
 
+
 class LoginResponse(BaseModel):
     user_id: int
     full_name: str
     username: str
     role: str
     token: str
+
+
+class MessageResponse(BaseModel):
+    success: bool
+    message: str
