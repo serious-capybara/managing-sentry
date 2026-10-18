@@ -883,3 +883,8 @@
 .checkout-payment-fields { max-height: 1200px; transition: max-height 0.5s ease, opacity 0.4s ease, margin 0.5s ease; }
 .checkout-payment-fields.collapsing { max-height: 0; opacity: 0; margin: 0; overflow: hidden; pointer-events: none; }
 .checkout-content .checkout-receipt { margin-top: 16px; }
+
+
+/* All pop-ups (Add / Edit Product, Add Stock, ...) scroll without a visible scroll bar */
+.modal, .modal * { scrollbar-width: none; -ms-overflow-style: none; }
+.modal::-webkit-scrollbar, .modal *::-webkit-scrollbar { display: none; width: 0; height: 0; }

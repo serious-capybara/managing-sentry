@@ -1273,7 +1273,20 @@ img, svg, video { max-width: 100%; }
   .dashboard-toggle-btn { display: none !important; }
 
   .dashboard-tabs-header,
-  .stocks-low-header { margin: 0; flex-wrap: nowrap; justify-content: stretch; }
+  .stocks-low-header {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 75;
+    margin: 0;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: #FFFFFF;
+    border-top: 1px solid var(--border-light);
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08);
+    flex-wrap: nowrap;
+    justify-content: stretch;
+  }
   .dashboard-tabs-header .dashboard-tabs,
   .stocks-low-header .dashboard-tabs { width: 100%; margin: 0; gap: 8px; flex-wrap: nowrap; }
   .dashboard-bottom-section .tab-btn,
@@ -1309,9 +1322,9 @@ img, svg, video { max-width: 100%; }
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: 62px !important;
     top: auto;
-    z-index: 60;
+    z-index: 70;
     display: flex !important;
     flex-direction: column;
     height: var(--sheet-h, 50dvh);

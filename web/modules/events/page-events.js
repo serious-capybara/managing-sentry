@@ -241,21 +241,26 @@ export function bindPageEvents(page) {
       dashBottom.classList.remove("collapsed-section");
       localStorage.setItem("sentryDashSectionCollapsed", "false");
     }
-    pageContent.querySelector("[data-sheet-collapse]")?.addEventListener("click", () => dashSheet?.close());
+    pageContent.addEventListener("click", e => {
+      const collapseBtn = e.target.closest("[data-sheet-collapse]");
+      if (collapseBtn) {
+        dashSheet?.close();
+      }
+    });
 
     pageContent.querySelectorAll(".tab-btn").forEach(btn => {
       btn.addEventListener("click", () => {
+        const targetTab = btn.dataset.tab;
         const previousTab = activeDashTab;
-        setActiveDashTab(btn.dataset.tab);
+        setActiveDashTab(targetTab);
 
         if (isPhone() && dashSheet) {
-          if (dashSheet.isOpen() && previousTab === btn.dataset.tab) {
+          if (dashSheet.isOpen() && previousTab === targetTab) {
             dashSheet.close();
           } else {
-            dashBody.classList.toggle("is-sell", btn.dataset.tab === "sell");
-            dashSheet.open({ locked: btn.dataset.tab === "sell" });
-            // build the content next frame so the sheet opens without waiting
-            requestAnimationFrame(() => setTimeout(renderActiveTab, 0));
+            dashBody.classList.toggle("is-sell", targetTab === "sell");
+            renderActiveTab();
+            dashSheet.open({ locked: targetTab === "sell" });
           }
           paintDashTabs(pageContent);
           return;
@@ -386,13 +391,26 @@ export function bindPageEvents(page) {
   if (page === "stocks") {
     const lowBody = document.getElementById("stocksLowBody");
     const lowHost = document.getElementById("stocksLowPanel");
+    const updateStocksLowTab = () => {
+      const btn = document.getElementById("stocksLowTab");
+      if (!btn) return;
+      const isActive = !isPhone() || !!stocksSheet?.isOpen();
+      btn.classList.toggle("active", isActive);
+    };
+
     stocksSheet = (lowBody && lowHost)
-      ? createSheet({ sheet: lowBody, handle: document.getElementById("stocksSheetHandle"), host: lowHost })
+      ? createSheet({
+          sheet: lowBody,
+          handle: document.getElementById("stocksSheetHandle"),
+          host: lowHost,
+          onChange: updateStocksLowTab
+        })
       : null;
     if (isPhone() && lowHost) {
       lowHost.classList.remove("stocks-collapsed");
       localStorage.setItem("sentryStockSectionCollapsed", "false");
     }
+    updateStocksLowTab();
     document.getElementById("stocksLowTab")?.addEventListener("click", () => {
       if (isPhone()) stocksSheet?.toggle();
     });
