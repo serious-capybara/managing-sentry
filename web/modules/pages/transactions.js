@@ -16,6 +16,7 @@ export function renderTransactions() {
             <option value="oldest">Oldest</option>
             <option value="sales">Sales</option>
             <option value="stock">Stock</option>
+            <option value="products">Product</option>
           </select>
         </div>
       </div>
@@ -49,21 +50,23 @@ export function historyBanner() {
 // type checks used by the filter, table and reports
 export const isSaleType  = t => String(t?.type || "").trim().toUpperCase() === "SALE";
 export const isStockType = t => /^STOCK[ _]?(IN|OUT)$/.test(String(t?.type || "").trim().toUpperCase());
+export const isProductType = t => /^(NEW PRODUCT|PRODUCT EDITED|PRODUCT REMOVED)$/i.test(String(t?.type || "").trim().toUpperCase());
 
-// database id: order_id for sales, adjustment_id for stock
+// database id: order_id for sales, adjustment_id for stock & product actions
 export function dbIdOf(t) {
-  if (isStockType(t)) {
+  if (isStockType(t) || isProductType(t)) {
     const id = Number(t.id ?? t.entry_id ?? 0);
     return id >= 100000 ? id - 100000 : id;   // backend adds 100000 to adjustment ids
   }
   return Number(t.order_id ?? t.id ?? 0);
 }
 
-// id with prefix: ORD- for sales, STK- for stock
+// id with prefix: ORD- for sales, STK- for stock, PRD- for product actions
 export function formatTransactionId(t) {
   const dbId = dbIdOf(t);
-  if (isSaleType(t))  return `ORD-${dbId}`;
-  if (isStockType(t)) return `STK-${dbId}`;
+  if (isSaleType(t))    return `ORD-${dbId}`;
+  if (isStockType(t))   return `STK-${dbId}`;
+  if (isProductType(t)) return `PRD-${dbId}`;
   return `ID-${dbId}`;
 }
 
@@ -87,10 +90,12 @@ export function filterHistory(list = state.transactions, mode = "newest", query 
   let out = [...list];
   if (mode === "sales") out = out.filter(isSaleType);
   else if (mode === "stock") out = out.filter(isStockType);
+  else if (mode === "products") out = out.filter(isProductType);
+
   if (q) out = out.filter(t => `${t.name} ${t.type} ${t.date} ${t.notes || ""} ${formatTransactionId(t)}`.toLowerCase().includes(q));
 
   if (mode === "oldest") return out.sort(chronoCmp);
-  if (mode === "sales" || mode === "stock") return out.sort((a, b) => dbIdOf(b) - dbIdOf(a));
+  if (mode === "sales" || mode === "stock" || mode === "products") return out.sort((a, b) => dbIdOf(b) - dbIdOf(a));
   return out.sort((a, b) => chronoCmp(b, a));
 }
 
@@ -131,9 +136,9 @@ export function format24hDate(raw) {
 function detailCell(t) {
   const index = state.transactions.indexOf(t);
   if (t.type === "SALE") return `<span class="text-link" data-receipt-idx="${index}" role="button" tabindex="0">Receipt</span>`;
-  const text = String(t.notes || "").split("\n").map(l => l.trim()).filter(Boolean).join(" · ");
+  const text = String(t.notes || "").trim();
   if (!text) return `<span class="note-text muted">N/A</span>`;
-  return `<span class="note-text text-link" data-notes-idx="${index}" title="${escapeHtml(text)}">${escapeHtml(text)}</span>`;
+  return `<span class="text-link" data-notes-idx="${index}" role="button" tabindex="0">Notes</span>`;
 }
 
 export function transactionRows(list = state.transactions, mode = "newest") {
@@ -310,7 +315,13 @@ export function renderHistoryPrintReport(list = state.transactions, mode = "newe
   const stockMode = mode === "stock";
   const costIn = sum(stockIn, t => Number(t.amount || 0));
   const costOut = sum(stockOut, t => Number(t.amount || 0));
-  const filterLabel = { newest: "All activity (newest first)", oldest: "All activity (oldest first)", sales: "Sales only", stock: "Stock movements only" }[mode] || "All activity";
+  const filterLabel = {
+    newest: "All activity (newest first)",
+    oldest: "All activity (oldest first)",
+    sales: "Sales only",
+    stock: "Stock movements only",
+    products: "Product actions only"
+  }[mode] || "All activity";
 
   const numbers = historyNumbers(state.transactions);
   const showRunning = mode === "newest" || mode === "oldest";

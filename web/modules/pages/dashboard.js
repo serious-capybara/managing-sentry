@@ -5,6 +5,7 @@ import { money, escapeHtml } from "../utils.js";
 import { renderSellTab } from "../cart.js";
 import { getProfitBreakdown, getSalesRevenue } from "../finance.js";
 import { sheetHandleHtml } from "../mobile-sheet.js";
+import { activeExpiryBatches } from "../stock-logic.js";
 
 export let activeDashTab = "expiring";
 export function setActiveDashTab(tab) { activeDashTab = tab; }
@@ -76,13 +77,15 @@ export function dashboardRows(products = state.products) {
   }).join("");
 }
 
-export function expiringRows(list) {
+export function expiringRows(batchEntries) {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return list.map((p, i) => {
-    const inCart = state.cart.find(c => c.id === p.id)?.qty || 0;
-    const available = Math.max(0, p.stock - inCart);
-    const parts = String(p.expiry || "").trim().substring(0, 10).split("-");
+  return batchEntries.map((entry, i) => {
+    const p = entry.product;
+    const batch = entry.batch;
+    const qty = Number(batch.qty || p.stock || 0);
+    const expStr = String(batch.expiry || p.expiry || "").trim();
+    const parts = expStr.substring(0, 10).split("-");
     let days = 0;
     if (parts.length >= 3) {
       const expDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
@@ -93,13 +96,13 @@ export function expiringRows(list) {
       <td>${i + 1}</td>
       <td><strong>${escapeHtml(p.name)}</strong></td>
       <td>${escapeHtml(p.category)}</td>
-      <td>${available} in stock</td>
+      <td>${qty} in batch</td>
       <td>${money(p.price)}</td>
-      <td>${p.expiry || "—"}</td>
+      <td>${expStr || "—"}</td>
       <td><span class="badge ${isExpired ? "red" : "orange"}">${isExpired ? "EXPIRED" : days === 0 ? "Expires Today" : `Expires in ${days}d`}</span></td>
       <td>
         ${isExpired
-          ? `<button class="confirm-removal-btn" type="button" data-confirm-expired-removal="${p.id}">
+          ? `<button class="confirm-removal-btn" type="button" data-confirm-expired-removal="${p.id}" data-batch-expiry="${escapeHtml(expStr)}" data-batch-qty="${qty}">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -116,21 +119,42 @@ export function expiringRows(list) {
 export function expiringPanel() {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const soon = state.products.filter(p => {
-    if (!p.expiry) return false;
-    const parts = String(p.expiry || "").trim().substring(0, 10).split("-");
-    if (parts.length < 3) return false;
-    const expDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-    const days = Math.round((expDate - today) / 86400000);
-    if (days < 0 && Number(p.stock || 0) <= 0) return false;
-    return days <= 7;
-  });
+  const batchEntries = [];
+
+  for (const p of state.products) {
+    const batches = activeExpiryBatches(p);
+    if (batches.length) {
+      for (const b of batches) {
+        if (!b.expiry) continue;
+        const parts = String(b.expiry).trim().substring(0, 10).split("-");
+        if (parts.length < 3) continue;
+        const expDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const days = Math.round((expDate - today) / 86400000);
+        if (days <= 7) {
+          batchEntries.push({ product: p, batch: b, days });
+        }
+      }
+    } else if (p.expiry) {
+      const parts = String(p.expiry).trim().substring(0, 10).split("-");
+      if (parts.length >= 3) {
+        const expDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const days = Math.round((expDate - today) / 86400000);
+        if (days <= 7) {
+          batchEntries.push({ product: p, batch: { expiry: p.expiry, qty: p.stock }, days });
+        }
+      }
+    }
+  }
+
+  // Sort: expired batches first, then soonest expiry date
+  batchEntries.sort((a, b) => a.days - b.days);
+
   return `
     <div class="wire-table-wrap dash-expiring-table-wrap">
       <table class="dashboard-inventory-table">
-        <thead><tr><th>ID</th><th>NAME</th><th>CATEGORY</th><th>STOCK</th><th>SRP</th><th>EXPIRATION DATE</th><th>STATUS</th><th>ACTION</th></tr></thead>
-        <tbody>${soon.length
-      ? expiringRows(soon)
+        <thead><tr><th>ID</th><th>NAME</th><th>CATEGORY</th><th>BATCH QTY</th><th>SRP</th><th>EXPIRATION DATE</th><th>STATUS</th><th>ACTION</th></tr></thead>
+        <tbody>${batchEntries.length
+      ? expiringRows(batchEntries)
       : `<tr><td colspan="8" class="table-empty">✓ No expiring items within the next 7 days.</td></tr>`}
         </tbody>
       </table>

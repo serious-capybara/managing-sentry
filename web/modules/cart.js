@@ -3,6 +3,7 @@
 import { state, persist } from "./state.js";
 import { money, escapeHtml, toast } from "./utils.js";
 import { askYesNo } from "./modals/dialogs.js";
+import { getSellableStock } from "./stock-logic.js";
 
 // cart
 
@@ -15,26 +16,23 @@ export function cartCount() {
 }
 
 export function isProductExpired(p) {
-  if (!p || !p.expiry) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const parts = String(p.expiry).trim().substring(0, 10).split("-");
-  if (parts.length < 3) return false;
-  const expDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-  return !Number.isNaN(expDate.getTime()) && expDate < today;
+  return getSellableStock(p) <= 0;
 }
 
 export function addToCart(id) {
   const p = state.products.find(x => x.id === id);
   if (!p) return;
 
-  if (isProductExpired(p)) {
-    return toast(`Cannot sell expired product (${p.name}).`);
-  }
-
   const inCart    = state.cart.find(c => c.id === id)?.qty || 0;
-  const available = p.stock - inCart;
-  if (available <= 0) return toast("This product is out of stock.");
+  const sellable  = getSellableStock(p);
+  const available = sellable - inCart;
+
+  if (available <= 0) {
+    if (p.stock > 0 && sellable <= 0) {
+      return toast(`Cannot sell expired product (${p.name}).`);
+    }
+    return toast("This product is out of stock.");
+  }
 
   const existing = state.cart.find(x => x.id === id);
   if (existing) existing.qty += 1;
@@ -49,8 +47,9 @@ export function updateCartQty(id, qty) {
   const item = state.cart.find(c => c.id === id);
   const p    = state.products.find(x => x.id === id);
   if (!item || !p) return;
+  const sellable = getSellableStock(p);
   qty = Math.max(1, Math.floor(Number(qty) || 1));
-  if (qty > p.stock) { qty = p.stock; toast(`Only ${p.stock} in stock.`); }
+  if (qty > sellable) { qty = sellable; toast(`Only ${sellable} unexpired units available.`); }
   item.qty = qty;
   persist();
   renderActiveTab();
@@ -60,9 +59,10 @@ export function stepCartQty(id, delta) {
   const item = state.cart.find(c => c.id === id);
   const p    = state.products.find(x => x.id === id);
   if (!item || !p) return;
+  const sellable = getSellableStock(p);
   const next = item.qty + delta;
   if (next <= 0) return removeFromCart(id);
-  if (next > p.stock) return toast(`Only ${p.stock} in stock.`);
+  if (next > sellable) return toast(`Only ${sellable} unexpired units available.`);
   item.qty = next;
   persist();
   renderActiveTab();
@@ -91,7 +91,7 @@ export async function clearSellCart() {
 // sell tab markup
 
 export function renderSellTab() {
-  const availableCount = state.products.filter(p => p.stock > 0 && !isProductExpired(p)).length;
+  const availableCount = state.products.filter(p => getSellableStock(p) > 0).length;
   return `<div class="sell-workspace">
     <section class="panel sell-panel">
       <div class="sell-panel-header">
@@ -178,13 +178,14 @@ export function renderSellTab() {
 }
 
 export function sellProductRows(products = state.products) {
-  const sellableProducts = products.filter(p => p.stock > 0 && !isProductExpired(p));
+  const sellableProducts = products.filter(p => getSellableStock(p) > 0);
   if (!sellableProducts.length) {
     return `<tr><td colspan="4" class="table-empty">No products available for sale.</td></tr>`;
   }
   return sellableProducts.map(p => {
+    const sellable  = getSellableStock(p);
     const inCart    = state.cart.find(i => i.id === p.id)?.qty || 0;
-    const available = Math.max(0, p.stock - inCart);
+    const available = Math.max(0, sellable - inCart);
 
     return `<tr>
       <td title="${escapeHtml(p.name)}">
